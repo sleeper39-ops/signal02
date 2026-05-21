@@ -2,146 +2,292 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Udon Checkpoint</title>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการเครือข่าย ศสส.บก.ควบคุม 2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #1a73e8; --red: #d93025; --dark: #111; --accent: #fbbc04; }
-        body { margin: 0; padding: 0; font-family: 'Kanit', sans-serif; background: #000; overflow: hidden; }
-        /* dvh = Dynamic Viewport Height ที่หักพื้นที่ browser UI บนมือถือออกแล้ว */
-        #map { height: 100dvh; height: 100vh; width: 100vw; z-index: 10; }
-        .header { position: fixed; top: 12px; left: 12px; z-index: 1000; background: white; padding: 6px 14px; border-radius: 40px; box-shadow: 0 4px 10px rgba(0,0,0,0.25); display: flex; align-items: center; gap: 8px; }
-        .header h1 { margin: 0; font-size: 13px; color: #333; font-weight: 600; }
-        /* crosshair จะถูกจัดตำแหน่งด้วย JS (positionCrosshair) เพื่อให้ตรงกับ map.getSize() */
-        #crosshair { position: fixed; width: 32px; height: 42px; z-index: 5000; display: none; pointer-events: none; }
-        .ch-pin { width: 32px; height: 32px; background: rgba(255, 68, 0, 0.95); border: 2px solid white; border-radius: 50%; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; }
-        .ch-pin::after { content: ''; position: absolute; bottom: -10px; left: 50%; margin-left: -8px; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 12px solid rgba(255, 68, 0, 0.95); }
-        .ch-dot { position: absolute; bottom: -12px; left: 50%; width: 4px; height: 4px; background: red; border-radius: 50%; margin-left: -2px; box-shadow: 0 0 5px red; }
-        .dm-wrapper { width: 34px; height: 42px; position: relative; }
-        .white-circle { background: white; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(0,0,0,0.4); border: 2px solid white; position: relative; font-size: 20px; }
-        .white-circle::after { content: ''; position: absolute; bottom: -8px; left: 50%; margin-left: -7px; width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 10px solid white; }
-        .label-tag { position: absolute; top: 44px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: white; padding: 4px 12px; border-radius: 12px; font-size: 10px; white-space: nowrap; text-align: center; line-height: 1.3; border: 1px solid rgba(255,255,255,0.15); }
-        #chatDrawer { position: fixed; bottom: -80vh; left: 0; width: 100%; height: 75vh; background: white; z-index: 4000; border-radius: 30px 30px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.4); transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1); display: flex; flex-direction: column; }
-        #chatDrawer.active { bottom: 0; }
-        .chat-messages { flex: 1; overflow-y: auto; padding: 15px; background: #f8f9fa; display: flex; flex-direction: column; gap: 10px; }
-        .msg { max-width: 85%; padding: 12px 16px; border-radius: 20px; font-size: 14px; position: relative; line-height: 1.4; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-        .msg-me { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 4px; }
-        .msg-other { align-self: flex-start; background: white; color: #333; border-bottom-left-radius: 4px; border: 1px solid #eee; }
-        .chat-img { width: 100%; max-width: 280px; border-radius: 12px; margin-top: 8px; display: block; border: 1px solid rgba(0,0,0,0.1); }
-        .bottom-nav { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); z-index: 3000; display: flex; gap: 10px; width: 92%; max-width: 450px; transition: 0.4s; }
-        .bottom-nav.hide { bottom: -100px; opacity: 0; }
-        .btn { flex: 1; padding: 16px; border: none; border-radius: 18px; font-weight: 800; font-size: 15px; background: white; color: #333; box-shadow: 0 5px 20px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Kanit'; cursor: pointer; position: relative; }
-        #chatBadge { position: absolute; top: 10px; right: 15px; background: var(--red); color: white; font-size: 10px; min-width: 18px; height: 18px; border-radius: 10px; display: none; align-items: center; justify-content: center; border: 2.5px solid white; font-weight: bold; }
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9200; display: none; align-items: center; justify-content: center; }
-        .modal { background: white; padding: 25px; border-radius: 24px; width: 260px; text-align: center; }
-        #imgQueueArea { display: none; padding: 10px 20px; background: #fefefe; border-top: 1px solid #eee; align-items: center; gap: 15px; }
-        #imgQueuePreview { width: 65px; height: 65px; border-radius: 10px; object-fit: cover; border: 2px solid var(--primary); }
-        #selector { position: fixed; bottom: 0; left: 0; width: 100%; padding: 30px 20px 60px; background: white; border-radius: 35px 35px 0 0; z-index: 6000; display: none; box-shadow: 0 -12px 50px rgba(0,0,0,0.5); text-align: center; }
+        body { font-family: 'Prompt', sans-serif; background-color: #f3f4f6; }
+        .modal-active { overflow: hidden; }
     </style>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 </head>
-<body>
+<body class="text-gray-800 antialiased">
 
-    <div id="crosshair"><div class="ch-pin">📌</div><div class="ch-dot"></div></div>
-    <div id="toast" style="position:fixed; top:70px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.85); color:white; padding: 8px 16px; border-radius:8px; z-index:8000; display:none; font-size:13px; text-align:center;"></div>
+    <nav class="bg-blue-800 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fa-solid fa-network-wired text-2xl mr-3"></i>
+                    <span class="font-semibold text-xl tracking-tight">ระบบฐานข้อมูลอินเตอร์เน็ต ศสส.บก.ควบคุม 2</span>
+                </div>
+            </div>
+        </div>
+    </nav>
 
-    <div id="loginOverlay" class="overlay"><div class="modal"><h3>🔒 แอดมินล็อกอิน</h3><input type="text" id="adminU" placeholder="ID" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:10px; font-family:'Kanit'"><input type="password" id="adminP" placeholder="Password" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ddd; border-radius:10px; font-family:'Kanit'"><button onclick="doLogin()" style="width:100%; padding:12px; background:var(--primary); color:white; border:none; border-radius:10px; font-weight:bold">ยืนยัน</button><button onclick="document.getElementById('loginOverlay').style.display='none'" style="margin-top:10px; background:none; border:none; color:#999">ปิด</button></div></div>
-    <div id="nickOverlay" class="overlay"><div class="modal"><h3>เข้าสู่ระบบ</h3><input type="text" id="nickInput" placeholder="พี่บอส อุดร" style="width:100%; padding:14px; margin-bottom:15px; border:1px solid #ddd; border-radius:12px; font-family:'Kanit'"><button onclick="saveNick()" style="width:100%; padding:14px; background:var(--primary); color:white; border:none; border-radius:12px; font-weight:bold">เริ่ม</button></div></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <h1 class="text-2xl font-semibold text-gray-800">รายการอุปกรณ์ในเครือข่าย</h1>
+            <div class="flex gap-2 w-full md:w-auto">
+                <div class="relative w-full md:w-64">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                        <i class="fa-solid fa-search text-gray-400"></i>
+                    </span>
+                    <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="ค้นหาชื่อ, IP, แผนก..." class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500 transition-colors">
+                </div>
+                <button onclick="openModal()" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg flex items-center transition-colors shrink-0">
+                    <i class="fa-solid fa-plus mr-2"></i> เพิ่มอุปกรณ์
+                </button>
+            </div>
+        </div>
 
-    <div class="header">
-        <img src="https://www.gstatic.com/images/branding/product/1x/maps_64dp.png" width="16">
-        <h1>Udon Checkpoint (เจอดานที่ไหน ปักหมุดให้ด้วย)</h1>
-        <button id="clearChatBtn" style="display:none; background:red; color:white; padding:4px 10px; border:none; border-radius:20px; font-size:10px; margin-left:8px" onclick="clearAllChat()">ล้างแชท</button>
-    </div>
-
-    <button id="adminBtn" style="position:fixed; top:12px; right:12px; z-index:1000; background:white; border:none; padding:8px; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.2);" onclick="handleAdminClick()"><i data-lucide="shield-check" id="adminIcon" style="color:var(--primary); display:none"></i><i data-lucide="user" id="userIcon"></i></button>
-
-    <div id="map"></div>
-
-    <div id="chatDrawer">
-        <div style="padding:18px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center" onclick="toggleChat()"><strong id="chatHeadline" style="font-size:15px">💬 แชทสด</strong><i data-lucide="chevron-down" style="width:20px"></i></div>
-        <div id="onlineList" style="background:#fff; border-bottom:1px solid #eee; padding:10px 15px; font-size:11px; display:flex; gap:8px; overflow-x:auto;"></div>
-        <div class="chat-messages" id="chatList"></div>
-        <div id="imgQueueArea" style="display:none"><div style="position:relative"><img id="imgQueuePreview" src=""><div onclick="clearQueue()" style="position:absolute; top:-6px; right:-6px; background:var(--red); color:white; width:24px; height:24px; border-radius:50%; font-size:14px; display:flex; align-items:center; justify-content:center; font-weight:bold; border:2px solid white">×</div></div><span style="font-size:13px; color:#555">📷 แนบรูปภาพแล้ว</span></div>
-        <div style="padding:15px 15px 35px; border-top:1px solid #eee; display:flex; gap:10px; align-items:center; background:white">
-            <input type="file" id="imgInput" style="display:none" accept="image/*" onchange="handleFileQueue(this)">
-            <button onclick="document.getElementById('imgInput').click()" style="background:#f1f3f4; border:none; width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0"><i data-lucide="camera" style="width:18px; color:#5f6368"></i></button>
-            <button onclick="promptChangeNick()" style="background:#f1f3f4; border:none; width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0"><i data-lucide="user-cog" style="width:18px; color:#5f6368"></i></button>
-            <input type="text" id="msgInput" style="flex:1; padding:12px 18px; border:1px solid #eee; background:#f8f9fa; border-radius:25px; outline:none; font-family:'Kanit'; font-size:14px" placeholder="คุยกันที่นี่...">
-            <button id="sendBtn" onclick="sendMsg()" style="background:var(--primary); color:white; border:none; width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0"><i data-lucide="send" style="width:18px"></i></button>
+        <div class="bg-white rounded-lg shadow overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่ออุปกรณ์</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ประเภท</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP Address / ข้อมูลอ้างอิง</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">หน่วยงาน/แผนก</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody id="deviceTableBody" class="bg-white divide-y divide-gray-200">
+                    </tbody>
+            </table>
         </div>
     </div>
 
-    <div class="bottom-nav"><button class="btn" style="background:#333; color:white;" onclick="toggleChat()"><i data-lucide="message-square" style="width:18px"></i> แชท<span id="chatBadge"></span></button><button class="btn" id="startBtn" style="background:var(--primary); color:white" onclick="startSel()">📌 แจ้งด่าน</button><button class="btn" id="confirmPosBtn" style="background:var(--accent); color:black; display:none" onclick="confPos()">📌 ยืนยันพิกัด</button><button class="btn" onclick="location.reload()" style="flex:0.4"><i data-lucide="rotate-cw" style="width:18px"></i></button></div>
-    <div id="selector"><h3 style="margin:0; font-size:20px">📌 เลือกประเภทด่าน</h3><div style="display:flex; justify-content:center; gap:15px; margin-top: 30px; width: 100%;"><button onclick="onSubmit('👮 ด่านจราจร')" style="flex:1; max-width:160px; padding:25px; background:#1a73e8; border:none; border-radius:22px; color:white; font-weight:bold; font-family:'Kanit'">👮 จราจร</button><button onclick="onSubmit('🚨 ด่านเป่า')" style="flex:1; max-width:160px; padding:25px; background:#d93025; border:none; border-radius:22px; color:white; font-weight:bold; font-family:'Kanit'">🚨 ด่านเป่า</button></div><button onclick="cancelAndHide()" style="margin-top:35px; border:none; background:none; color:#bbb; font-family:'Kanit'; font-size:15px">ยกเลิก (เปลี่ยนพิกัด)</button><button onclick="cancelAll()" style="margin-top:10px; border:none; background:none; color:red; font-family:'Kanit'; font-size:13px; display:block; width:100%">ปิดหน้านี้</button></div>
+    <div id="deviceModal" class="fixed inset-0 z-50 hidden bg-gray-900 bg-opacity-50 flex justify-center items-center">
+        <div class="bg-white rounded-lg shadow-xl w-11/12 md:w-1/2 max-w-lg mx-auto">
+            <div class="flex justify-between items-center px-6 py-4 border-b">
+                <h3 class="text-lg font-semibold text-gray-900" id="modalTitle">เพิ่มอุปกรณ์ใหม่</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            
+            <form id="deviceForm" onsubmit="saveDevice(event)" class="px-6 py-4 space-y-4">
+                <input type="hidden" id="deviceId">
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">ชื่ออุปกรณ์</label>
+                    <input type="text" id="deviceName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="เช่น เครื่องพิมพ์ ฝขว., Router Army05">
+                </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">ประเภทอุปกรณ์</label>
+                    <select id="deviceType" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <option value="PC">คอมพิวเตอร์ (PC)</option>
+                        <option value="Notebook">โน้ตบุ๊ก (Notebook)</option>
+                        <option value="Server">เซิร์ฟเวอร์ (Server)</option>
+                        <option value="Router">เราเตอร์ (Router/Wi-Fi)</option>
+                        <option value="Switch">สวิตช์ฮับ (Switch/Hub)</option>
+                        <option value="Printer">เครื่องพิมพ์ (Printer)</option>
+                        <option value="Fax">แฟกซ์ (Fax)</option>
+                        <option value="Other">อื่นๆ</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">IP Address / หมายเลขอ้างอิง</label>
+                    <input type="text" id="deviceIp" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="เช่น 192.168.10.50 หรือ 042219604">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">หน่วยงาน / แผนก</label>
+                    <input type="text" id="deviceDept" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="เช่น ฝขว., ฝยก., ศสส., ส่วนกลาง">
+                </div>
+
+                <div class="pt-4 flex justify-end gap-2 border-t mt-6">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors">ยกเลิก</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">บันทึกข้อมูล</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
-        const _0x1 = { f1: atob("QUl6YVN5RDk4T213VXlzZ1FkVW1GZTBWOEVhdm9PNGZDVmx6VVFz"), f2: atob("dWRjcC1kYWRlOC5maXJlYmFzZWFwcC5jb20="), f3: atob("dWRjcC1kYWRlOA=="), f4: atob("aHR0cHM6Ly91ZGNwLWRhZGU4LWRlZmF1bHQtcnRkYi5hc2lhLXNvdXRoZWFzdDEuZmlyZWJhc2VkYXRhYmFzZS5hcHA="), i1: atob("OWRkODJjM2UwOTk4M2M2M2VjN2NiYWRiMmQ3Y2YxYmQ="), a1: atob("YWRtaW4="), a2: atob("YWRtaW4yMg==") };
-        firebase.initializeApp({ apiKey: _0x1.f1, authDomain: _0x1.f2, projectId: _0x1.f3, databaseURL: _0x1.f4 });
-        const db = firebase.database();
-        const P_REF = db.ref('points'); const C_REF = db.ref('chat'); const PRES_REF = db.ref('presence');
-        let map, markerGroup, nick = localStorage.getItem('chat_nick'), isAdmin = sessionStorage.getItem('isAdmin') === 'true';
-        let pendingFile = null; let activeLL = null;
-        let isChatOpen = false; let unreadCount = 0; let appStartTime = Date.now();
-        let presRefObj = null;
+        // ข้อมูลเริ่มต้นดึงมาจากเอกสาร ศสส. บก.ควบคุม 2
+        let devices = [
+            { id: 1, name: 'Firewall/Server อินเตอร์เน็ต', type: 'Server', ip: '192.168.10.1', dept: 'ส่วนกลาง' },
+            { id: 2, name: 'Server ศสส.', type: 'Server', ip: '192.168.10.50', dept: 'ศสส.' },
+            { id: 3, name: 'Router Army02', type: 'Router', ip: '192.168.20.1', dept: 'ส่วนกลาง' },
+            { id: 4, name: 'Router Army03', type: 'Router', ip: '192.168.21.1', dept: 'ส่วนกลาง' },
+            { id: 5, name: 'Router Army04', type: 'Router', ip: '192.168.22.1', dept: 'ส่วนกลาง' },
+            { id: 6, name: 'คอมพิวเตอร์ ฝขว.', type: 'PC', ip: '192.168.10.76', dept: 'ฝขว.' },
+            { id: 7, name: 'คอมพิวเตอร์ ฝยก.', type: 'PC', ip: '192.168.10.102', dept: 'ฝยก.' },
+            { id: 8, name: 'Server ฝยก.', type: 'Server', ip: '192.168.10.100', dept: 'ฝยก.' },
+            { id: 9, name: 'Fax ศสส.', type: 'Fax', ip: '042219604', dept: 'ศสส.' },
+            { id: 10, name: 'Router ห้องประชุม', type: 'Router', ip: '192.168.24.1', dept: 'ห้องประชุม' },
+            { id: 11, name: 'Switch Hub หลัก', type: 'Switch', ip: '-', dept: 'ส่วนกลาง' }
+        ];
 
+        let editMode = false;
+
+        // ฟังก์ชันช่วยกำหนดสีป้ายกำกับ (Badge) ตามประเภทอุปกรณ์
+        function getTypeStyle(type) {
+            const styles = {
+                'Server': 'bg-red-100 text-red-800',
+                'Router': 'bg-blue-100 text-blue-800',
+                'Switch': 'bg-indigo-100 text-indigo-800',
+                'PC': 'bg-gray-100 text-gray-800',
+                'Notebook': 'bg-purple-100 text-purple-800',
+                'Printer': 'bg-yellow-100 text-yellow-800',
+                'Fax': 'bg-orange-100 text-orange-800',
+                'Other': 'bg-green-100 text-green-800'
+            };
+            return styles[type] || styles['Other'];
+        }
+
+        // ฟังก์ชันช่วยกำหนดไอคอนตามประเภทอุปกรณ์
+        function getTypeIcon(type) {
+            const icons = {
+                'Server': 'fa-server',
+                'Router': 'fa-wifi',
+                'Switch': 'fa-network-wired',
+                'PC': 'fa-desktop',
+                'Notebook': 'fa-laptop',
+                'Printer': 'fa-print',
+                'Fax': 'fa-fax',
+                'Other': 'fa-microchip'
+            };
+            return icons[type] || 'fa-microchip';
+        }
+
+        // แสดงผลตาราง
+        function renderTable(data = devices) {
+            const tbody = document.getElementById('deviceTableBody');
+            tbody.innerHTML = '';
+            
+            if(data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">ไม่พบข้อมูลอุปกรณ์</td></tr>';
+                return;
+            }
+
+            data.forEach(device => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50 transition-colors';
+                
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-600">
+                                <i class="fa-solid ${getTypeIcon(device.type)}"></i>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">${device.name}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getTypeStyle(device.type)}">
+                            ${device.type}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
+                        ${device.ip || '-'}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${device.dept}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button onclick="editDevice(${device.id})" class="text-indigo-600 hover:text-indigo-900 mr-3" title="แก้ไข">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button onclick="deleteDevice(${device.id})" class="text-red-600 hover:text-red-900" title="ลบ">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ระบบค้นหา
+        function filterTable() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = devices.filter(d => 
+                d.name.toLowerCase().includes(searchTerm) || 
+                d.ip.toLowerCase().includes(searchTerm) || 
+                d.dept.toLowerCase().includes(searchTerm) ||
+                d.type.toLowerCase().includes(searchTerm)
+            );
+            renderTable(filtered);
+        }
+
+        // เปิด Modal
+        function openModal(id = null) {
+            const modal = document.getElementById('deviceModal');
+            const form = document.getElementById('deviceForm');
+            const title = document.getElementById('modalTitle');
+            
+            form.reset();
+            document.body.classList.add('modal-active');
+            modal.classList.remove('hidden');
+
+            if (id) {
+                editMode = true;
+                title.innerText = 'แก้ไขข้อมูลอุปกรณ์';
+                const device = devices.find(d => d.id === id);
+                document.getElementById('deviceId').value = device.id;
+                document.getElementById('deviceName').value = device.name;
+                document.getElementById('deviceType').value = device.type;
+                document.getElementById('deviceIp').value = device.ip;
+                document.getElementById('deviceDept').value = device.dept;
+            } else {
+                editMode = false;
+                title.innerText = 'เพิ่มอุปกรณ์ใหม่';
+                document.getElementById('deviceId').value = '';
+            }
+        }
+
+        // ปิด Modal
+        function closeModal() {
+            const modal = document.getElementById('deviceModal');
+            modal.classList.add('hidden');
+            document.body.classList.remove('modal-active');
+        }
+
+        // บันทึกข้อมูล (เพิ่ม/แก้ไข)
+        function saveDevice(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('deviceId').value;
+            const name = document.getElementById('deviceName').value;
+            const type = document.getElementById('deviceType').value;
+            const ip = document.getElementById('deviceIp').value;
+            const dept = document.getElementById('deviceDept').value;
+
+            if (editMode && id) {
+                // อัพเดท
+                const index = devices.findIndex(d => d.id == id);
+                if (index !== -1) {
+                    devices[index] = { id: parseInt(id), name, type, ip, dept };
+                }
+            } else {
+                // สร้างใหม่
+                const newId = devices.length > 0 ? Math.max(...devices.map(d => d.id)) + 1 : 1;
+                devices.push({ id: newId, name, type, ip, dept });
+            }
+
+            closeModal();
+            filterTable(); // เพื่อให้ตารางรีเฟรชและยังคงค่าการค้นหาไว้
+        }
+
+        // ลบข้อมูล
+        function deleteDevice(id) {
+            if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบอุปกรณ์นี้?')) {
+                devices = devices.filter(d => d.id !== id);
+                filterTable();
+            }
+        }
+
+        // โหลดข้อมูลครั้งแรก
         window.onload = () => {
-            map = L.map('map', { zoomControl:false, attributionControl:false }).setView([17.4138, 102.7872], 14);
-            L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}&scale=2', { detectRetina: true }).addTo(map);
-            markerGroup = L.layerGroup().addTo(map); listenPoints(); listenChat(); listenPresence();
-            if(!nick) document.getElementById('nickOverlay').style.display='flex'; else setupPresence();
-            if(isAdmin) updateAdminUI(true); lucide.createIcons();
-            C_REF.orderByChild('ts').startAt(appStartTime).on('child_added', snap => { const m = snap.val(); if (!isChatOpen && m.n !== nick && m.ts > appStartTime) { unreadCount++; updateBadge(); } });
-            map.on('resize moveend zoomend', () => { positionCrosshair(); });
-            window.addEventListener('resize', positionCrosshair);
+            renderTable();
         };
-
-        // วางเป้าเล็งให้ตรงกับจุดกึ่งกลาง map container จริงๆ (v54)
-        function positionCrosshair() {
-            const ch = document.getElementById('crosshair');
-            const mapContainer = map.getContainer();
-            const rect = mapContainer.getBoundingClientRect();
-            // จุดกึ่งกลาง map ที่แท้จริงในพิกัด screen
-            const cx = rect.left + rect.width / 2;
-            const cy = rect.top + rect.height / 2;
-            // ปลายแหลมอยู่ที่ bottom-center ของ crosshair (width=32, pinHeight=32+tail=10 = 42px)
-            ch.style.left = (cx - 16) + 'px'; // 16 = ครึ่งหนึ่งของ width 32px
-            ch.style.top  = (cy - 42) + 'px'; // 42 = ความสูงทั้งหมดจากปลายแหลมถึงหัวหมุด
-        }
-
-        function promptChangeNick() { const n = prompt("ระบุชื่อเล่นใหม่ของคุณ:", nick); if(n && n.trim() !== "" && n !== nick) { if(presRefObj) presRefObj.remove(); nick = n.trim(); localStorage.setItem('chat_nick', nick); setupPresence(); showToast("✅ เปลี่ยนชื่อเล่นสำเร็จ!"); } }
-        function saveNick() { const v = document.getElementById('nickInput').value.trim(); if(v) { nick = v; localStorage.setItem('chat_nick', v); document.getElementById('nickOverlay').style.display='none'; setupPresence(); } }
-        function confPos() { 
-            // ใช้ map.getSize().divideBy(2) = จุดกึ่งกลาง map container จริง (ไม่ใช่ window)
-            activeLL = map.containerPointToLatLng(map.getSize().divideBy(2)); 
-            document.getElementById('crosshair').style.display = 'none'; 
-            document.getElementById('confirmPosBtn').style.display = 'none'; 
-            document.getElementById('selector').style.display = 'block'; 
-        }
-        function toggleChat() { const d = document.getElementById('chatDrawer'); const nav = document.querySelector('.bottom-nav'); d.classList.toggle('active'); nav.classList.toggle('hide'); isChatOpen = d.classList.contains('active'); if(isChatOpen) { unreadCount = 0; updateBadge(); } }
-        function updateBadge() { const b = document.getElementById('chatBadge'); if(unreadCount > 0) { b.innerText = unreadCount; b.style.display = 'flex'; } else { b.style.display = 'none'; } }
-        function startSel() { positionCrosshair(); document.getElementById('crosshair').style.display = 'block'; document.getElementById('startBtn').style.display = 'none'; document.getElementById('confirmPosBtn').style.display = 'flex'; }
-        function cancelAndHide() { document.getElementById('selector').style.display='none'; document.getElementById('crosshair').style.display='block'; document.getElementById('confirmPosBtn').style.display='flex'; }
-        function cancelAll() { document.getElementById('crosshair').style.display='none'; document.getElementById('selector').style.display='none'; document.getElementById('confirmPosBtn').style.display='none'; document.getElementById('startBtn').style.display='flex'; }
-        function onSubmit(type) { if(!activeLL) activeLL = map.containerPointToLatLng(map.getSize().divideBy(2)); P_REF.push({ lat: activeLL.lat, lng: activeLL.lng, type, createdAt: firebase.database.ServerValue.TIMESTAMP, votes: 0, reporter: nick }); C_REF.push({ n: '📢 ระบบ', t: `พบ ${type} (โดย ${nick})`, ts: firebase.database.ServerValue.TIMESTAMP }); cancelAll(); showToast("✅ แจ้งด่านสำเร็จ!"); }
-        function handleFileQueue(input) { const f = input.files[0]; if(!f) return; pendingFile = f; const r = new FileReader(); r.onload = e => { document.getElementById('imgQueuePreview').src = e.target.result; document.getElementById('imgQueueArea').style.display='flex'; }; r.readAsDataURL(f); }
-        function clearQueue() { pendingFile = null; document.getElementById('imgInput').value = ""; document.getElementById('imgQueueArea').style.display = 'none'; }
-        async function sendMsg() { const mInput = document.getElementById('msgInput'); const msg = mInput.value.trim(); if(!nick || (!msg && !pendingFile)) return; const sBtn = document.getElementById('sendBtn'); sBtn.disabled = true; sBtn.style.opacity = '0.5'; let imgUrl = ""; if(pendingFile) { showToast("⏳ กำลังส่งรูป..."); try { const f = new FormData(); f.append('image', pendingFile); const r = await fetch(`https://api.imgbb.com/1/upload?key=${_0x1.i1}`, { method:'POST', body:f }); const d = await r.json(); if(d.success) imgUrl = d.data.url; } catch(e) {} } C_REF.push({ n: nick, t: msg, img: imgUrl, ts: firebase.database.ServerValue.TIMESTAMP }); mInput.value = ""; clearQueue(); sBtn.disabled = false; sBtn.style.opacity = '1'; }
-        function listenChat() { C_REF.limitToLast(50).on('value', snap => { const l = document.getElementById('chatList'); l.innerHTML = ""; snap.forEach(c => { const m = c.val(); const isMe = m.n === nick; const d = new Date(m.ts); const time = `${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}`; const div = document.createElement('div'); div.className = `msg ${isMe?'msg-me':'msg-other'}`; let content = `<small style="display:block; font-weight:bold; opacity:0.7">${m.n} · ${time}</small>`; if(m.t) content += `<div>${m.t}</div>`; if(m.img) content += `<img src="${m.img}" class="chat-img">`; if(isAdmin) content += `<button style="position:absolute; top:-5px; right:-5px; background:red; color:white; border:none; width:20px; height:20px; border-radius:50%; font-size:10px" onclick="db.ref('chat/${c.key}').remove()">🗑️</button>`; div.innerHTML = content; l.appendChild(div); }); l.scrollTop = l.scrollHeight; }); }
-        function listenPoints() { P_REF.on('value', snap => { markerGroup.clearLayers(); snap.forEach(c => { const p = c.val(); if(Date.now() - p.createdAt > 10800000) { c.ref.remove(); return; } const d = new Date(p.createdAt); const time = `${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}`; const emo = p.type.includes('จราจร') ? '👮' : '🚨'; const html = `<div class="dm-wrapper"><div class="white-circle">${emo}</div><div class="label-tag"><div style="font-weight:600">${p.type}</div><div>(${p.reporter}) แจ้งเมื่อ ${time}</div></div></div>`; const m = L.marker([p.lat, p.lng], { icon: L.divIcon({ className:'custom-pin', html: html, iconSize:[34, 42], iconAnchor:[17, 42] }) }).addTo(markerGroup); m.bindPopup(`<div style="text-align:center"><b>${p.type}</b><br><small>แจ้งเมื่อ ${time}</small><hr><button onclick="voteDown('${c.key}')" style="width:100%; padding:8px; background:var(--red); color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer">${isAdmin?'❌ ลบทันที':`❌ ไม่อยู่แล้ว (${p.votes||0}/3)`}</button></div>`); }); }); }
-        function handleAdminClick() { if(isAdmin) { if(confirm("ออกจากแอดมิน?")) doLogout(); } else document.getElementById('loginOverlay').style.display='flex'; }
-        function doLogin() { if(document.getElementById('adminU').value === _0x1.a1 && document.getElementById('adminP').value === _0x1.a2) { isAdmin=true; sessionStorage.setItem('isAdmin','true'); document.getElementById('loginOverlay').style.display='none'; updateAdminUI(true); } else alert("Error"); }
-        function doLogout() { isAdmin=false; sessionStorage.setItem('isAdmin','false'); updateAdminUI(false); }
-        function updateAdminUI(show) { document.getElementById('adminIcon').style.display = show ? 'block' : 'none'; document.getElementById('userIcon').style.display = show ? 'none' : 'block'; document.getElementById('clearChatBtn').style.display = show ? 'inline-block' : 'none'; listenChat(); listenPoints(); }
-        function voteDown(k) { if(isAdmin) { P_REF.child(k).remove(); return; } let voted = JSON.parse(localStorage.getItem('udon_voted') || '[]'); if(voted.includes(k)) { showToast("⚠️ คุณโหวตด่านนี้ไปแล้วครับ"); return; } P_REF.child(k).transaction(c => { if(c) { c.votes = (c.votes||0)+1; if(c.votes >= 3) return null; } return c; }, (e, com) => { if(com) { voted.push(k); localStorage.setItem('udon_voted', JSON.stringify(voted)); showToast("✅ โหวตสำเร็จ!"); } }); }
-        function setupPresence() { presRefObj = PRES_REF.push(); db.ref(".info/connected").on("value", s=>{ if(s.val()) { presRefObj.onDisconnect().remove(); presRefObj.set({ name: nick }); } }); }
-        function listenPresence() { PRES_REF.on('value', snap => { const list = document.getElementById('onlineList'); let count = 0; let users = []; snap.forEach(c => { const u = c.val(); if(u.name === nick) users.unshift(u); else users.push(u); }); list.innerHTML = ""; users.forEach(u => { count++; const tag = document.createElement('div'); tag.style="background:#f1f3f4; padding:3px 12px; border-radius:12px; font-weight:600; border:1px solid #ddd; white-space:nowrap"; tag.innerText = (u.name===nick?'คุณ: ':'')+u.name; list.appendChild(tag); }); document.getElementById('chatHeadline').innerText = `💬 แชทสด (ออนไลน์ ${count})`; }); }
-        function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.style.display='block'; setTimeout(()=>t.style.display='none', 4000); }
-        function clearAllChat() { if(confirm("ลบแชททั้งหมด?")) C_REF.remove(); }
     </script>
 </body>
 </html>

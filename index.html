@@ -3,325 +3,311 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการเครือข่าย ศสส.บก.ควบคุม 2 (ข้อมูลจริงจากไฟล์)</title>
+    <title>ระบบจัดการเครือข่าย ศสส.บก.ควบคุม 2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Prompt', sans-serif; background-color: #f0f2f5; }
+        body { font-family: 'Prompt', sans-serif; background-color: #f8fafc; }
         .mono { font-family: 'JetBrains Mono', monospace; }
         .modal-active { overflow: hidden; }
-        .ip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .ip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
+        
+        /* สไตล์ Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body class="text-slate-800 antialiased">
 
-    <nav class="bg-[#0f172a] text-white shadow-2xl sticky top-0 z-50 border-b border-blue-500/30">
-        <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+    <nav class="bg-slate-900 text-white shadow-lg sticky top-0 z-40 border-b-4 border-blue-500">
+        <div class="max-w-full mx-auto px-6">
             <div class="flex items-center justify-between h-16">
                 <div class="flex items-center gap-4">
-                    <div class="bg-blue-600 p-2 rounded-lg shadow-lg shadow-blue-500/20">
+                    <div class="bg-blue-600 p-2 rounded-lg shadow-md">
                         <i class="fa-solid fa-server text-xl"></i>
                     </div>
                     <div>
-                        <span class="font-bold text-lg tracking-tight">NMS ศสส.บก.ควบคุม 2</span>
-                        <span class="text-xs text-blue-400 block -mt-1 font-medium">IP Mapping 192.168.10.1 - 255</span>
+                        <span class="font-bold text-lg tracking-wide block">NMS ศสส.บก.ควบคุม 2</span>
+                        <span class="text-xs text-blue-400 block -mt-1 font-medium">ระบบบริหารจัดการหมายเลข IP 192.168.10.x</span>
                     </div>
                 </div>
-                <div class="flex items-center gap-4">
-                    <div id="ipStats" class="hidden md:flex gap-4 text-xs font-medium mr-4">
-                        <span class="text-emerald-400"><i class="fa-solid fa-circle mr-1"></i> ใช้งานแล้ว: <span id="usedCount">0</span></span>
-                        <span class="text-slate-400"><i class="fa-solid fa-circle mr-1"></i> IP ว่าง: <span id="unusedCount">0</span></span>
-                    </div>
+                <div class="hidden md:flex gap-4 text-sm font-bold bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
+                    <span class="text-emerald-400"><i class="fa-solid fa-check-circle mr-1"></i> ใช้แล้ว: <span id="usedCount">0</span></span>
+                    <span class="text-rose-400"><i class="fa-solid fa-circle-dot mr-1"></i> ไอพีว่าง: <span id="unusedCount">0</span></span>
                 </div>
             </div>
         </div>
     </nav>
 
-    <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-12 py-8">
-        
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-            <div class="lg:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 h-fit sticky top-24">
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center">
-                    <i class="fa-solid fa-layer-group mr-2"></i> หมวดหมู่ฝ่าย / หน่วยงาน
-                </h3>
-                <div class="flex flex-col gap-1" id="deptMenu">
-                    </div>
+    <div class="max-w-full mx-auto px-6 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 sticky top-24">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase mb-4 flex items-center">
+                        <i class="fa-solid fa-sitemap mr-2"></i> แยกตามหน่วยงาน
+                    </h3>
+                    <div class="flex flex-col gap-2" id="deptMenu">
+                        </div>
 
-                <hr class="my-6 border-slate-100">
+                    <hr class="my-6 border-slate-100">
 
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center">
-                    <i class="fa-solid fa-microchip mr-2"></i> เครื่องมือจัดการ
-                </h3>
-                <button onclick="toggleIpView()" id="btnIpMap" class="w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all bg-slate-50 text-slate-600 hover:bg-blue-50 hover:text-blue-600 mb-2 border border-transparent">
-                    <i class="fa-solid fa-map-location-dot mr-2"></i> ดูผัง IP 192.168.10.x
-                </button>
-                <button onclick="openModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 transition-all active:scale-95 text-sm">
-                    <i class="fa-solid fa-plus-circle"></i> เพิ่มอุปกรณ์เข้าระบบ
-                </button>
+                    <h3 class="text-xs font-bold text-slate-400 uppercase mb-4 flex items-center">
+                        <i class="fa-solid fa-toolbox mr-2"></i> เครื่องมือ
+                    </h3>
+                    <button onclick="toggleIpView()" id="btnIpMap" class="w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-all bg-slate-50 text-slate-600 hover:bg-blue-50 hover:text-blue-600 mb-3 border border-slate-200">
+                        <i class="fa-solid fa-table-cells mr-2"></i> ดูผังไอพี (1-255)
+                    </button>
+                    <button onclick="openModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30 transition-all active:scale-95">
+                        <i class="fa-solid fa-plus-circle"></i> เพิ่มอุปกรณ์ใหม่
+                    </button>
+                </div>
             </div>
 
-            <div class="lg:col-span-3">
-                <div class="flex flex-col md:flex-row gap-4 mb-6">
-                    <div class="relative flex-grow">
-                        <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input type="text" id="searchInput" onkeyup="filterDevices()" placeholder="ค้นหาชื่อเครื่อง, หมายเลข IP, หรือประเภทอุปกรณ์..." class="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-sm bg-white">
-                    </div>
+            <div class="lg:col-span-4 space-y-4">
+                
+                <div class="relative">
+                    <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="searchInput" onkeyup="filterDevices()" placeholder="ค้นหาชื่อเครื่อง, IP Address, หรือประเภทอุปกรณ์..." class="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none shadow-sm text-sm font-medium transition-colors">
                 </div>
 
-                <div id="tableView" class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden transition-all">
-                    <div class="overflow-x-auto custom-scrollbar">
+                <div id="tableView" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead>
-                                <tr class="bg-slate-50/80 border-b border-slate-100">
-                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">ชื่ออุปกรณ์</th>
+                                <tr class="bg-slate-50 border-b border-slate-200">
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">อุปกรณ์</th>
                                     <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">ประเภท</th>
                                     <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">IP Address</th>
                                     <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">ฝ่ายรับผิดชอบ</th>
-                                    <th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">จัดการ</th>
+                                    <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">จัดการ</th>
                                 </tr>
                             </thead>
-                            <tbody id="deviceTableBody" class="divide-y divide-slate-50">
+                            <tbody id="deviceTableBody" class="divide-y divide-slate-100 text-sm">
                                 </tbody>
                         </table>
                     </div>
                 </div>
 
-                <div id="ipMapView" class="hidden space-y-6 animate-in fade-in duration-500">
-                    <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
-                        <div class="flex justify-between items-center mb-6">
-                            <h2 class="text-xl font-bold text-slate-800 flex items-center">
-                                <i class="fa-solid fa-network-wired mr-3 text-blue-600"></i> แผนผังการจ่าย IP: 192.168.10.1 - 255
-                            </h2>
-                            <div class="flex gap-4 text-xs">
-                                <span class="flex items-center gap-1.5"><div class="w-3 h-3 bg-blue-600 rounded"></div> ใช้งานแล้ว</span>
-                                <span class="flex items-center gap-1.5"><div class="w-3 h-3 bg-slate-100 border border-slate-200 rounded"></div> ว่าง</span>
-                            </div>
+                <div id="ipMapView" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-200 animate-in fade-in duration-300">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b pb-4">
+                        <h2 class="text-xl font-bold text-slate-800 flex items-center">
+                            <i class="fa-solid fa-network-wired mr-3 text-blue-500"></i> ผังหมายเลข IP 192.168.10.x
+                        </h2>
+                        <div class="flex gap-4 text-xs font-bold">
+                            <span class="flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-md"><div class="w-3 h-3 bg-white border border-slate-300 rounded"></div> ว่าง/ยังไม่ใช้</span>
                         </div>
-                        <div class="ip-grid" id="ipGridContainer">
-                            </div>
                     </div>
+                    <div class="ip-grid" id="ipGridContainer">
+                        </div>
                 </div>
 
             </div>
         </div>
     </div>
 
-    <div id="deviceModal" class="fixed inset-0 z-[60] hidden bg-slate-900/60 backdrop-blur-sm flex justify-center items-center p-4">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden transition-all scale-100">
-            <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center">
-                <h3 class="text-xl font-bold text-slate-900" id="modalTitle">ลงทะเบียนอุปกรณ์</h3>
-                <button onclick="closeModal()" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 transition-colors">
-                    <i class="fa-solid fa-times text-lg"></i>
+    <div id="deviceModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex justify-center items-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
+            <div class="px-6 py-5 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2" id="modalTitle">
+                    <i class="fa-solid fa-pen-to-square text-blue-600"></i> ลงทะเบียนอุปกรณ์
+                </h3>
+                <button onclick="closeModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 text-slate-500 transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
             
-            <form id="deviceForm" onsubmit="handleSave(event)" class="p-8 space-y-5">
+            <form id="deviceForm" onsubmit="handleSave(event)" class="p-6 space-y-5">
                 <input type="hidden" id="deviceId">
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div class="md:col-span-2">
-                        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">ชื่ออุปกรณ์ / รายละเอียดไอพี</label>
-                        <input type="text" id="deviceName" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all" placeholder="เช่น PC ฝยก. 01">
+                        <label class="block font-bold text-slate-600 mb-1">ชื่ออุปกรณ์ / รายละเอียด</label>
+                        <input type="text" id="deviceName" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 outline-none transition-colors" placeholder="เช่น เครื่องปริ้นเตอร์ ฝขว. 01">
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">ประเภทอุปกรณ์</label>
-                        <select id="deviceType" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all bg-white">
-                            <option value="PC">Computer (PC)</option>
-                            <option value="Notebook">Notebook</option>
-                            <option value="Printer">Printer</option>
-                            <option value="Mobile">Mobile (มือถือ)</option>
-                            <option value="iPad">iPad</option>
-                            <option value="Server">Server</option>
-                            <option value="Router">Router/Wi-Fi</option>
-                            <option value="Switch">Switch Hub</option>
-                            <option value="Fax">Fax</option>
-                            <option value="Unused">IP ว่าง / กลุ่ม IP (Pool)</option>
-                            <option value="Other">อื่นๆ</option>
+                        <label class="block font-bold text-slate-600 mb-1">ประเภทอุปกรณ์</label>
+                        <select id="deviceType" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 outline-none bg-white">
+                            <option value="PC">คอมพิวเตอร์ (PC)</option>
+                            <option value="Notebook">โน้ตบุ๊ก (Notebook)</option>
+                            <option value="Printer">เครื่องพิมพ์ (Printer)</option>
+                            <option value="Mobile">มือถือ (Mobile)</option>
+                            <option value="iPad">ไอแพด (iPad/Tablet)</option>
+                            <option value="Server">เซิร์ฟเวอร์ (Server)</option>
+                            <option value="Router">เราเตอร์ (Router/Wi-Fi)</option>
+                            <option value="Switch">สวิตช์ฮับ (Switch)</option>
+                            <option value="Fax">แฟกซ์ (Fax)</option>
+                            <option value="Unused">กลุ่มไอพีว่าง / Pool</option>
+                            <option value="Other">อุปกรณ์อื่นๆ</option>
                         </select>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">IP Address</label>
-                        <input type="text" id="deviceIp" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all mono" placeholder="192.168.10.x">
+                        <label class="block font-bold text-slate-600 mb-1">IP Address</label>
+                        <input type="text" id="deviceIp" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 outline-none mono font-bold text-blue-600" placeholder="192.168.10.x">
                     </div>
 
                     <div class="md:col-span-2">
-                        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">หน่วยงาน/ฝ่าย</label>
-                        <select id="deviceDept" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all bg-white">
+                        <label class="block font-bold text-slate-600 mb-1">ฝ่ายที่รับผิดชอบ</label>
+                        <select id="deviceDept" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 outline-none bg-white">
                             <option value="ส่วนกลาง">ส่วนกลาง / ระบบหลัก</option>
                             <option value="ศสส.">ศสส.</option>
                             <option value="ฝขว.">ฝขว.</option>
                             <option value="ฝยก.">ฝยก.</option>
-                            <option value="หน่วย 250">หน่วย 250</option>
+                            <option value="หน่วย 250">หน่วย 250.</option>
                             <option value="ปจว.">ปจว.</option>
                             <option value="ฝปส.">ฝปส.</option>
                             <option value="ฝยส.">ฝยส.</option>
                             <option value="ศสน.">ศสน.</option>
-                            <option value="ไอพีที่ยังไม่ได้ใช้">ไอพีที่ยังไม่ได้ใช้</option>
+                            <option value="ว่าง">พื้นที่ IP ว่าง</option>
                         </select>
                     </div>
                 </div>
 
-                <div class="pt-6 flex gap-3">
-                    <button type="button" onclick="closeModal()" class="flex-1 px-6 py-3.5 rounded-xl font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all">ยกเลิก</button>
-                    <button type="submit" class="flex-1 px-6 py-3.5 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all transform active:scale-95">บันทึกข้อมูล</button>
+                <div class="pt-4 flex gap-3 border-t border-slate-100 mt-6">
+                    <button type="button" onclick="closeModal()" class="flex-1 px-4 py-3 rounded-xl font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">ยกเลิก</button>
+                    <button type="submit" class="flex-1 px-4 py-3 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors">บันทึกข้อมูล</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        // ข้อมูลนำเข้าจากไฟล์: ระบบฐานข้อมูลอินเตอร์เน็ต ศสส 20-5-2026.pptx
+        // --- การตั้งค่าสีสำหรับแต่ละฝ่าย (Department Colors) ---
+        const deptConfig = {
+            'ทั้งหมด': { bg: 'bg-slate-100', text: 'text-slate-600', active: 'bg-slate-800 text-white' },
+            'ส่วนกลาง': { bg: 'bg-gray-200', text: 'text-gray-800', active: 'bg-gray-600 text-white' },
+            'ศสส.': { bg: 'bg-blue-100', text: 'text-blue-700', active: 'bg-blue-600 text-white' },
+            'ฝขว.': { bg: 'bg-rose-100', text: 'text-rose-700', active: 'bg-rose-600 text-white' },
+            'ฝยก.': { bg: 'bg-indigo-100', text: 'text-indigo-700', active: 'bg-indigo-600 text-white' },
+            'หน่วย 250': { bg: 'bg-amber-100', text: 'text-amber-700', active: 'bg-amber-600 text-white' },
+            'ปจว.': { bg: 'bg-emerald-100', text: 'text-emerald-700', active: 'bg-emerald-600 text-white' }, /* แยก ปจว. เด็ดขาด */
+            'ฝปส.': { bg: 'bg-cyan-100', text: 'text-cyan-700', active: 'bg-cyan-600 text-white' },         /* แยก ฝปส. เด็ดขาด */
+            'ฝยส.': { bg: 'bg-fuchsia-100', text: 'text-fuchsia-700', active: 'bg-fuchsia-600 text-white' },
+            'ศสน.': { bg: 'bg-teal-100', text: 'text-teal-700', active: 'bg-teal-600 text-white' },
+            'ว่าง': { bg: 'bg-slate-50', text: 'text-slate-400', active: 'bg-slate-400 text-white' }
+        };
+
+        // --- การตั้งค่าสีและไอคอนของอุปกรณ์ (Device Types) ---
+        const typeConfig = {
+            'PC': { icon: 'fa-desktop', color: 'text-slate-600', bg: 'bg-slate-100' },
+            'Notebook': { icon: 'fa-laptop', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+            'Printer': { icon: 'fa-print', color: 'text-orange-600', bg: 'bg-orange-100' }, /* เพิ่ม Printer */
+            'Mobile': { icon: 'fa-mobile-screen-button', color: 'text-emerald-600', bg: 'bg-emerald-100' }, /* เพิ่ม Mobile */
+            'iPad': { icon: 'fa-tablet-screen-button', color: 'text-blue-600', bg: 'bg-blue-100' }, /* เพิ่ม iPad */
+            'Server': { icon: 'fa-server', color: 'text-rose-600', bg: 'bg-rose-100' },
+            'Router': { icon: 'fa-wifi', color: 'text-cyan-600', bg: 'bg-cyan-50' },
+            'Switch': { icon: 'fa-network-wired', color: 'text-violet-600', bg: 'bg-violet-100' },
+            'Fax': { icon: 'fa-fax', color: 'text-amber-700', bg: 'bg-amber-100' },
+            'Unused': { icon: 'fa-circle-dot', color: 'text-slate-300', bg: 'bg-transparent' },
+            'Other': { icon: 'fa-microchip', color: 'text-gray-500', bg: 'bg-gray-100' }
+        };
+
+        // --- ข้อมูลเริ่มต้น (ดึงมาจากไฟล์ PPTX และจำลองอุปกรณ์ใหม่บางส่วน) ---
         let devices = [
             // ส่วนกลาง / ระบบหลัก
-            { id: 1, name: 'Firewall/Server อินเตอร์เน็ต', type: 'Server', ip: '192.168.10.1', dept: 'ส่วนกลาง' },
-            { id: 2, name: 'อินเตอร์เน็ตสำนักงาน (TOT สีขาว)', type: 'Router', ip: '192.168.0.1', dept: 'ส่วนกลาง' },
-            { id: 3, name: 'อินเตอร์เน็ตใช้งานทั่วไป (TOT สีขาว)', type: 'Router', ip: '192.168.1.1', dept: 'ส่วนกลาง' },
-            { id: 4, name: 'Router Army02', type: 'Router', ip: '192.168.20.1', dept: 'ส่วนกลาง' },
-            { id: 5, name: 'Router Army03', type: 'Router', ip: '192.168.21.1', dept: 'ส่วนกลาง' },
-            { id: 6, name: 'Router Army04', type: 'Router', ip: '192.168.22.1', dept: 'ส่วนกลาง' },
-            { id: 7, name: 'Router Army05', type: 'Router', ip: '192.168.23.1', dept: 'ส่วนกลาง' },
-            { id: 8, name: 'Router ห้องประชุม', type: 'Router', ip: '192.168.24.1', dept: 'ส่วนกลาง' },
-            { id: 9, name: 'Switch Hub (สำนักงาน)', type: 'Switch', ip: '-', dept: 'ส่วนกลาง' },
-
-            // ฝ่าย ศสส.
-            { id: 10, name: 'Server ศสส.', type: 'Server', ip: '192.168.10.50', dept: 'ศสส.' },
-            { id: 11, name: 'คอมพิวเตอร์ ศสส.', type: 'PC', ip: '192.168.10.51', dept: 'ศสส.' },
-            { id: 12, name: 'Fax ศสส.', type: 'Fax', ip: '042219604', dept: 'ศสส.' },
-            
-            // ฝ่าย ฝขว.
-            { id: 13, name: 'PC ฝขว.', type: 'PC', ip: '192.168.10.60', dept: 'ฝขว.' },
-            { id: 14, name: 'PC ฝขว.', type: 'PC', ip: '192.168.10.62', dept: 'ฝขว.' },
-            { id: 15, name: 'Notebook ส่วนตัว ฝขว.', type: 'Notebook', ip: '192.168.10.64', dept: 'ฝขว.' },
-            { id: 16, name: 'Server ฝขว.', type: 'Server', ip: '192.168.10.65', dept: 'ฝขว.' },
-            { id: 17, name: 'PC ฝขว.', type: 'PC', ip: '192.168.10.66', dept: 'ฝขว.' },
-            { id: 18, name: 'PC ฝขว.', type: 'PC', ip: '192.168.10.69', dept: 'ฝขว.' },
-            { id: 19, name: 'PC ฝขว. (เครื่องหลัก)', type: 'PC', ip: '192.168.10.76', dept: 'ฝขว.' },
-
-            // ฝ่าย ฝยก.
-            { id: 20, name: 'Server ฝยก.', type: 'Server', ip: '192.168.10.100', dept: 'ฝยก.' },
-            { id: 21, name: 'PC ฝยก.', type: 'PC', ip: '192.168.10.101', dept: 'ฝยก.' },
-            { id: 22, name: 'PC ฝยก.', type: 'PC', ip: '192.168.10.102', dept: 'ฝยก.' },
-            { id: 23, name: 'PC ฝยก.', type: 'PC', ip: '192.168.10.107', dept: 'ฝยก.' },
-            { id: 24, name: 'Notebook สำนักงาน ฝยก.', type: 'Notebook', ip: '-', dept: 'ฝยก.' },
-
-            // หน่วย 250.
-            { id: 25, name: 'PC 250.', type: 'PC', ip: '192.168.10.112', dept: 'หน่วย 250' },
-            { id: 26, name: 'PC 250.', type: 'PC', ip: '192.168.10.115', dept: 'หน่วย 250' },
-            { id: 27, name: 'PC 250.', type: 'PC', ip: '192.168.10.116', dept: 'หน่วย 250' },
-
-            // ฝ่าย ปจว.
-            { id: 28, name: 'PC ปจว.', type: 'PC', ip: '192.168.10.121', dept: 'ปจว.' },
-            { id: 29, name: 'PC ปจว.', type: 'PC', ip: '192.168.10.123', dept: 'ปจว.' },
-            { id: 30, name: 'PC ปจว.', type: 'PC', ip: '192.168.10.125', dept: 'ปจว.' },
-
-            // ฝ่าย ฝปส.
-            { id: 31, name: 'PC ฝปส.', type: 'PC', ip: '192.168.10.122', dept: 'ฝปส.' },
-            { id: 32, name: 'Notebook ส่วนตัว ฝปส.', type: 'Notebook', ip: '192.168.10.124', dept: 'ฝปส.' },
-            { id: 33, name: 'Notebook ส่วนตัว ฝปส.', type: 'Notebook', ip: '192.168.10.126', dept: 'ฝปส.' },
-
-            // ฝ่าย ฝยส.
-            { id: 34, name: 'PC ฝยส.', type: 'PC', ip: '192.168.10.131', dept: 'ฝยส.' },
-            { id: 35, name: 'Server ฝยส.', type: 'Server', ip: '192.168.10.132', dept: 'ฝยส.' },
-            { id: 36, name: 'PC ฝยส.', type: 'PC', ip: '192.168.10.133', dept: 'ฝยส.' },
-
-            // ฝ่าย ศสน.
-            { id: 37, name: 'Computer ส่วนตัว ศสน.', type: 'PC', ip: '192.168.10.141', dept: 'ศสน.' },
-            { id: 38, name: 'PC ศสน.', type: 'PC', ip: '192.168.10.142', dept: 'ศสน.' },
-            { id: 39, name: 'Server ศสน.', type: 'Server', ip: '192.168.10.143', dept: 'ศสน.' },
-            { id: 40, name: 'PC ศสน.', type: 'PC', ip: '192.168.10.152', dept: 'ศสน.' },
-            { id: 41, name: 'PC ศสน.', type: 'PC', ip: '192.168.10.153', dept: 'ศสน.' },
-
-            // IP Pool (ช่วง IP ที่กำหนดไว้สำหรับแจกจ่ายในเครือข่าย)
-            { id: 42, name: 'DHCP Pool ปจว/ฝปส/ฝยส', type: 'Unused', ip: '192.168.10.160-175', dept: 'ไอพีที่ยังไม่ได้ใช้' },
-            { id: 43, name: 'DHCP Pool ศสน', type: 'Unused', ip: '192.168.10.176-187', dept: 'ไอพีที่ยังไม่ได้ใช้' },
-            { id: 44, name: 'DHCP Pool ฝยก+250', type: 'Unused', ip: '192.168.10.188-202', dept: 'ไอพีที่ยังไม่ได้ใช้' },
-            { id: 45, name: 'DHCP Pool ฝขว', type: 'Unused', ip: '192.168.10.203-215', dept: 'ไอพีที่ยังไม่ได้ใช้' }
+            { id: 1, name: 'Firewall หลัก', type: 'Server', ip: '192.168.10.1', dept: 'ส่วนกลาง' },
+            { id: 2, name: 'Router Gateway Army02', type: 'Router', ip: '192.168.20.1', dept: 'ส่วนกลาง' },
+            { id: 3, name: 'Router Gateway Army03', type: 'Router', ip: '192.168.21.1', dept: 'ส่วนกลาง' },
+            { id: 4, name: 'Router ห้องประชุม', type: 'Router', ip: '192.168.24.1', dept: 'ส่วนกลาง' },
+            // ศสส.
+            { id: 5, name: 'Server ศูนย์สารสนเทศ', type: 'Server', ip: '192.168.10.50', dept: 'ศสส.' },
+            { id: 6, name: 'PC เจ้าหน้าที่ ศสส.', type: 'PC', ip: '192.168.10.51', dept: 'ศสส.' },
+            { id: 7, name: 'Fax กลาง (042219604)', type: 'Fax', ip: '-', dept: 'ศสส.' },
+            // ฝขว.
+            { id: 8, name: 'PC รวบรวมข่าว ฝขว.', type: 'PC', ip: '192.168.10.60', dept: 'ฝขว.' },
+            { id: 9, name: 'Server ฝขว.', type: 'Server', ip: '192.168.10.65', dept: 'ฝขว.' },
+            { id: 10, name: 'Printer เลเซอร์ ฝขว.', type: 'Printer', ip: '192.168.10.70', dept: 'ฝขว.' },
+            // ฝยก. และ หน่วย 250
+            { id: 11, name: 'Server ฝยก.', type: 'Server', ip: '192.168.10.100', dept: 'ฝยก.' },
+            { id: 12, name: 'PC แผนงาน ฝยก.', type: 'PC', ip: '192.168.10.101', dept: 'ฝยก.' },
+            { id: 13, name: 'PC หน่วย 250', type: 'PC', ip: '192.168.10.115', dept: 'หน่วย 250' },
+            // ปจว. (แยกเดี่ยว)
+            { id: 14, name: 'PC ผลิตสื่อ ปจว.', type: 'PC', ip: '192.168.10.121', dept: 'ปจว.' },
+            { id: 15, name: 'มือถือปฏิบัติงาน ปจว. 01', type: 'Mobile', ip: '192.168.10.125', dept: 'ปจว.' },
+            // ฝปส. (แยกเดี่ยว)
+            { id: 16, name: 'PC ประสานงาน ฝปส.', type: 'PC', ip: '192.168.10.122', dept: 'ฝปส.' },
+            { id: 17, name: 'iPad สำหรับตรวจงาน ฝปส.', type: 'iPad', ip: '192.168.10.128', dept: 'ฝปส.' },
+            // IP Pools อ้างอิงจากไฟล์ PPTX
+            { id: 18, name: 'DHCP Pool ปจว/ฝปส/ฝยส', type: 'Unused', ip: '192.168.10.160-175', dept: 'ว่าง' },
+            { id: 19, name: 'DHCP Pool ศสน.', type: 'Unused', ip: '192.168.10.176-187', dept: 'ว่าง' },
+            { id: 20, name: 'DHCP Pool ฝยก+250', type: 'Unused', ip: '192.168.10.188-202', dept: 'ว่าง' },
+            { id: 21, name: 'DHCP Pool ฝขว.', type: 'Unused', ip: '192.168.10.203-215', dept: 'ว่าง' }
         ];
 
         let currentTab = 'ทั้งหมด';
         let viewMode = 'table'; 
 
-        const deptList = ['ทั้งหมด', 'ส่วนกลาง', 'ศสส.', 'ฝขว.', 'ฝยก.', 'หน่วย 250', 'ปจว.', 'ฝปส.', 'ฝยส.', 'ศสน.', 'ไอพีที่ยังไม่ได้ใช้'];
-
-        const typeConfig = {
-            'PC': { icon: 'fa-desktop', color: 'bg-slate-100 text-slate-600' },
-            'Notebook': { icon: 'fa-laptop', color: 'bg-indigo-100 text-indigo-600' },
-            'Printer': { icon: 'fa-print', color: 'bg-amber-100 text-amber-600' },
-            'Mobile': { icon: 'fa-mobile-screen-button', color: 'bg-emerald-100 text-emerald-600' },
-            'iPad': { icon: 'fa-tablet-screen-button', color: 'bg-blue-100 text-blue-600' },
-            'Server': { icon: 'fa-server', color: 'bg-rose-100 text-rose-600' },
-            'Router': { icon: 'fa-wifi', color: 'bg-sky-100 text-sky-600' },
-            'Switch': { icon: 'fa-network-wired', color: 'bg-violet-100 text-violet-600' },
-            'Fax': { icon: 'fa-fax', color: 'bg-orange-100 text-orange-600' },
-            'Unused': { icon: 'fa-circle-dot', color: 'bg-gray-100 text-gray-400 border border-dashed border-gray-300' },
-            'Other': { icon: 'fa-microchip', color: 'bg-gray-100 text-gray-600' }
-        };
-
+        // --- ฟังก์ชันสร้างเมนูแถบซ้าย ---
         function renderMenu() {
             const container = document.getElementById('deptMenu');
-            container.innerHTML = deptList.map(dept => `
-                <button onclick="setTab('${dept}')" class="flex justify-between items-center px-4 py-3 rounded-xl text-sm font-medium transition-all ${currentTab === dept ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}">
-                    <span>${dept}</span>
-                    <span class="text-[10px] px-2 py-0.5 rounded-full ${currentTab === dept ? 'bg-white/20' : 'bg-slate-200'}">
-                        ${dept === 'ทั้งหมด' ? devices.length : devices.filter(d => d.dept === dept).length}
-                    </span>
-                </button>
-            `).join('');
+            container.innerHTML = Object.keys(deptConfig).map(dept => {
+                const config = deptConfig[dept];
+                const isActive = currentTab === dept;
+                const count = dept === 'ทั้งหมด' ? devices.length : devices.filter(d => d.dept === dept).length;
+                
+                return `
+                    <button onclick="setTab('${dept}')" class="flex justify-between items-center px-4 py-3 rounded-xl text-sm font-bold transition-all border ${isActive ? config.active + ' border-transparent shadow-md' : config.bg + ' ' + config.text + ' border-transparent hover:border-slate-300'}">
+                        <span>${dept}</span>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full ${isActive ? 'bg-white/20' : 'bg-white shadow-sm'}">${count}</span>
+                    </button>
+                `;
+            }).join('');
         }
 
-        function setTab(dept) {
-            currentTab = dept;
-            viewMode = 'table';
-            document.getElementById('tableView').classList.remove('hidden');
-            document.getElementById('ipMapView').classList.add('hidden');
-            document.getElementById('btnIpMap').className = "w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all bg-slate-50 text-slate-600 hover:bg-blue-50 hover:text-blue-600 mb-2 border border-transparent";
-            renderMenu();
-            filterDevices();
-        }
-
-        function toggleIpView() {
-            viewMode = 'ipmap';
-            document.getElementById('tableView').classList.add('hidden');
-            document.getElementById('ipMapView').classList.remove('hidden');
-            document.getElementById('btnIpMap').className = "w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all bg-blue-50 text-blue-600 mb-2 border border-blue-200 shadow-sm";
-            currentTab = '';
-            renderMenu();
-            renderIpMap();
-        }
-
+        // --- ฟังก์ชันแสดงข้อมูลแบบตาราง (Table) ---
         function renderTable(data = devices) {
             const tbody = document.getElementById('deviceTableBody');
-            tbody.innerHTML = data.length ? data.map(d => `
-                <tr class="hover:bg-slate-50/50 transition-colors">
-                    <td class="px-6 py-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-lg flex items-center justify-center ${typeConfig[d.type]?.color || typeConfig.Other.color}">
-                                <i class="fa-solid ${typeConfig[d.type]?.icon || typeConfig.Other.icon}"></i>
+            
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-12 text-center text-slate-400 italic font-medium">ไม่พบข้อมูลในหมวดหมู่นี้</td></tr>`;
+                updateStats();
+                return;
+            }
+
+            tbody.innerHTML = data.map(d => {
+                const tConf = typeConfig[d.type] || typeConfig.Other;
+                const dConf = deptConfig[d.dept] || deptConfig.ส่วนกลาง;
+                
+                return `
+                    <tr class="hover:bg-slate-50 transition-colors group border-b border-slate-50 last:border-0">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg flex items-center justify-center ${tConf.bg} ${tConf.color}">
+                                    <i class="fa-solid ${tConf.icon}"></i>
+                                </div>
+                                <span class="font-bold ${d.type === 'Unused' ? 'text-slate-500 italic' : 'text-slate-800'}">${d.name}</span>
                             </div>
-                            <span class="font-semibold ${d.type === 'Unused' ? 'text-slate-400 italic' : 'text-slate-700'}">${d.name}</span>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 text-xs font-bold ${d.type === 'Unused' ? 'text-slate-300' : 'text-slate-400'}">${d.type}</td>
-                    <td class="px-6 py-4 text-sm mono font-medium text-blue-600">${d.ip || '-'}</td>
-                    <td class="px-6 py-4">
-                        <span class="px-2.5 py-1 rounded-md ${d.type === 'Unused' ? 'bg-amber-50 text-amber-600' : 'bg-slate-100 text-slate-600'} text-xs font-semibold">${d.dept}</span>
-                    </td>
-                    <td class="px-6 py-4 text-right">
-                        <button onclick="editDevice(${d.id})" class="text-slate-400 hover:text-blue-600 p-2 transition-colors"><i class="fa-solid fa-edit"></i></button>
-                        <button onclick="deleteDevice(${d.id})" class="text-slate-400 hover:text-rose-600 p-2 transition-colors"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                </tr>
-            `).join('') : `<tr><td colspan="5" class="py-12 text-center text-slate-400 italic">ไม่พบข้อมูลในหมวดหมู่นี้</td></tr>`;
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-2.5 py-1 rounded-md text-[11px] font-bold uppercase ${tConf.bg} ${tConf.color} border border-current opacity-80">${d.type}</span>
+                        </td>
+                        <td class="px-6 py-4 mono font-bold ${d.type === 'Unused' ? 'text-slate-400' : 'text-blue-600'}">${d.ip || '-'}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-3 py-1 rounded-lg text-xs font-bold ${dConf.bg} ${dConf.text}">${d.dept}</span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex justify-center gap-2">
+                                <button onclick="editDevice(${d.id})" class="w-8 h-8 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center shadow-sm" title="แก้ไขข้อมูล">
+                                    <i class="fa-solid fa-pen text-xs"></i>
+                                </button>
+                                <button onclick="deleteDevice(${d.id})" class="w-8 h-8 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors flex items-center justify-center shadow-sm" title="ลบข้อมูล">
+                                    <i class="fa-solid fa-minus text-sm"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
             
             updateStats();
         }
 
+        // --- ฟังก์ชันแสดงผังไอพี (1 - 255) ---
         function renderIpMap() {
             const container = document.getElementById('ipGridContainer');
             let html = '';
@@ -329,24 +315,29 @@
             
             for(let i = 1; i <= 255; i++) {
                 const ipStr = `192.168.10.${i}`;
-                // เช็คว่า IP ตรงกับอุปกรณ์ใด หรืออยู่ในช่วง Pool ไหม (แบบง่ายๆ ให้คลิกเพิ่มได้)
                 const device = devices.find(d => d.ip === ipStr);
                 
                 if(device) {
                     used++;
+                    const dConf = deptConfig[device.dept] || deptConfig.ส่วนกลาง;
+                    const tConf = typeConfig[device.type] || typeConfig.Other;
+                    
                     html += `
-                        <div class="p-2.5 rounded-lg bg-blue-600 text-white text-center cursor-pointer shadow-md shadow-blue-500/20 hover:scale-105 transition-transform" onclick="editDevice(${device.id})">
-                            <div class="text-[10px] opacity-70 leading-none mb-1">.${i}</div>
-                            <i class="fa-solid ${typeConfig[device.type]?.icon || 'fa-desktop'} text-xs"></i>
-                            <div class="text-[8px] truncate mt-1 font-medium">${device.name}</div>
+                        <div onclick="editDevice(${device.id})" class="p-2 rounded-xl ${dConf.bg} ${dConf.text} border border-transparent hover:border-current cursor-pointer text-center relative group transition-all shadow-sm">
+                            <div class="text-[10px] font-bold opacity-70 mb-1">.${i}</div>
+                            <i class="fa-solid ${tConf.icon} text-base mb-1"></i>
+                            <div class="text-[9px] font-bold truncate px-1">${device.dept}</div>
+                            <div class="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
+                                <i class="fa-solid fa-pen text-[8px]"></i>
+                            </div>
                         </div>
                     `;
                 } else {
                     html += `
-                        <div class="p-2.5 rounded-lg bg-slate-100 border border-slate-200 text-slate-400 text-center cursor-pointer hover:bg-white hover:border-blue-400 hover:text-blue-500 transition-all group" onclick="addWithIp('${ipStr}')">
-                            <div class="text-[10px] opacity-60 leading-none mb-1">.${i}</div>
-                            <i class="fa-solid fa-plus opacity-0 group-hover:opacity-100 text-xs"></i>
-                            <div class="text-[8px] mt-1 font-bold">ว่าง</div>
+                        <div onclick="addWithIp('${ipStr}')" class="p-2 rounded-xl bg-slate-50 border border-dashed border-slate-300 text-slate-400 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-500 cursor-pointer text-center group transition-all">
+                            <div class="text-[10px] font-bold opacity-50 mb-1">.${i}</div>
+                            <i class="fa-solid fa-plus opacity-0 group-hover:opacity-100 text-base mb-1"></i>
+                            <div class="text-[9px] font-bold">ว่าง</div>
                         </div>
                     `;
                 }
@@ -355,58 +346,86 @@
             updateStats(used);
         }
 
+        // --- ฟังก์ชันนับสถิติไอพี ---
         function updateStats(usedCount = null) {
-            // นับเฉพาะอุปกรณ์ที่มี IP เป็น 192.168.10.x แบบเจาะจง (ไม่รวม Pool หรือเบอร์ Fax)
+            // นับเฉพาะอุปกรณ์ที่มี IP เป็น 192.168.10.x แบบเจาะจง (ไม่รวม Pool หรือพวกที่ไม่มีไอพี)
             const used = usedCount !== null ? usedCount : devices.filter(d => d.ip && d.ip.startsWith('192.168.10.') && !d.ip.includes('-')).length;
             document.getElementById('usedCount').innerText = used;
             document.getElementById('unusedCount').innerText = 255 - used;
+        }
+
+        // --- ระบบควบคุมมุมมอง (Tab & View) ---
+        function setTab(dept) {
+            currentTab = dept;
+            viewMode = 'table';
+            document.getElementById('tableView').classList.remove('hidden');
+            document.getElementById('ipMapView').classList.add('hidden');
+            
+            // ปรับสไตล์ปุ่มเครื่องมือ
+            document.getElementById('btnIpMap').className = "w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-all bg-slate-50 text-slate-600 hover:bg-blue-50 hover:text-blue-600 mb-3 border border-slate-200";
+            
+            renderMenu();
+            filterDevices();
+        }
+
+        function toggleIpView() {
+            viewMode = 'ipmap';
+            document.getElementById('tableView').classList.add('hidden');
+            document.getElementById('ipMapView').classList.remove('hidden');
+            
+            // เน้นปุ่มดูผัง IP
+            document.getElementById('btnIpMap').className = "w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-all bg-blue-50 text-blue-600 mb-3 border border-blue-200 shadow-sm";
+            
+            currentTab = ''; 
+            renderMenu();
+            renderIpMap();
         }
 
         function filterDevices() {
             const q = document.getElementById('searchInput').value.toLowerCase();
             const filtered = devices.filter(d => {
                 const matchTab = (currentTab === 'ทั้งหมด' || d.dept === currentTab);
-                const matchQuery = (d.name.toLowerCase().includes(q) || d.ip.toLowerCase().includes(q) || d.dept.toLowerCase().includes(q));
+                const matchQuery = (d.name.toLowerCase().includes(q) || (d.ip && d.ip.toLowerCase().includes(q)) || d.type.toLowerCase().includes(q));
                 return (currentTab ? matchTab : true) && matchQuery;
             });
             renderTable(filtered);
         }
 
-        function addWithIp(ip) {
-            openModal();
-            document.getElementById('deviceIp').value = ip;
+        // --- ระบบ Modal แบบฟอร์มเพิ่ม/แก้ไข ---
+        function addWithIp(ip) { 
+            openModal(); 
+            document.getElementById('deviceIp').value = ip; 
         }
-
+        
         function openModal(id = null) {
             const m = document.getElementById('deviceModal');
             document.getElementById('deviceForm').reset();
             document.getElementById('deviceId').value = '';
-            document.getElementById('modalTitle').innerText = 'ลงทะเบียนอุปกรณ์ใหม่';
+            document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-plus-circle text-blue-600"></i> ลงทะเบียนอุปกรณ์ใหม่';
             
             if(id) {
                 const d = devices.find(x => x.id === id);
                 document.getElementById('deviceId').value = d.id;
                 document.getElementById('deviceName').value = d.name;
                 document.getElementById('deviceType').value = d.type;
-                document.getElementById('deviceIp').value = d.ip;
+                document.getElementById('deviceIp').value = d.ip || '';
                 document.getElementById('deviceDept').value = d.dept;
-                document.getElementById('modalTitle').innerText = 'แก้ไขข้อมูลอุปกรณ์';
-            } else {
-                if (currentTab !== 'ทั้งหมด') {
-                    document.getElementById('deviceDept').value = currentTab;
-                    if(currentTab === 'ไอพีที่ยังไม่ได้ใช้') document.getElementById('deviceType').value = 'Unused';
-                }
+                document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-pen-to-square text-blue-600"></i> แก้ไขข้อมูลอุปกรณ์';
+            } else if (currentTab !== 'ทั้งหมด' && currentTab !== '') {
+                document.getElementById('deviceDept').value = currentTab;
+                if(currentTab === 'ว่าง') document.getElementById('deviceType').value = 'Unused';
             }
             
             m.classList.remove('hidden');
             document.body.classList.add('modal-active');
         }
 
-        function closeModal() {
-            document.getElementById('deviceModal').classList.add('hidden');
-            document.body.classList.remove('modal-active');
+        function closeModal() { 
+            document.getElementById('deviceModal').classList.add('hidden'); 
+            document.body.classList.remove('modal-active'); 
         }
 
+        // --- บันทึกข้อมูล (Save) ---
         function handleSave(e) {
             e.preventDefault();
             const id = document.getElementById('deviceId').value;
@@ -417,33 +436,36 @@
                 ip: document.getElementById('deviceIp').value,
                 dept: document.getElementById('deviceDept').value
             };
-
-            if(id) {
-                const idx = devices.findIndex(x => x.id === parseInt(id));
-                devices[idx] = data;
-            } else {
-                devices.push(data);
+            
+            if(id) { 
+                const idx = devices.findIndex(x => x.id === parseInt(id)); 
+                devices[idx] = data; 
+            } else { 
+                devices.push(data); 
             }
-
+            
             closeModal();
-            if(viewMode === 'ipmap') renderIpMap();
+            if(viewMode === 'ipmap') renderIpMap(); 
             else { renderMenu(); filterDevices(); }
         }
 
-        function editDevice(id) { openModal(id); }
-
-        function deleteDevice(id) {
-            if(confirm('ยืนยันการลบข้อมูลอุปกรณ์นี้?')) {
-                devices = devices.filter(x => x.id !== id);
-                if(viewMode === 'ipmap') renderIpMap();
-                else { renderMenu(); filterDevices(); }
-            }
+        // --- ฟังก์ชันแก้ไข / ลบ ---
+        function editDevice(id) { 
+            openModal(id); 
+        }
+        
+        function deleteDevice(id) { 
+            if(confirm('ยืนยันการลบอุปกรณ์นี้ออกจากระบบ?')) { 
+                devices = devices.filter(x => x.id !== id); 
+                if(viewMode === 'ipmap') renderIpMap(); 
+                else { renderMenu(); filterDevices(); } 
+            } 
         }
 
-        // Init
-        window.onload = () => {
-            renderMenu();
-            renderTable();
+        // --- ทำงานเมื่อเปิดเว็บ ---
+        window.onload = () => { 
+            renderMenu(); 
+            renderTable(); 
         };
     </script>
 </body>

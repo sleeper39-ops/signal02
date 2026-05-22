@@ -3,19 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการเครือข่าย ศสส.บก.ควบคุม 2 (v6.0)</title>
+    <title>ระบบจัดการเครือข่าย ศสส.บก.ควบคุม 2 (v8.3 - Modern Theme Sync)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght=300;400;500;600;700&family=JetBrains+Mono:wght=500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght=300;400;500;600;700&display=swap" rel="stylesheet">
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
         body { font-family: 'Prompt', sans-serif; background-color: #f0f2f5; color: #050505; }
-        .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
         .modal-active { overflow: hidden; }
         
-        /* แถบสีด้านหน้าสำหรับระบุประเภทอุปกรณ์ */
         .device-server { border-left: 6px solid #ef4444 !important; }
         .device-pc { border-left: 6px solid #3b82f6 !important; }
         .device-notebook { border-left: 6px solid #80cbc4 !important; }
@@ -24,7 +23,6 @@
         .device-printer { border-left: 6px solid #bcaaa4 !important; }
         .device-default { border-left: 6px solid #94a3b8 !important; }
 
-        /* สไตล์ Badge ประเภทอุปกรณ์ */
         .badge-red { color: #ef4444; border: 1px solid #fecaca; background: transparent; }
         .badge-blue { color: #3b82f6; border: 1px solid #bfdbfe; background: transparent; }
         .badge-cyan { color: #80cbc4; border: 1px solid #b2dfdb; background: transparent; }
@@ -38,38 +36,53 @@
         
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #1877F2; border-radius: 4px; }
+
+        @keyframes slideIn { from { transform: translateY(1rem); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .toast-animate { animation: slideIn 0.3s ease-out forwards; }
+
+        @keyframes pulse-ring { 0% { transform: scale(0.33); } 80%, 100% { opacity: 0; } }
+        .recording-pulse { position: relative; }
+        .recording-pulse::before {
+            content: ''; position: absolute; display: block; width: 100%; height: 100%;
+            box-sizing: border-box; border-radius: 9999px; background-color: #ef4444;
+            animation: pulse-ring 1.25s cubic-bezier(0.215, 0.610, 0.355, 1) infinite;
+        }
     </style>
 </head>
 <body class="antialiased">
 
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-[200] flex flex-col gap-3 max-w-sm w-full"></div>
+
     <nav class="bg-[#1877F2] text-white shadow-xl sticky top-0 z-50 border-b border-[#166FE5]">
         <div class="max-w-full mx-auto px-6 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-4 cursor-pointer" onclick="switchMainTab('network')">
                 <div class="bg-white/20 p-2 rounded-xl shadow-sm">
-                    <i class="fa-solid fa-network-wired text-xl text-white"></i>
+                    <i class="ph-bold ph-broadcast text-xl text-white"></i>
                 </div>
                 <div>
-                    <h1 class="font-bold text-xl tracking-tight leading-none uppercase text-white">NMS CONTROL 2</h1>
-                    <span class="text-[11px] text-white/80 font-medium tracking-widest uppercase">Network Admin System</span>
+                    <h1 class="font-bold text-xl tracking-tight leading-none uppercase text-white">NMS & REC CONTROL</h1>
+                    <span class="text-[11px] text-white/80 font-medium tracking-widest uppercase">Network & Meeting Admin System</span>
                 </div>
             </div>
-            <div class="hidden md:flex gap-6 text-sm font-bold">
-                <div class="flex items-center gap-2 text-white/90"><div class="w-2.5 h-2.5 bg-green-400 rounded-full"></div> ใช้งาน: <span id="usedCount" class="text-white">0</span></div>
-                <div class="flex items-center gap-2 text-white/70"><div class="w-2.5 h-2.5 bg-white/40 rounded-full"></div> ว่าง: <span id="unusedCount" class="text-white">0</span></div>
+            
+            <div class="flex items-center gap-4 text-sm font-bold">
+                <button onclick="switchMainTab('meeting')" class="bg-slate-900 hover:bg-slate-800 text-white text-xs px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-md transition-all active:scale-95 border border-white/10">
+                    <i class="ph-bold ph-microphone-stage text-sm text-sky-400"></i> ระบบบันทึกเสียงและการประชุม
+                </button>
+                <div class="hidden md:flex gap-6 border-l border-white/20 pl-6">
+                    <div class="flex items-center gap-2 text-white/90"><div class="w-2.5 h-2.5 bg-green-400 rounded-full"></div> ใช้งาน IP: <span id="usedCount" class="text-white">0</span></div>
+                </div>
             </div>
         </div>
     </nav>
 
-    <div class="max-w-full mx-auto px-4 py-6">
+    <div id="networkSection" class="max-w-full mx-auto px-4 py-6">
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
-            
             <div class="lg:col-span-1 space-y-6">
                 <div class="bg-white p-4 rounded-[1.5rem] shadow-sm border border-slate-200 sticky top-24">
                     <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center pl-2 border-l-4 border-slate-300">ฝ่าย / หน่วยงาน</h3>
                     <div class="flex flex-col gap-2" id="deptMenu"></div>
-
                     <hr class="my-6 border-slate-100">
-                    
                     <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center pl-2 border-l-4 border-slate-300">ชนิดอุปกรณ์</h3>
                     <div class="flex flex-col gap-2" id="typeMenu"></div>
                 </div>
@@ -78,14 +91,15 @@
             <div class="lg:col-span-4 space-y-4">
                 <div class="flex gap-4">
                     <button onclick="toggleIpView()" id="btnIpMap" class="flex-1 sidebar-btn px-4 py-2.5 rounded-xl font-semibold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200">
-                        <i class="fa-solid fa-table-cells mr-2 text-slate-400"></i> <span id="btnIpMapText">ดูแผนผัง IP</span>
+                        <i class="ph ph-squares-four mr-2"></i> <span id="btnIpMapText">ดูแผนผัง IP</span>
                     </button>
-                    <button onclick="openModal()" class="flex-1 bg-green-400 hover:bg-green-500 text-white font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 sidebar-btn">
-                        <i class="fa-solid fa-plus-circle"></i> เพิ่มอุปกรณ์
+                    <button onclick="openModal()" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 sidebar-btn">
+                        <i class="ph-bold ph-plus-circle"></i> เพิ่มอุปกรณ์
                     </button>
                 </div>
+
                 <div class="relative">
-                    <i class="fa-solid fa-search absolute left-5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <i class="ph ph-magnifying-glass absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
                     <input type="text" id="searchInput" onkeyup="filterDevices()" placeholder="ค้นหาชื่ออุปกรณ์, หมายเลข IP, ฝ่าย..." class="w-full pl-14 pr-6 py-3 rounded-[1.25rem] border-2 border-white focus:border-slate-300 bg-white shadow-sm outline-none transition-all text-base font-medium">
                 </div>
 
@@ -108,12 +122,110 @@
 
                 <div id="ipMapView" class="hidden bg-white p-10 rounded-[1.5rem] shadow-sm border border-slate-200">
                     <h2 class="text-xl font-bold text-slate-800 mb-8 flex items-center gap-3">
-                        <i class="fa-solid fa-network-wired text-slate-400"></i> แผนผังไอพี (192.168.10.x)
+                        <i class="ph ph-network text-slate-400"></i> แผนผังไอพี (192.168.10.x)
                     </h2>
                     <div class="ip-grid" id="ipGridContainer"></div>
                 </div>
-
             </div>
+        </div>
+    </div>
+
+    <div id="meetingSection" class="max-w-full mx-auto px-6 py-6 hidden">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+            <div>
+                <button onclick="switchMainTab('network')" class="text-[#1877F2] font-semibold text-xs flex items-center gap-1 mb-1 hover:underline">
+                    <i class="ph ph-arrow-left"></i> กลับไปหน้าเครือข่าย
+                </button>
+                <h2 class="text-xl font-black text-slate-800 flex items-center gap-2">
+                    <i class="ph-bold ph-microphone text-blue-600"></i> ระบบบันทึกเสียงและข้อมูลประชุม
+                </h2>
+            </div>
+            <button onclick="openMeetingModal()" class="bg-sky-600 hover:bg-sky-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shadow-md transition-all active:scale-95">
+                <i class="ph-bold ph-plus-circle text-sm"></i> บันทึกข้อมูลการประชุมใหม่
+            </button>
+        </div>
+
+        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm mb-4 flex flex-wrap items-center justify-between gap-4 text-xs font-bold text-slate-600">
+            <div class="flex flex-wrap items-center gap-6">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                    <span>การประชุมทั้งหมด: <span id="statTotalMeetings" class="text-slate-900 font-black text-sm pl-1">0</span> ครั้ง</span>
+                </div>
+                <div class="flex items-center gap-2 border-l border-slate-200 pl-6">
+                    <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                    <span>ระเบียนบันทึกเสียง: <span id="statAudioCount" class="text-slate-900 font-black text-sm pl-1">0</span> ไฟล์</span>
+                </div>
+            </div>
+            
+            <div class="relative w-full md:w-64">
+                <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                <input type="text" id="meetingSearch" onkeyup="filterMeetings()" placeholder="ค้นหาบันทึกข้อมูลด่วน..." class="w-full pl-9 pr-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 outline-none font-medium text-xs">
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <!-- เพิ่มความกว้างขั้นต่ำของตารางเพื่อรองรับเครื่องเล่นเสียงที่ยาวขึ้น -->
+                <div class="min-w-[1200px] divide-y divide-slate-100" id="meetingListContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="meetingModal" class="fixed inset-0 z-[100] hidden bg-slate-900/60 backdrop-blur-md flex justify-center items-center p-4">
+        <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-xl overflow-hidden border border-slate-100">
+            <div class="px-8 py-5 bg-slate-50 border-b border-slate-200 flex justify-between items-center text-slate-900">
+                <h3 class="text-lg font-bold flex items-center gap-2" id="meetingModalTitle"><i class="ph ph-microphone text-sky-600"></i> จัดการบันทึกข้อมูลการประชุม</h3>
+                <button type="button" onclick="closeMeetingModal()" class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-200 text-slate-400 transition-all"><i class="ph ph-x"></i></button>
+            </div>
+            
+            <form id="meetingForm" onsubmit="handleSaveMeeting(event)" class="p-8 space-y-4 text-sm">
+                <input type="hidden" id="meetingId">
+                <input type="hidden" id="meetAudioData">
+
+                <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div id="recordDot" class="w-10 h-10 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-lg shadow-sm shrink-0">
+                            <i class="ph-bold ph-microphone"></i>
+                        </div>
+                        <div>
+                            <div id="recordStatus" class="font-bold text-slate-800">เครื่องบันทึกเสียงในเครื่อง (ไมโครโฟน)</div>
+                            <div id="recordTimer" class="text-xs font-semibold text-slate-400">กดปุ่มฝั่งขวาเพื่อเริ่มจับเสียงประชุมสด</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                        <button type="button" id="btnStartRec" onclick="startAudioRecording()" class="flex-1 sm:flex-none bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-sm text-xs min-w-[95px]">
+                            <i class="ph-bold ph-circle"></i> เริ่มอัดเสียง
+                        </button>
+                        <button type="button" id="btnResumeRec" onclick="resumeAudioRecording()" class="hidden flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-sm text-xs min-w-[95px]">
+                            <i class="ph-bold ph-play"></i> เล่นต่อ
+                        </button>
+                        <button type="button" id="btnStopRec" onclick="stopAudioRecording()" disabled class="flex-1 sm:flex-none bg-slate-800 text-white font-bold px-4 py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all opacity-50 cursor-not-allowed shadow-sm text-xs min-w-[75px]">
+                            <i class="ph-bold ph-square"></i> หยุด
+                        </button>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block font-bold text-slate-500 mb-1">หัวข้อ / ชื่อการประชุม *</label>
+                    <input type="text" id="meetTitle" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none bg-slate-50 font-semibold" placeholder="ชื่อหัวข้อ">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-500 mb-1">วันที่ประชุม *</label>
+                    <input type="date" id="meetDate" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none bg-slate-50 font-semibold">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-500 mb-1">สรุปสาระสำคัญการประชุม</label>
+                    <textarea id="meetDetails" rows="4" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none bg-slate-50 font-semibold" placeholder="รายละเอียดเนื้อหาที่ประชุมย่อ..."></textarea>
+                </div>
+
+                <div class="pt-4 flex gap-4">
+                    <button type="button" onclick="closeMeetingModal()" class="flex-1 px-6 py-3 rounded-xl font-bold bg-slate-100 text-slate-500 hover:bg-slate-200">ยกเลิก</button>
+                    <button type="submit" class="flex-1 px-6 py-3 rounded-xl font-bold bg-[#1877F2] text-white hover:bg-[#166FE5] shadow-lg text-sm tracking-wider">บันทึก</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -121,11 +233,8 @@
         <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100">
             <div class="px-10 py-7 bg-slate-50 border-b border-slate-200 flex justify-between items-center text-slate-900">
                 <h3 class="text-lg font-bold" id="modalTitle">ลงทะเบียนอุปกรณ์</h3>
-                <button onclick="closeModal()" class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-200 text-slate-400 transition-all">
-                    <i class="fa-solid fa-times"></i>
-                </button>
+                <button type="button" onclick="closeModal()" class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-200 text-slate-400 transition-all"><i class="ph ph-x"></i></button>
             </div>
-            
             <form id="deviceForm" onsubmit="handleSave(event)" class="p-10 space-y-6 text-sm">
                 <input type="hidden" id="deviceId">
                 <div>
@@ -150,7 +259,7 @@
                     </div>
                     <div>
                         <label class="block font-black text-slate-500 mb-2 uppercase text-sm tracking-widest">หมายเลข IP Address</label>
-                        <input type="text" id="deviceIp" class="w-full px-5 py-3.5 rounded-xl border border-slate-200 focus:border-slate-500 outline-none mono font-bold text-blue-600" placeholder="192.168.10.x">
+                        <input type="text" id="deviceIp" class="w-full px-5 py-3.5 rounded-xl border border-slate-200 focus:border-slate-500 outline-none font-bold text-blue-600" placeholder="192.168.10.x">
                     </div>
                 </div>
                 <div>
@@ -158,27 +267,26 @@
                     <select id="deviceDept" required class="w-full px-5 py-3.5 rounded-xl border border-slate-200 focus:border-slate-500 outline-none bg-white font-semibold">
                         <option value="ส่วนกลาง">ส่วนกลาง / ระบบหลัก</option>
                         <option value="ศสส.">ศสส.</option>
-                        <option value="ชกส.">ชกส.</option>
                         <option value="ฝขว.">ฝขว.</option>
                         <option value="ฝยก.">ฝยก.</option>
-                        <option value="250">250.</option>
                         <option value="ปจว.">ปจว.</option>
                         <option value="ฝกร.">ฝกร.</option>
                         <option value="ฝยส.">ฝยส.</option>
                         <option value="ศสน.">ศสน.</option>
+                        <option value="ชกส.">ชกส.</option>
+                        <option value="250">250.</option>
                     </select>
                 </div>
-
                 <div class="pt-6 flex gap-4">
                     <button type="button" onclick="closeModal()" class="flex-1 px-8 py-4 rounded-xl font-bold bg-slate-100 text-slate-500 hover:bg-slate-200">ยกเลิก</button>
-                    <button type="submit" class="flex-1 px-8 py-4 rounded-xl font-bold bg-[#1877F2] text-white hover:bg-[#166FE5] shadow-lg transition-all transform active:scale-95 uppercase text-xs">บันทึกข้อมูล</button>
+                    <button type="submit" class="flex-1 px-8 py-4 rounded-xl font-bold bg-[#1877F2] text-white hover:bg-[#166FE5] shadow-lg transform active:scale-95 uppercase text-xs">บันทึกข้อมูล</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        // --- 1. เชื่อมต่อ Firebase Realtime Database โปรเจกต์ใหม่ (signal02-f4d85) ---
+        // --- 1. CONFIG FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyDnbOpvNTZ1bNFzReLXMq_wW4kp5iB5oiE",
             authDomain: "signal02-f4d85.firebaseapp.com",
@@ -191,317 +299,408 @@
         };
 
         firebase.initializeApp(firebaseConfig);
-        const dbRef = firebase.database().ref('devices'); // ชี้ไปยัง Node คลังอุปกรณ์ใน Realtime DB
+        const dbRefDevices = firebase.database().ref('devices');
+        const dbRefMeetings = firebase.database().ref('meetings');
 
-        // --- 2. ข้อมูลและสถานะตั้งต้น ---
+        // --- 2. GLOBAL STATE ---
         let devices = [];
+        let meetings = [];
         let currentDept = 'ทั้งหมด';
         let currentTypeFilter = 'ทั้งหมด';
         let viewMode = 'table';
 
-        const depts = ['ทั้งหมด', 'ส่วนกลาง', 'ศสส.', 'ชกส.', 'ฝขว.', 'ฝยก.', '250', 'ปจว.', 'ฝกร.', 'ฝยส.', 'ศสน.'];
+        let mediaRecorder;
+        let audioChunks = [];
+        let recordInterval;
+        let recordSeconds = 0;
+        let latestAudioBlob = null; 
+
+        // แก้ไขลำดับของฝ่าย/หน่วยงานตามที่กำหนด
+        const depts = ['ทั้งหมด', 'ส่วนกลาง', 'ศสส.', 'ฝขว.', 'ฝยก.', 'ปจว.', 'ฝกร.', 'ฝยส.', 'ศสน.', 'ชกส.', '250'];
         const types = ['ทั้งหมด', 'Server', 'PC', 'Notebook', 'Fax', 'Printer', 'Mobile', 'iPad', 'Router', 'Switch'];
 
-        // --- 3. ฟังก์ชันตัวช่วยสไตล์และการจัดเรียงไอพี ---
-        function parseIP(ip) {
-            if (!ip || ip === '-') return [999, 999, 999, 999];
-            let parts = ip.split('.').map(Number);
-            return parts.length === 4 ? parts : [999, 999, 999, 999];
+        // --- 3. TOAST SYSTEM ---
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const id = Date.now();
+            const bgClass = type === 'success' ? 'bg-emerald-500' : type === 'error' ? 'bg-rose-500' : 'bg-amber-500';
+            const iconClass = type === 'success' ? 'ph-bold ph-check-circle' : type === 'error' ? 'ph-bold ph-warning-octagon' : 'ph-bold ph-info';
+            
+            container.insertAdjacentHTML('beforeend', `
+                <div id="toast-${id}" class="toast-animate flex items-center gap-3 p-4 rounded-xl text-white shadow-xl border border-white/10 ${bgClass}">
+                    <i class="${iconClass} text-xl"></i>
+                    <div class="font-medium text-xs flex-1">${message}</div>
+                </div>
+            `);
+            setTimeout(() => { const el = document.getElementById(`toast-${id}`); if(el) el.remove(); }, 3500);
         }
 
-        function sortDevicesByIP(list) {
-            return list.sort((a, b) => {
-                const ipA = parseIP(a.ip);
-                const ipB = parseIP(b.ip);
-                for (let i = 0; i < 4; i++) {
-                    if (ipA[i] !== ipB[i]) return ipA[i] - ipB[i];
+        function switchMainTab(tabName) {
+            if(tabName === 'meeting') {
+                document.getElementById('networkSection').classList.add('hidden');
+                document.getElementById('meetingSection').classList.remove('hidden');
+            } else {
+                document.getElementById('meetingSection').classList.add('hidden');
+                document.getElementById('networkSection').classList.remove('hidden');
+            }
+        }
+
+        // --- 4. ADVANCED AUDIO RECORDING ENGINE ---
+        async function startAudioRecording() {
+            audioChunks = [];
+            recordSeconds = 0;
+            latestAudioBlob = null;
+            document.getElementById('meetAudioData').value = '';
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showToast("เบราว์เซอร์หรืออุปกรณ์นี้ไม่รองรับการเข้าถึงไมโครโฟน", "error");
+                return;
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) audioChunks.push(e.data);
+                };
+
+                mediaRecorder.onstart = () => {
+                    showToast("เริ่มบันทึกเสียงสด...", "warning");
+                    document.getElementById('btnStartRec').classList.add('hidden');
+                    document.getElementById('btnResumeRec').classList.add('hidden');
+                    document.getElementById('btnStopRec').disabled = false;
+                    document.getElementById('btnStopRec').classList.remove('opacity-50', 'cursor-not-allowed');
+                    
+                    document.getElementById('recordDot').classList.remove('bg-slate-200', 'bg-emerald-600');
+                    document.getElementById('recordDot').classList.add('bg-red-500', 'recording-pulse');
+                    document.getElementById('recordStatus').innerText = "🔴 กำลังบันทึกเสียงประชุมสด...";
+                    
+                    runTimer();
+                };
+
+                mediaRecorder.start();
+            } catch (err) {
+                showToast("ปฏิเสธสิทธิ์เข้าถึงไมค์: " + err.message, "error");
+            }
+        }
+
+        function stopAudioRecording() {
+            if (!mediaRecorder || mediaRecorder.state === "inactive") return;
+
+            mediaRecorder.onstop = async () => {
+                clearInterval(recordInterval);
+                document.getElementById('recordDot').classList.remove('bg-red-500', 'recording-pulse');
+                document.getElementById('recordDot').classList.add('bg-emerald-600');
+                document.getElementById('recordStatus').innerText = "⏸️ หยุดอัดชั่วคราว (สามารถกดเล่นต่อ หรือกดบันทึกข้อมูลด่วน)";
+                
+                latestAudioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                
+                document.getElementById('btnResumeRec').classList.remove('hidden');
+                document.getElementById('btnStopRec').disabled = true;
+                document.getElementById('btnStopRec').classList.add('opacity-50', 'cursor-not-allowed');
+                showToast("พักการอัดสัญญาณเสียงชั่วคราวแล้ว", "info");
+            };
+
+            mediaRecorder.stop();
+            mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        }
+
+        async function resumeAudioRecording() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) audioChunks.push(e.data);
+                };
+
+                mediaRecorder.onstart = () => {
+                    showToast("กำลังบันทึกเสียงต่อเนื่อง...", "success");
+                    document.getElementById('btnResumeRec').classList.add('hidden');
+                    document.getElementById('btnStopRec').disabled = false;
+                    document.getElementById('btnStopRec').classList.remove('opacity-50', 'cursor-not-allowed');
+                    
+                    document.getElementById('recordDot').classList.remove('bg-emerald-600');
+                    document.getElementById('recordDot').classList.add('bg-red-500', 'recording-pulse');
+                    document.getElementById('recordStatus').innerText = "🔴 กำลังบันทึกเสียงประชุมต่อ...";
+                    
+                    runTimer();
+                };
+
+                mediaRecorder.start();
+            } catch (err) {
+                showToast("ข้อผิดพลาด: " + err.message, "error");
+            }
+        }
+
+        function runTimer() {
+            if(recordInterval) clearInterval(recordInterval);
+            recordInterval = setInterval(() => {
+                recordSeconds++;
+                const m = String(Math.floor(recordSeconds / 60)).padStart(2, '0');
+                const s = String(recordSeconds % 60).padStart(2, '0');
+                document.getElementById('recordTimer').innerText = `ระยะเวลาอัดเสียง: ${m}:${s} นาที`;
+            }, 1000);
+        }
+
+        // --- 5. MP3 EXPORT ENGINE ---
+        function downloadAudioAsMp3(base64Data, meetingTitle) {
+            if (!base64Data) {
+                showToast("ไม่พบข้อมูลไฟล์เสียงในระบบ", "error");
+                return;
+            }
+            try {
+                showToast("กำลังประมวลผลไฟล์เสียง...", "warning");
+                const parts = base64Data.split(';base64,');
+                const raw = window.atob(parts[1] || parts[0]);
+                const rawLength = raw.length;
+                const uInt8Array = new Uint8Array(rawLength);
+
+                for (let i = 0; i < rawLength; ++i) { uInt8Array[i] = raw.charCodeAt(i); }
+
+                const blob = new Blob([uInt8Array], { type: 'audio/mp3' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none'; a.href = url;
+                const safeTitle = meetingTitle.replace(/[\/\\?%*:|"<>]/g, '-'); 
+                a.download = `บันทึกเสียง_${safeTitle}.mp3`;
+                document.body.appendChild(a); a.click();
+                setTimeout(() => { document.body.removeChild(a); window.URL.revokeObjectURL(url); }, 100);
+                showToast("ดาวน์โหลดไฟล์เสียง .mp3 สำเร็จ", "success");
+            } catch (err) { showToast("เกิดข้อผิดพลาดในการแปลงไฟล์: " + err.message, "error"); }
+        }
+
+        // --- 6. MEETING FORM & UNIFIED SAVE PROCESS WITH COMMIT GUARD ---
+        function openMeetingModal(id = null) {
+            if(recordInterval) clearInterval(recordInterval);
+            const modal = document.getElementById('meetingModal');
+            document.getElementById('meetingForm').reset();
+            document.getElementById('meetingId').value = '';
+            document.getElementById('meetAudioData').value = '';
+            latestAudioBlob = null; 
+            
+            document.getElementById('btnStartRec').classList.remove('hidden');
+            document.getElementById('btnResumeRec').classList.add('hidden');
+            
+            document.getElementById('recordTimer').innerText = "กดปุ่มฝั่งขวาเพื่อเริ่มจับเสียงประชุมสด";
+            document.getElementById('recordStatus').innerText = "เครื่องบันทึกเสียงในเครื่อง (ไมโครโฟน)";
+            document.getElementById('btnStartRec').disabled = false;
+            document.getElementById('btnStopRec').disabled = true;
+            document.getElementById('btnStopRec').classList.add('opacity-50', 'cursor-not-allowed');
+            document.getElementById('recordDot').className = "w-10 h-10 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-lg shadow-sm shrink-0";
+            
+            document.getElementById('meetDate').value = new Date().toISOString().split('T')[0];
+
+            if(id) {
+                const m = meetings.find(x => x.id === id);
+                if(m) {
+                    document.getElementById('meetingId').value = m.id;
+                    document.getElementById('meetTitle').value = m.title || '';
+                    document.getElementById('meetDate').value = m.date || '';
+                    document.getElementById('meetDetails').value = m.details || '';
+                    document.getElementById('meetAudioData').value = m.audioData || '';
+                    if(m.audioData) {
+                        document.getElementById('recordStatus').innerText = "🔊 มีไฟล์เสียงบันทึกสดแนบอยู่ภายในระเบียนแล้ว";
+                    }
                 }
-                return 0;
-            });
+            }
+            modal.classList.remove('hidden');
+            document.body.classList.add('modal-active');
         }
 
-        function getDeviceTypeClass(type) {
-            switch(type) {
-                case 'Server': return 'device-server';
-                case 'PC': return 'device-pc';
-                case 'Notebook': return 'device-notebook';
-                case 'Fax': return 'device-fax';
-                case 'Router': return 'device-router';
-                case 'Printer': return 'device-printer';
-                default: return 'device-default';
+        function closeMeetingModal() {
+            if (mediaRecorder && mediaRecorder.state === "recording") {
+                stopAudioRecording();
+            }
+            document.getElementById('meetingModal').classList.add('hidden');
+            document.body.classList.remove('modal-active');
+        }
+
+        function handleSaveMeeting(e) {
+            e.preventDefault();
+
+            if (mediaRecorder && mediaRecorder.state === "recording") {
+                showToast("⚠️ ไม่สามารถบันทึกได้! กรุณากดปุ่ม 'หยุด' เพื่อตัดกระแสเสียงให้เรียบร้อยก่อน", "error");
+                return; 
+            }
+
+            showToast("กำลังประมวลผลเซฟโครงสร้างข้อมูลทั้งหมด...", "warning");
+
+            const saveProcess = (base64AudioString = '') => {
+                const id = document.getElementById('meetingId').value;
+                let existingData = {};
+                if (id) { const old = meetings.find(x => x.id === id); if (old) existingData = old; }
+
+                const finalAudio = base64AudioString || document.getElementById('meetAudioData').value;
+
+                const data = {
+                    ...existingData,
+                    title: document.getElementById('meetTitle').value,
+                    date: document.getElementById('meetDate').value,
+                    details: document.getElementById('meetDetails').value,
+                    audioData: finalAudio,
+                    timestamp: Date.now()
+                };
+
+                if(id) {
+                    firebase.database().ref('meetings/' + id).set(data)
+                        .then(() => { showToast("อัปเดตข้อมูลการประชุมเรียบร้อย", "success"); closeMeetingModal(); })
+                        .catch(err => showToast("Error: " + err.message, "error"));
+                } else {
+                    dbRefMeetings.push(data)
+                        .then(() => { showToast("เพิ่มบันทึกข้อมูลการประชุมสำเร็จ", "success"); closeMeetingModal(); })
+                        .catch(err => showToast("Error: " + err.message, "error"));
+                }
+            };
+
+            if (latestAudioBlob) {
+                const reader = new FileReader();
+                reader.readAsDataURL(latestAudioBlob);
+                reader.onloadend = () => { saveProcess(reader.result); };
+            } else {
+                saveProcess();
             }
         }
 
-        function getBadgeStyle(type) {
-            switch(type) {
-                case 'Server': return 'badge-red';
-                case 'PC': return 'badge-blue';
-                case 'Notebook': return 'badge-cyan';
-                case 'Fax': return 'badge-yellow';
-                case 'Router': return 'badge-purple';
-                case 'Printer': return 'badge-brown';
-                default: return 'badge-gray';
+        async function deleteMeeting(id) {
+            if(confirm("⚠️ ลบระเบียนบันทึกข้อมูลการประชุมและไฟล์เสียงทิ้งอย่างถาวร?")) {
+                await firebase.database().ref('meetings/' + id).remove();
+                showToast("ทำลายข้อมูลระเบียนเสียงเรียบร้อย", "info");
             }
         }
 
-        function getDeviceIcon(type) {
-            const icons = {
-                'PC': 'fa-desktop', 'Notebook': 'fa-laptop', 'Printer': 'fa-print',
-                'Mobile': 'fa-mobile-screen', 'iPad': 'fa-tablet-screen-button',
-                'Server': 'fa-server', 'Router': 'fa-wifi', 'Switch': 'fa-network-wired',
-                'Fax': 'fa-fax'
-            };
-            return icons[type] || 'fa-microchip';
+        function calculateMeetingStats() {
+            document.getElementById('statTotalMeetings').innerText = meetings.length;
+            document.getElementById('statAudioCount').innerText = meetings.filter(m => m.audioData && m.audioData.length > 10).length;
         }
 
-        function getDeviceIconColor(type) {
-            const colors = {
-                'Server': '#ef4444', 'PC': '#3b82f6', 'Notebook': '#80cbc4',
-                'Fax': '#eab308', 'Router': '#ce93d8', 'Printer': '#bcaaa4',
-                'Mobile': '#94a3b8', 'iPad': '#94a3b8', 'Switch': '#94a3b8', 'Other': '#94a3b8'
-            };
-            return colors[type] || '#94a3b8';
+        // --- RENDER MEETING DATA ---
+        function renderMeetings(dataList) {
+            const container = document.getElementById('meetingListContainer');
+            if(dataList.length === 0) {
+                container.innerHTML = `<div class="p-8 text-center text-slate-400 font-bold">ไม่มีข้อมูลการประชุมตามกลุ่มค้นหา</div>`; return;
+            }
+            const sorted = dataList.sort((a,b) => b.timestamp - a.timestamp);
+            container.innerHTML = sorted.map(m => `
+                <div class="flex items-center justify-between p-2.5 gap-4 text-xs font-medium hover:bg-slate-50/80 transition-all border-l-4 border-slate-300">
+                    <div class="w-24 shrink-0 text-slate-500 font-bold flex items-center gap-1 pl-1">
+                        <i class="ph ph-calendar-blank text-sm text-slate-400"></i> ${m.date || '-'}
+                    </div>
+                    <div class="w-52 shrink-0 font-bold text-slate-800 truncate" title="${m.title}">${m.title}</div>
+                    
+                    <div class="flex-1 min-w-[150px] text-slate-500 truncate" title="${m.details || 'ไม่มีรายละเอียด'}">${m.details || 'ไม่มีบันทึกย่อเพิ่มเติม'}</div>
+                    
+                    ${m.audioData ? `
+                        <div class="w-[480px] shrink-0 flex items-center bg-slate-900 px-3 py-1 rounded-xl shadow-inner ml-2">
+                            <span class="text-[10px] text-sky-400 font-bold shrink-0 pr-2">LIVE:</span>
+                            <audio controls controlsList="nodownload noplaybackrate" src="${m.audioData}" class="w-full h-7 outline-none invert brightness-100 opacity-95"></audio>
+                        </div>
+                        <div class="flex items-center gap-1.5 shrink-0 ml-auto">
+                            <button onclick="downloadAudioAsMp3('${m.audioData}', '${m.title}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] py-1.5 px-3 rounded-lg flex items-center gap-1 transition-all active:scale-95 shadow-sm">
+                                <i class="ph-bold ph-download-simple text-white"></i> .MP3
+                            </button>
+                        </div>
+                    ` : `
+                        <div class="flex items-center gap-1.5 shrink-0 ml-auto">
+                            <span class="text-[10px] text-slate-400 bg-slate-100 border border-slate-200 px-2 py-1 rounded-md"><i class="ph ph-microphone-slash"></i> ไม่มีไฟล์เสียง</span>
+                        </div>
+                    `}
+                    
+                    <div class="flex items-center gap-0.5 shrink-0 pl-2 border-l border-slate-200">
+                        <button onclick="openMeetingModal('${m.id}')" class="text-emerald-600 hover:bg-emerald-50 p-1.5 rounded-lg transition-all" title="แก้ไข"><i class="ph-bold ph-pencil-line text-sm"></i></button>
+                        <button onclick="deleteMeeting('${m.id}')" class="text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg transition-all" title="ลบ"><i class="ph-bold ph-trash text-sm"></i></button>
+                    </div>
+                </div>
+            `).join('');
         }
 
-        function getDeviceIconBgColor(type) {
-            const colors = {
-                'Server': '#ffebee', 'PC': '#e3f2fd', 'Notebook': '#e0f2f1',
-                'Fax': '#fff3e0', 'Router': '#f3e5f5', 'Printer': '#efebe9',
-                'Mobile': '#f5f5f5', 'iPad': '#f5f5f5', 'Switch': '#f5f5f5', 'Other': '#f5f5f5'
-            };
-            return colors[type] || '#f5f5f5';
+        function filterMeetings() {
+            const q = document.getElementById('meetingSearch').value.toLowerCase();
+            const filtered = meetings.filter(m => (m.title && m.title.toLowerCase().includes(q)) || (m.details && m.details.toLowerCase().includes(q)));
+            renderMeetings(filtered);
         }
 
-        // --- 4. การเรนเดอร์ UI ส่วนต่างๆ ---
+        // --- 7. ORIGINAL NETWORK STACK ---
+        function parseIP(ip) { if (!ip || ip === '-') return [999, 999, 999, 999]; let parts = ip.split('.').map(Number); return parts.length === 4 ? parts : [999, 999, 999, 999]; }
+        function sortDevicesByIP(list) { return list.sort((a, b) => { const ipA = parseIP(a.ip); const ipB = parseIP(b.ip); for (let i = 0; i < 4; i++) { if (ipA[i] !== ipB[i]) return ipA[i] - ipB[i]; } return 0; }); }
+        function getDeviceTypeClass(type) { switch(type) { case 'Server': return 'device-server'; case 'PC': return 'device-pc'; case 'Notebook': return 'device-notebook'; case 'Fax': return 'device-fax'; case 'Router': return 'device-router'; case 'Printer': return 'device-printer'; default: return 'device-default'; } }
+        function getBadgeStyle(type) { switch(type) { case 'Server': return 'badge-red'; case 'PC': return 'badge-blue'; case 'Notebook': return 'badge-cyan'; case 'Fax': return 'badge-yellow'; case 'Router': return 'badge-purple'; case 'Printer': return 'badge-brown'; default: return 'badge-gray'; } }
+        function getDeviceIcon(type) { const icons = { 'PC': 'fa-desktop', 'Notebook': 'fa-laptop', 'Printer': 'fa-print', 'Mobile': 'fa-mobile-screen', 'iPad': 'fa-tablet-screen-button', 'Server': 'fa-server', 'Router': 'fa-wifi', 'Switch': 'fa-network-wired', 'Fax': 'fa-fax' }; return icons[type] || 'fa-microchip'; }
+        function getDeviceIconColor(type) { const colors = { 'Server': '#ef4444', 'PC': '#3b82f6', 'Notebook': '#80cbc4', 'Fax': '#eab308', 'Router': '#ce93d8', 'Printer': '#bcaaa4' }; return colors[type] || '#94a3b8'; }
+        function getDeviceIconBgColor(type) { const colors = { 'Server': '#ffebee', 'PC': '#e3f2fd', 'Notebook': '#e0f2f1', 'Fax': '#fff3e0', 'Router': '#f3e5f5', 'Printer': '#efebe9' }; return colors[type] || '#f5f5f5'; }
+
         function renderFilters() {
             const deptContainer = document.getElementById('deptMenu');
             deptContainer.innerHTML = depts.map(d => `
-                <button onclick="setFilter('dept', '${d}')" class="sidebar-btn flex justify-between items-center px-4 py-3 rounded-xl font-bold transition-all ${currentDept === d ? 'bg-[#1877F2] text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}">
-                    <span>${d}</span>
-                    <span class="text-[10px] px-2 py-0.5 rounded-full ${currentDept === d ? 'bg-white/20' : 'bg-slate-200'}">
-                        ${d === 'ทั้งหมด' ? devices.length : devices.filter(x => x.dept === d).length}
-                    </span>
+                <button onclick="setFilter('dept', '${d}')" class="sidebar-btn flex justify-between items-center px-4 py-3 rounded-xl font-bold transition-all ${currentDept === d ? 'bg-[#1877F2] text-white' : 'bg-white text-slate-600 border border-slate-200'}">
+                    <span>${d}</span><span class="text-[10px] px-2 py-0.5 rounded-full ${currentDept === d ? 'bg-white/20' : 'bg-slate-200'}">${d === 'ทั้งหมด' ? devices.length : devices.filter(x => x.dept === d).length}</span>
                 </button>
             `).join('');
-
             const typeContainer = document.getElementById('typeMenu');
             typeContainer.innerHTML = types.map(t => `
-                <button onclick="setFilter('type', '${t}')" class="sidebar-btn flex justify-between items-center px-4 py-3 rounded-xl font-bold transition-all ${currentTypeFilter === t ? 'bg-[#1877F2] text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}">
-                    <span>${t}</span>
-                    <span class="text-[10px] px-2 py-0.5 rounded-full ${currentTypeFilter === t ? 'bg-white/20' : 'bg-slate-200'}">
-                        ${t === 'ทั้งหมด' ? devices.length : devices.filter(x => x.type === t).length}
-                    </span>
+                <button onclick="setFilter('type', '${t}')" class="sidebar-btn flex justify-between items-center px-4 py-3 rounded-xl font-bold transition-all ${currentTypeFilter === t ? 'bg-[#1877F2] text-white' : 'bg-white text-slate-600 border border-slate-200'}">
+                    <span>${t}</span><span class="text-[10px] px-2 py-0.5 rounded-full ${currentTypeFilter === t ? 'bg-white/20' : 'bg-slate-200'}">${t === 'ทั้งหมด' ? devices.length : devices.filter(x => x.type === t).length}</span>
                 </button>
             `).join('');
         }
 
         function renderTable(dataToRender) {
-            const tbody = document.getElementById('deviceTableBody');
-            const sortedData = sortDevicesByIP([...dataToRender]);
-
-            if (sortedData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="py-24 text-center text-slate-300 font-bold italic tracking-widest uppercase">ไม่พบข้อมูลอุปกรณ์</td></tr>`;
-                return;
-            }
-
+            const tbody = document.getElementById('deviceTableBody'); const sortedData = sortDevicesByIP([...dataToRender]);
+            if (sortedData.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="py-12 text-center text-slate-300 font-bold">ไม่พบข้อมูลอุปกรณ์</td></tr>`; return; }
             tbody.innerHTML = sortedData.map(d => `
-                <tr class="hover:bg-slate-50/50 transition-all ${getDeviceTypeClass(d.type)} bg-white">
-                    <td class="px-5 py-3">
-                        <div class="flex items-center gap-4">
-                            <div class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-100" style="background-color: ${getDeviceIconBgColor(d.type)}">
-                                <i class="fa-solid ${getDeviceIcon(d.type)} text-sm" style="color: ${getDeviceIconColor(d.type)}"></i>
-                            </div>
-                            <span class="font-semibold text-slate-700 tracking-tight text-sm">${d.name}</span>
-                        </div>
-                    </td>
-                    <td class="px-5 py-3 text-sm">
-                        <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase border tracking-widest ${getBadgeStyle(d.type)}">
-                            ${d.type}
-                        </span>
-                    </td>
-                    <td class="px-5 py-3 mono font-bold text-blue-600 text-sm">${d.ip || '-'}</td>
-                    <td class="px-5 py-3">
-                        <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase border tracking-widest bg-slate-100 text-slate-500 border-slate-200">
-                            ${d.dept}
-                        </span>
-                    </td>
-                    <td class="px-5 py-3 text-center">
-                        <div class="flex justify-center gap-2.5">
-                            <button onclick="editDevice('${d.id}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center shadow-sm"><i class="fa-solid fa-pencil text-[10px]"></i></button>
-                            <button onclick="deleteDevice('${d.id}')" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center shadow-sm"><i class="fa-solid fa-trash-can text-[10px]"></i></button>
-                        </div>
-                    </td>
+                <tr class="hover:bg-slate-50/50 ${getDeviceTypeClass(d.type)} bg-white">
+                    <td class="px-5 py-3"><div class="flex items-center gap-4"><div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: ${getDeviceIconBgColor(d.type)}"><i class="fa-solid ${getDeviceIcon(d.type)} text-sm" style="color: ${getDeviceIconColor(d.type)}"></i></div><span class="font-semibold text-slate-700 text-sm">${d.name}</span></div></td>
+                    <td class="px-5 py-3 text-sm"><span class="px-2.5 py-0.5 rounded-lg text-[10px] font-black border uppercase ${getBadgeStyle(d.type)}">${d.type}</span></td>
+                    <td class="px-5 py-3 font-bold text-blue-600 text-sm">${d.ip || '-'}</td>
+                    <td class="px-5 py-3"><span class="px-2.5 py-0.5 rounded-lg text-[10px] font-black bg-slate-100 text-slate-500">${d.dept}</span></td>
+                    <td class="px-5 py-3 text-center"><div class="flex justify-center gap-2"><button onclick="editDevice('${d.id}')" class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><i class="fa-solid fa-pencil text-[10px]"></i></button><button onclick="deleteDevice('${d.id}')" class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center"><i class="fa-solid fa-trash-can text-[10px]"></i></button></div></td>
                 </tr>
             `).join('');
         }
 
         function renderIpMap() {
-            const container = document.getElementById('ipGridContainer');
-            let html = '';
+            const container = document.getElementById('ipGridContainer'); let html = '';
             for(let i = 1; i <= 255; i++) {
-                const ipStr = `192.168.10.${i}`;
-                const device = devices.find(d => d.ip === ipStr);
+                const ipStr = `192.168.10.${i}`; const device = devices.find(d => d.ip === ipStr);
                 if(device) {
-                    html += `
-                        <div onclick="editDevice('${device.id}')" class="p-4 rounded-2xl border-2 ${getBadgeStyle(device.type)} cursor-pointer text-center shadow-md hover:scale-105 transition-all relative bg-white">
-                            <div class="text-lg font-black mb-2 leading-none">.${i}</div>
-                            <i class="fa-solid ${getDeviceIcon(device.type)} text-3xl mb-2" style="color: ${getDeviceIconColor(device.type)}"></i>
-                            <div class="text-xs font-bold uppercase tracking-wide">${device.type}</div>
-                        </div>
-                    `;
+                    html += `<div onclick="editDevice('${device.id}')" class="p-4 rounded-2xl border-2 ${getBadgeStyle(device.type)} cursor-pointer text-center bg-white"><div class="text-base font-black mb-1">.${i}</div><i class="fa-solid ${getDeviceIcon(device.type)} text-2xl mb-1" style="color: ${getDeviceIconColor(device.type)}"></i></div>`;
                 } else {
-                    html += `
-                        <div onclick="addWithIp('${ipStr}')" class="p-4 rounded-2xl bg-gray-50 border-2 border-dashed border-gray-300 text-gray-600 hover:border-green-400 hover:bg-green-50 hover:text-green-600 cursor-pointer text-center group transition-all">
-                            <div class="text-base font-black opacity-80 mb-2 leading-none">.${i}</div>
-                            <i class="fa-solid fa-plus text-2xl mb-2 opacity-60 group-hover:opacity-100"></i>
-                            <div class="text-sm font-bold uppercase tracking-wide">ว่าง</div>
-                        </div>
-                    `;
+                    html += `<div onclick="addWithIp('${ipStr}')" class="p-4 rounded-2xl bg-gray-50 border-2 border-dashed border-gray-300 text-slate-400 text-center cursor-pointer hover:bg-green-50"><div class="text-sm font-bold">.${i}</div></div>`;
                 }
             }
             container.innerHTML = html;
         }
 
-        // --- 5. ตรรกะการคัดกรองและการจัดการสถานะระบบ ---
-        function setFilter(type, value) {
-            if(type === 'dept') currentDept = value;
-            else currentTypeFilter = value;
-            viewMode = 'table';
-            document.getElementById('tableView').classList.remove('hidden');
-            document.getElementById('ipMapView').classList.add('hidden');
-            const btnText = document.getElementById('btnIpMapText');
-            const btnIcon = document.querySelector('#btnIpMap i');
-            btnText.innerText = 'ดูแผนผัง IP';
-            btnIcon.className = 'fa-solid fa-table-cells mr-2 text-slate-400';
-            renderFilters();
-            filterDevices();
-        }
+        function setFilter(type, value) { if(type === 'dept') currentDept = value; else currentTypeFilter = value; viewMode = 'table'; document.getElementById('tableView').classList.remove('hidden'); document.getElementById('ipMapView').classList.add('hidden'); renderFilters(); filterDevices(); }
+        function toggleIpView() { if (viewMode === 'ipmap') { viewMode = 'table'; document.getElementById('tableView').classList.remove('hidden'); document.getElementById('ipMapView').classList.add('hidden'); } else { viewMode = 'ipmap'; document.getElementById('tableView').classList.add('hidden'); document.getElementById('ipMapView').classList.remove('hidden'); renderIpMap(); } }
+        function filterDevices() { const q = document.getElementById('searchInput').value.toLowerCase(); const filtered = devices.filter(d => { return (currentDept === 'ทั้งหมด' || d.dept === currentDept) && (currentTypeFilter === 'ทั้งหมด' || d.type === currentTypeFilter) && (d.name.toLowerCase().includes(q) || (d.ip && d.ip.includes(q))); }); renderTable(filtered); }
+        function updateStats() { document.getElementById('usedCount').innerText = devices.filter(d => d.ip && d.ip.startsWith('192.168.10.')).length; }
+        function openModal(id = null) { const m = document.getElementById('deviceModal'); document.getElementById('deviceForm').reset(); document.getElementById('deviceId').value = ''; if(id) { const d = devices.find(x => x.id === id); document.getElementById('deviceId').value = d.id; document.getElementById('deviceName').value = d.name; document.getElementById('deviceType').value = d.type; document.getElementById('deviceIp').value = d.ip || ''; document.getElementById('deviceDept').value = d.dept; } m.classList.remove('hidden'); }
+        function closeModal() { document.getElementById('deviceModal').classList.add('hidden'); }
 
-        // สลับมุมมองระหว่างตารางกับแผนผัง IP
-        function toggleIpView() {
-            const btnText = document.getElementById('btnIpMapText');
-            const btnIcon = document.querySelector('#btnIpMap i');
-            if (viewMode === 'ipmap') {
-                viewMode = 'table';
-                document.getElementById('tableView').classList.remove('hidden');
-                document.getElementById('ipMapView').classList.add('hidden');
-                btnText.innerText = 'ดูแผนผัง IP';
-                btnIcon.className = 'fa-solid fa-table-cells mr-2 text-slate-400';
-            } else {
-                viewMode = 'ipmap';
-                document.getElementById('tableView').classList.add('hidden');
-                document.getElementById('ipMapView').classList.remove('hidden');
-                renderIpMap();
-                btnText.innerText = 'ดูตาราง';
-                btnIcon.className = 'fa-solid fa-table mr-2 text-slate-400';
-            }
-        }
-
-        function filterDevices() {
-            const q = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = devices.filter(d => {
-                const matchDept = (currentDept === 'ทั้งหมด' || d.dept === currentDept);
-                const matchType = (currentTypeFilter === 'ทั้งหมด' || d.type === currentTypeFilter);
-                const matchQuery = (d.name.toLowerCase().includes(q) || (d.ip && d.ip.toLowerCase().includes(q)));
-                return matchDept && matchType && matchQuery;
-            });
-            renderTable(filtered);
-        }
-
-        function updateStats() {
-            const used = devices.filter(d => d.ip && d.ip.startsWith('192.168.10.')).length;
-            document.getElementById('usedCount').innerText = used;
-            document.getElementById('unusedCount').innerText = 255 - used;
-        }
-
-        // --- 6. การจัดการหน้าต่าง Modal สำหรับ บันทึก/แก้ไขข้อมูล ---
-        function openModal(id = null) {
-            const m = document.getElementById('deviceModal');
-            document.getElementById('deviceForm').reset();
-            document.getElementById('deviceId').value = '';
-            document.getElementById('modalTitle').innerText = 'ลงทะเบียนอุปกรณ์ใหม่';
-            if(id) {
-                const d = devices.find(x => x.id === id);
-                document.getElementById('deviceId').value = d.id;
-                document.getElementById('deviceName').value = d.name;
-                document.getElementById('deviceType').value = d.type;
-                document.getElementById('deviceIp').value = d.ip || '';
-                document.getElementById('deviceDept').value = d.dept;
-                document.getElementById('modalTitle').innerText = 'แก้ไขรายละเอียดอุปกรณ์';
-            }
-            m.classList.remove('hidden');
-            document.body.classList.add('modal-active');
-        }
-
-        function closeModal() { 
-            document.getElementById('deviceModal').classList.add('hidden'); 
-            document.body.classList.remove('modal-active'); 
-        }
-
-        // บันทึกหรืออัปเดตข้อมูลไปยัง Realtime Database
         async function handleSave(event) {
-            event.preventDefault();
-            const id = document.getElementById('deviceId').value;
-            const data = {
-                name: document.getElementById('deviceName').value,
-                type: document.getElementById('deviceType').value,
-                ip: document.getElementById('deviceIp').value,
-                dept: document.getElementById('deviceDept').value
-            };
-            try {
-                if(id) { 
-                    // อัปเดตข้อมูลเดิมตามคีย์ ID ของแถวนั้นๆ
-                    await firebase.database().ref('devices/' + id).set(data);
-                } else { 
-                    // สร้างข้อมูลชิ้นใหม่ลงฐานข้อมูล
-                    await dbRef.push(data);
-                }
-                closeModal();
-            } catch (error) {
-                alert("ไม่สามารถบันทึกข้อมูลได้เนื่องจากสิทธิ์ระบบล็อกอิน: " + error.message);
-            }
+            event.preventDefault(); const id = document.getElementById('deviceId').value;
+            const data = { name: document.getElementById('deviceName').value, type: document.getElementById('deviceType').value, ip: document.getElementById('deviceIp').value, dept: document.getElementById('deviceDept').value };
+            if(id) { await firebase.database().ref('devices/' + id).set(data); } else { await dbRefDevices.push(data); } closeModal();
         }
-
         function addWithIp(ip) { openModal(); document.getElementById('deviceIp').value = ip; }
         function editDevice(id) { openModal(id); }
-        
-        // ลบข้อมูลอุปกรณ์ออกจากระบบ Realtime Database
-        async function deleteDevice(id) { 
-            if(confirm('⚠️ ยืนยันการลบข้อมูลอุปกรณ์นี้ออกจากระบบ?')) { 
-                await firebase.database().ref('devices/' + id).remove();
-            } 
-        }
+        async function deleteDevice(id) { if(confirm('⚠️ ลบอุปกรณ์?')) await firebase.database().ref('devices/' + id).remove(); }
 
-        // --- 7. การดักจับและโหลดข้อมูลสตรีมเรียลไทม์จากระบบเครือข่ายใหม่ ---
+        // --- 8. SYNC INITIALIZATION ---
         window.onload = () => {
-            const tbody = document.getElementById('deviceTableBody');
-            tbody.innerHTML = `<tr><td colspan="5" class="py-24 text-center text-slate-400 font-medium animate-pulse">กำลังโหลดข้อมูลเครือข่าย...</td></tr>`;
+            dbRefDevices.on('value', snapshot => {
+                const data = snapshot.val(); devices = [];
+                if (data) Object.keys(data).forEach(key => { devices.push({ id: key, ...data[key] }); });
+                renderFilters(); updateStats(); if(viewMode === 'ipmap') renderIpMap(); else filterDevices();
+            });
 
-            // ตรวจจับความเปลี่ยนแปลงบนคลังคอลเลกชัน 'devices' ตลอดเวลา
-            dbRef.on('value', snapshot => {
-                const data = snapshot.val();
-                devices = [];
-                if (data) {
-                    // แปลงรูปแบบ Object ดั้งเดิมของ Realtime DB ให้มาเป็นแบบชุด Array เพื่อนำมาวนลูปเรนเดอร์หน้าจอ
-                    Object.keys(data).forEach(key => {
-                        devices.push({
-                            id: key,
-                            ...data[key]
-                        });
-                    });
-                }
-                
-                renderFilters();
-                updateStats();
-                
-                if(viewMode === 'ipmap') {
-                    renderIpMap();
-                } else {
-                    filterDevices();
-                }
-            }, error => {
-                console.error("Firebase Realtime DB Connection Error:", error);
-                tbody.innerHTML = `<tr><td colspan="5" class="py-24 text-center text-rose-500 font-bold">❌ เกิดข้อผิดพลาดในการดึงฐานข้อมูล กรุณาเช็คกฎสิทธิ์ความปลอดภัย (Rules)</td></tr>`;
+            dbRefMeetings.on('value', snapshot => {
+                const data = snapshot.val(); meetings = [];
+                if(data) Object.keys(data).forEach(key => { meetings.push({ id: key, ...data[key] }); });
+                calculateMeetingStats(); filterMeetings();
             });
         };
     </script>

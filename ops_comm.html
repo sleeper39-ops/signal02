@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>การปฏิบัติงาน ฝสส.ฯ | Communication Dept</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; }
+        .bg-navy { background-color: #2c4a7c; } /* Match image blue */
+        .text-navy { color: #2c4a7c; }
+        .org-line { width: 2px; background-color: #ffffff; }
+        .org-line-h { height: 2px; background-color: #ffffff; }
+        .card-shadow { box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1); }
+        .section-header { background: #2c4a7c; color: white; }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+    <!-- Navigation -->
+    <nav class="bg-[#1e293b] text-white shadow-xl sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="bg-blue-500/20 p-2 rounded-xl border border-blue-500/30 hover:bg-blue-500/40 transition-all">
+                    <i class="ph-bold ph-arrow-left text-xl text-blue-400"></i>
+                </a>
+                <h1 class="font-bold text-lg">การปฏิบัติงาน ฝสส.ฯ บก.ควบคุม 2</h1>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="seedInitialData()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2 rounded-xl flex items-center gap-2 text-sm transition-all shadow-lg shadow-amber-500/20">
+                    <i class="ph-bold ph-magic-wand"></i> โหลดข้อมูลเริ่มต้น
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="w-full flex-grow">
+        
+        <!-- New Hero Header Section -->
+        <section class="bg-white py-20 px-6 relative overflow-hidden border-b border-slate-100">
+            <!-- Background Decoration (Shapes like in image) -->
+            <div class="absolute top-0 left-0 w-1/3 h-full bg-navy rounded-br-[10rem] opacity-100 -translate-x-10 -translate-y-10 rotate-12"></div>
+            <div class="absolute bottom-0 left-10 w-48 h-48 bg-navy rounded-3xl opacity-20 rotate-45"></div>
+            
+            <div class="max-w-6xl mx-auto relative z-10 flex flex-col items-center text-center">
+                <!-- Logo -->
+                <div class="group/logo relative w-48 h-48 mb-10 rounded-full bg-white shadow-2xl p-1 border-4 border-blue-600 flex items-center justify-center overflow-hidden">
+                    <img id="headerLogo" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_uN8B7wW5mN3z6_PjH3f6N_6_z_z_z_z_z_z&s" alt="Logo" class="w-full h-full object-contain" onerror="this.src='https://placehold.co/200x200?text=LOGO'">
+                    <button onclick="document.getElementById('logoInput').click()" class="absolute inset-0 bg-black/40 text-white opacity-0 group-hover/logo:opacity-100 transition-opacity flex flex-col items-center justify-center text-xs font-bold gap-2">
+                        <i class="ph-bold ph-camera text-2xl"></i>
+                        เปลี่ยนโลโก้
+                    </button>
+                    <input type="file" id="logoInput" class="hidden" accept="image/*" onchange="uploadLogo(this)">
+                </div>
+                
+                <!-- Titles -->
+                <h1 class="text-5xl md:text-6xl font-black text-slate-800 mb-6 tracking-tight">
+                    การปฏิบัติงาน ฝ่ายสื่อสาร
+                </h1>
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-600">
+                    กองบังคับการ ควบคุมที่ 2
+                </h2>
+            </div>
+        </section>
+
+        <!-- 1. โครงสร้างการจัดกำลัง (Organization Structure) -->
+        <section id="orgStructureSection" class="bg-navy text-white py-16 px-6 relative overflow-hidden">
+            <div class="absolute top-10 left-10 opacity-20">
+                <i class="ph ph-shield-chevron text-[12rem]"></i>
+            </div>
+            
+            <div class="max-w-6xl mx-auto relative z-10">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl font-black mb-4 tracking-tight">โครงสร้างการจัดกำลัง</h2>
+                    <div class="flex items-center justify-center gap-3 group/subtitle">
+                        <p id="orgSubtitle" class="text-xl font-bold opacity-90">ฝสส.บก.ควบคุม 2</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-col items-center">
+                    <!-- Connector Line from Title -->
+                    <div class="org-line h-12 mb-0"></div>
+                    
+                    <!-- Horizontal Line -->
+                    <div class="org-line-h w-[50%]"></div>
+
+                    <div class="flex justify-between w-full max-w-4xl mt-0">
+                        <!-- Member 1 -->
+                        <div class="flex flex-col items-center w-1/2">
+                            <div class="org-line h-12"></div>
+                            <div id="member-0" class="group relative bg-white p-2 rounded-[2rem] shadow-2xl transition-all hover:scale-105">
+                                <div class="w-48 h-60 rounded-[1.8rem] overflow-hidden bg-slate-100 relative">
+                                    <img src="" alt="Photo" class="w-full h-full object-cover hidden">
+                                    <div class="placeholder-icon w-full h-full flex items-center justify-center text-slate-300 bg-slate-50">
+                                        <i class="ph ph-user text-6xl"></i>
+                                    </div>
+                                    <button onclick="document.getElementById('memberInput-0').click()" class="absolute inset-0 bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-xs font-bold gap-2">
+                                        <i class="ph-bold ph-camera text-2xl"></i>
+                                        เปลี่ยนรูป
+                                    </button>
+                                    <input type="file" id="memberInput-0" class="hidden" accept="image/*" onchange="uploadMemberPhoto(this, 0)">
+                                </div>
+                            </div>
+                            <div class="text-center mt-6 group/text relative">
+                                <h3 id="name-0" class="text-xl font-black mb-1">ส.อ.สรรเสริญ แก้วพรม</h3>
+                                <p id="pos-0" class="text-blue-200 font-bold text-sm">จนท.ศสส.บก.ควบคุม 2</p>
+                                <button onclick="openEditMemberModal(0)" class="absolute -right-8 top-1 opacity-0 group-hover/text:opacity-100 transition-opacity text-blue-300 hover:text-white">
+                                    <i class="ph-bold ph-pencil-simple"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Member 2 -->
+                        <div class="flex flex-col items-center w-1/2">
+                            <div class="org-line h-12"></div>
+                            <div id="member-1" class="group relative bg-white p-2 rounded-[2rem] shadow-2xl transition-all hover:scale-105">
+                                <div class="w-48 h-60 rounded-[1.8rem] overflow-hidden bg-slate-100 relative">
+                                    <img src="" alt="Photo" class="w-full h-full object-cover hidden">
+                                    <div class="placeholder-icon w-full h-full flex items-center justify-center text-slate-300 bg-slate-50">
+                                        <i class="ph ph-user text-6xl"></i>
+                                    </div>
+                                    <button onclick="document.getElementById('memberInput-1').click()" class="absolute inset-0 bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-xs font-bold gap-2">
+                                        <i class="ph-bold ph-camera text-2xl"></i>
+                                        เปลี่ยนรูป
+                                    </button>
+                                    <input type="file" id="memberInput-1" class="hidden" accept="image/*" onchange="uploadMemberPhoto(this, 1)">
+                                </div>
+                            </div>
+                            <div class="text-center mt-6 group/text relative">
+                                <h3 id="name-1" class="text-xl font-black mb-1">ส.อ.ชาติชาย ตรีแสน</h3>
+                                <p id="pos-1" class="text-blue-200 font-bold text-sm">จนท.ศสส.บก.ควบคุม 2</p>
+                                <button onclick="openEditMemberModal(1)" class="absolute -right-8 top-1 opacity-0 group-hover/text:opacity-100 transition-opacity text-blue-300 hover:text-white">
+                                    <i class="ph-bold ph-pencil-simple"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. ภารกิจและหน้าที่รับผิดชอบ (Mission) -->
+        <section class="py-12 px-6">
+            <div class="max-w-5xl mx-auto">
+                <div class="section-header rounded-[2.5rem] p-8 shadow-xl mb-8 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-6 opacity-10">
+                        <i class="ph ph-target text-7xl"></i>
+                    </div>
+                    <div class="relative z-10 text-center">
+                        <h2 class="text-3xl font-black mb-4">ภารกิจและหน้าที่รับผิดชอบ</h2>
+                        <div class="bg-white/10 backdrop-blur-sm p-6 rounded-2xl border border-white/20 max-w-3xl mx-auto relative group/mission">
+                            <p id="missionText" class="text-lg font-bold leading-relaxed">
+                                <!-- Dynamic Mission -->
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="dutiesList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Dynamic Duties -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. การแบ่งมอบหน้าที่ปฏิบัติงาน (Task Assignment) -->
+        <section class="py-16 px-6 bg-slate-50 border-y border-slate-200">
+            <div class="max-w-6xl mx-auto">
+                <div class="flex items-center justify-between mb-10">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
+                            <i class="ph-bold ph-list-checks text-2xl"></i>
+                        </div>
+                        <h2 class="text-3xl font-black text-slate-800">การแบ่งมอบหน้าที่ปฏิบัติงาน</h2>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-800 text-white">
+                                <th class="px-8 py-6 font-black uppercase text-sm w-48 border-r border-slate-700">ประเภทงาน</th>
+                                <th class="px-8 py-6 font-black uppercase text-sm">รายละเอียดการปฏิบัติ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="taskAssignmentBody" class="divide-y divide-slate-100">
+                            <!-- Dynamic Task Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. แผนการปฏิบัติงานประจำวัน (Daily Plan) -->
+        <section class="py-16 px-6">
+            <div class="max-w-6xl mx-auto">
+                <div class="flex items-center gap-4 mb-10">
+                    <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                        <i class="ph-bold ph-calendar-blank text-2xl"></i>
+                    </div>
+                    <h2 class="text-3xl font-black text-slate-800">แผนการปฏิบัติงานประจำวัน</h2>
+                </div>
+
+                <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-800 text-white">
+                                <th class="px-8 py-6 font-black uppercase text-sm w-48 border-r border-slate-700">วัน</th>
+                                <th class="px-8 py-6 font-black uppercase text-sm">รายละเอียดการปฏิบัติ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dailyPlanBody" class="divide-y divide-slate-100">
+                            <!-- Dynamic Daily Plan -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. การรับ-ส่งข้อมูล (Data Transmission) -->
+        <section class="py-16 px-6 bg-slate-50 border-y border-slate-200">
+            <div class="max-w-6xl mx-auto">
+                <div class="flex items-center gap-4 mb-10">
+                    <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+                        <i class="ph-bold ph-file-arrow-up text-2xl"></i>
+                    </div>
+                    <h2 class="text-3xl font-black text-slate-800">การรับ-ส่งข้อมูล</h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-200 group relative">
+                        <h3 class="text-xl font-black mb-8 flex items-center gap-4 text-slate-500">
+                            การรับ-ส่งข้อมูล ระหว่าง บก.ควบคุม 2 กับ ชป.
+                        </h3>
+                        <ul id="transmission1" class="space-y-6">
+                            <!-- Dynamic List -->
+                        </ul>
+                    </div>
+
+                    <div class="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-200 group relative">
+                        <h3 class="text-xl font-black mb-8 flex items-center gap-4 text-slate-500">
+                            การรับ-ส่งข้อมูล ระหว่าง บก.ควบคุม 2 กับ นสศ. และ กกล.ฯ
+                        </h3>
+                        <ul id="transmission2" class="space-y-6">
+                            <!-- Dynamic List -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 6. การติดต่อสื่อสาร (Communication Contact) -->
+        <section class="py-16 px-6">
+            <div class="max-w-6xl mx-auto">
+                <div class="flex items-center gap-4 mb-10">
+                    <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+                        <i class="ph-bold ph-phone-call text-2xl"></i>
+                    </div>
+                    <h2 class="text-3xl font-black text-slate-800">การติดต่อสื่อสาร</h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-200 group relative">
+                        <h3 class="text-xl font-black mb-8 flex items-center gap-4 text-slate-500">
+                            ติดต่อ บก.ควบคุม 2 กับ ชป.
+                        </h3>
+                        <ul id="contact1" class="space-y-6">
+                            <!-- Dynamic List -->
+                        </ul>
+                    </div>
+
+                    <div class="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-200 group relative">
+                        <h3 class="text-xl font-black mb-8 flex items-center gap-4 text-slate-500">
+                            ติดต่อ บก.ควบคุม 2 กับ นสศ. และ กกล.ฯ
+                        </h3>
+                        <ul id="contact2" class="space-y-6">
+                            <!-- Dynamic List -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-8">
+        <div class="max-w-6xl mx-auto px-6 text-center">
+            <p class="text-slate-400 text-xs font-medium">
+                &copy; 2026 ฝ่ายสื่อสาร บก.ควบคุม 2. ข้อมูลเพื่อการปฏิบัติงานภายใน
+            </p>
+        </div>
+    </footer>
+
+    <!-- Edit Member Modal -->
+    <div id="editMemberModal" class="fixed inset-0 z-[100] hidden bg-slate-900/60 backdrop-blur-sm flex justify-center items-center p-4">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
+            <div class="px-8 py-5 bg-white border-b border-slate-100 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-800">แก้ไขข้อมูลกำลังพล</h3>
+                <button onclick="closeEditMemberModal()" class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-400">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+            </div>
+            <form id="editMemberForm" onsubmit="handleSaveMember(event)" class="p-8 space-y-4">
+                <input type="hidden" id="editMemberIndex">
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 pl-1">ยศ - ชื่อ - สกุล</label>
+                    <input type="text" id="editMemberName" required class="w-full px-5 py-3 rounded-xl border border-slate-200 focus:border-blue-500 outline-none bg-slate-50 font-semibold">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 pl-1">ตำแหน่ง</label>
+                    <input type="text" id="editMemberPos" required class="w-full px-5 py-3 rounded-xl border border-slate-200 focus:border-blue-500 outline-none bg-slate-50 font-semibold">
+                </div>
+                <div class="pt-4 flex gap-3">
+                    <button type="button" onclick="closeEditMemberModal()" class="flex-1 py-3 rounded-xl font-bold bg-slate-100 text-slate-500 hover:bg-slate-200">ยกเลิก</button>
+                    <button type="submit" class="flex-1 py-3 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-500/20">บันทึกข้อมูล</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDnbOpvNTZ1bNFzReLXMq_wW4kp5iB5oiE",
+            authDomain: "signal02-f4d85.firebaseapp.com",
+            databaseURL: "https://signal02-f4d85-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "signal02-f4d85",
+            storageBucket: "signal02-f4d85.firebasestorage.app",
+            messagingSenderId: "653019128612",
+            appId: "1:653019128612:web:41d283659202787c4689b1",
+            measurementId: "G-3G3TQ0VLXM"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let orgData = [];
+
+        function uploadLogo(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64 = e.target.result;
+                    db.ref('ops_comm/header_logo').set(base64)
+                        .then(() => alert('อัปเดตโลโก้สำเร็จ'))
+                        .catch(err => alert('เกิดข้อผิดพลาด: ' + err.message));
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function uploadMemberPhoto(input, index) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64 = e.target.result;
+                    db.ref(`ops_comm/org_structure/${index}/img`).set(base64)
+                        .then(() => alert('อัปโหลดรูปสำเร็จ'))
+                        .catch(err => alert('เกิดข้อผิดพลาด: ' + err.message));
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function openEditMemberModal(index) {
+            const member = orgData[index];
+            document.getElementById('editMemberIndex').value = index;
+            document.getElementById('editMemberName').value = member.name;
+            document.getElementById('editMemberPos').value = member.pos;
+            document.getElementById('editMemberModal').classList.remove('hidden');
+        }
+
+        function closeEditMemberModal() {
+            document.getElementById('editMemberModal').classList.add('hidden');
+        }
+
+        function handleSaveMember(e) {
+            e.preventDefault();
+            const index = document.getElementById('editMemberIndex').value;
+            const name = document.getElementById('editMemberName').value;
+            const pos = document.getElementById('editMemberPos').value;
+
+            db.ref(`ops_comm/org_structure/${index}`).update({
+                name: name,
+                pos: pos
+            }).then(() => {
+                alert('บันทึกข้อมูลสำเร็จ');
+                closeEditMemberModal();
+            }).catch(err => alert('เกิดข้อผิดพลาด: ' + err.message));
+        }
+
+        function renderOrg() {
+            orgData.forEach((member, index) => {
+                const nameEl = document.getElementById(`name-${index}`);
+                const posEl = document.getElementById(`pos-${index}`);
+                const memberCard = document.getElementById(`member-${index}`);
+                
+                if (nameEl) nameEl.innerText = member.name;
+                if (posEl) posEl.innerText = member.pos;
+                
+                if (memberCard) {
+                    const imgTag = memberCard.querySelector('img');
+                    const placeholder = memberCard.querySelector('.placeholder-icon');
+                    
+                    if (member.img) {
+                        imgTag.src = member.img;
+                        imgTag.classList.remove('hidden');
+                        placeholder.classList.add('hidden');
+                    } else {
+                        imgTag.classList.add('hidden');
+                        placeholder.classList.remove('hidden');
+                    }
+                }
+            });
+        }
+
+        function renderDuties(duties) {
+            const container = document.getElementById('dutiesList');
+            if (!container) return;
+            container.innerHTML = duties.map(duty => `
+                <div class="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm flex items-start gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+                        <i class="ph-bold ph-check-circle text-2xl"></i>
+                    </div>
+                    <p class="text-slate-600 font-bold leading-relaxed">${duty}</p>
+                </div>
+            `).join('');
+        }
+
+        function renderTasks(tasks) {
+            const body = document.getElementById('taskAssignmentBody');
+            if (!body) return;
+            body.innerHTML = tasks.map(task => `
+                <tr>
+                    <td class="px-8 py-6 font-bold text-slate-800 border-r border-slate-100 bg-slate-50/50">${task.type}</td>
+                    <td class="px-8 py-6 text-slate-600 font-medium leading-relaxed">${task.detail.replace(/\n/g, '<br>')}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderDailyPlan(plan) {
+            const body = document.getElementById('dailyPlanBody');
+            if (!body) return;
+            body.innerHTML = plan.map(item => `
+                <tr>
+                    <td class="px-8 py-6 font-bold text-slate-800 border-r border-slate-100 bg-slate-50/50">${item.day}</td>
+                    <td class="px-8 py-6 text-slate-600 font-medium leading-relaxed">${item.detail.replace(/\n/g, '<br>')}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderTransmission(trans) {
+            const t1 = document.getElementById('transmission1');
+            const t2 = document.getElementById('transmission2');
+            if (t1) t1.innerHTML = (trans.t1 || []).map(item => `
+                <li class="flex items-start gap-4">
+                    <div class="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></div>
+                    <span class="text-slate-600 font-bold">${item}</span>
+                </li>
+            `).join('');
+            if (t2) t2.innerHTML = (trans.t2 || []).map(item => `
+                <li class="flex items-start gap-4">
+                    <div class="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></div>
+                    <span class="text-slate-600 font-bold">${item}</span>
+                </li>
+            `).join('');
+        }
+
+        function renderContacts(contacts) {
+            const c1 = document.getElementById('contact1');
+            const c2 = document.getElementById('contact2');
+            if (c1) c1.innerHTML = (contacts.c1 || []).map(item => `
+                <li class="flex items-start gap-4">
+                    <div class="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></div>
+                    <span class="text-slate-600 font-bold">${item}</span>
+                </li>
+            `).join('');
+            if (c2) c2.innerHTML = (contacts.c2 || []).map(item => `
+                <li class="flex items-start gap-4">
+                    <div class="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></div>
+                    <span class="text-slate-600 font-bold">${item}</span>
+                </li>
+            `).join('');
+        }
+
+        function seedInitialData() {
+            if (!confirm('ต้องการโหลดข้อมูลเริ่มต้นใช่หรือไม่? (ข้อมูลเดิมจะถูกเขียนทับ)')) return;
+            
+            const initialData = {
+                header_logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_uN8B7wW5mN3z6_PjH3f6N_6_z_z_z_z_z_z&s",
+                org_subtitle: "ฝสส.บก.ควบคุม 2",
+                org_structure: [
+                    { name: "ส.อ.สรรเสริญ แก้วพรม", pos: "จนท.ศสส.บก.ควบคุม 2", img: "" },
+                    { name: "ส.อ.ชาติชาย ตรีแสน", pos: "จนท.ศสส.บก.ควบคุม 2", img: "" }
+                ],
+                mission: "ภารกิจปฏิบัติการทางการสื่อสารในการดำเนินการติดต่อสื่อสาร ระหว่าง บก.ควบคุม 2 กับ นขต., บก.ควบคุม 2 กับ นสศ. และ บก.ควบคุม 2 กับ กกล.ฯ",
+                duties: [
+                    "รับ-ส่งข้อมูล ข่าวสาร ชป., นสศ. และ กกล.ฯ",
+                    "เสนอ และแจกจ่าย เอกสาร",
+                    "รับ-ส่ง เอกสารไปรษณีย์",
+                    "จัดทำบัญชีรายชื่อหมายเลขโทรศัพท์กำลังพล / ข่ายการติดต่อสื่อสาร",
+                    "ดำรงการติดต่อสื่อสารกับหน่วยเหนือ",
+                    "จัดเตรียมระบบห้องประชุม",
+                    "ดูแล ระบบอินเทอร์เน็ต ระบบเครือข่าย ระบบฐานข้อมูล และกล้องวงจรปิด",
+                    "ดูแลรักษา ซ่อมบำรุง คอมพิวเตอร์",
+                    "ดูแลรักษาจัดการระบบ ซอฟต์แวร์ และฮาร์ดแวร์",
+                    "สนับสนุนงานอื่นๆ ตามคำสั่ง ผบช."
+                ],
+                tasks: [
+                    { type: "ปจว.", detail: "1) รับ-ส่งข้อมูล ข่าวสาร, เอกสารภายในหน่วย และภายนอกหน่วย\n2) เสนอ และแจกจ่ายเอกสาร" },
+                    { type: "ปจส.", detail: "1) จัดเตรียมห้องประชุม กับ นสศ. และภายใน บก.ควบคุม 2\n2) รับ-ส่ง เอกสารไปรษณีย์" },
+                    { type: "ปจด.", detail: "1) รับ-ส่งข้อมูล ข่าวสาร เอกสาร ปจด. จากทุก ชปม.\n2) ขึ้นข่ายการติดต่อสื่อสารกับ นสศ. วงรอบ 1 เดือน" },
+                    { type: "3 เดือน", detail: "ทำความสะอาดคอมพิวเตอร์ภายในสำนักงาน" },
+                    { type: "6 เดือน", detail: "จัดทำบัญชีรายชื่อหมายเลขโทรศัพท์/ข่ายการติดต่อต่างๆ" },
+                    { type: "1 ปี", detail: "เบิกแบตเตอรี่วิทยุสายสนามผ่านทางระบบ E-Army" },
+                    { type: "อื่นๆ", detail: "1) ซ่อมบำรุง คอมพิวเตอร์\n2) ดูแล ระบบเครือข่ายอินเทอร์เน็ต\n3) สนับสนุนงานอื่นๆ ตามคำสั่ง ผบช." }
+                ],
+                daily_plan: [
+                    { day: "วันจันทร์", detail: "0830 รับ – ส่งข้อมูล ข่าวสารประจำวัน" },
+                    { day: "วันอังคาร", detail: "0830 รับ – ส่งข้อมูล ข่าวสารประจำวัน" },
+                    { day: "วันพุธ", detail: "0830 รับ – ส่งข้อมูล ข่าวสารประจำวัน\n0900 ขึ้นระบบประชุมติดตามสถานการณ์ข่าว ผ่าน Google Meet ร่วมกับ ชป." },
+                    { day: "วันพฤหัสบดี", detail: "0830 รับ – ส่งข้อมูล ข่าวสารประจำวัน\n1000 ขึ้นระบบประชุม VTC ประจำสัปดาห์กับ นสศ." },
+                    { day: "วันศุกร์", detail: "0830 รับ – ส่งข้อมูล ข่าวสารประจำวัน\n0900 ขึ้นระบบประชุม ผ่าน Google Meet ร่วมกับ ชป." },
+                    { day: "วันเสาร์", detail: "0930 รับ – ส่งข้อมูล ข่าวสาร ประจำวัน" },
+                    { day: "วันอาทิตย์", detail: "0930 รับ – ส่งข้อมูล ข่าวสาร ประจำวัน" }
+                ],
+                transmission: {
+                    t1: ["รับ-ส่งผ่านระบบ NAS", "รับ-ส่งผ่านระบบไลน์กลุ่ม หรือไลน์ส่วนตัว (กรณี เร่งด่วน)", "การรับ-ส่งไปรษณีย์"],
+                    t2: ["รับ-ส่งผ่านระบบ WorkD โดยใช้ sfob_2@rta.mi.th", "รับ-ส่งผ่านระบบไลน์กลุ่ม หรือไลน์ส่วนตัว (กรณี เร่งด่วน)", "การรับ-ส่งแฟกซ์", "การรับ-ส่งไปรษณีย์"]
+                },
+                contacts: {
+                    c1: ["โทรศัพท์เคลื่อนที่", "โทรศัพท์ประจำสำนักงาน (042-219604)", "ไลน์ส่วนตัว", "ไลน์กลุ่มประสานงาน"],
+                    c2: ["โทรศัพท์เคลื่อนที่", "โทรศัพท์ประจำสำนักงาน (042-219604)", "ไลน์ส่วนตัว", "ไลน์กลุ่มประสานงาน", "การติดต่อทางวิทยุ (PRC-2200)"]
+                }
+            };
+
+            db.ref('ops_comm').set(initialData)
+                .then(() => alert('โหลดข้อมูลสำเร็จ'))
+                .catch(err => alert('เกิดข้อผิดพลาด: ' + err.message));
+        }
+
+        function loadData() {
+            db.ref('ops_comm/header_logo').on('value', snapshot => {
+                const logoUrl = snapshot.val();
+                if (logoUrl) document.getElementById('headerLogo').src = logoUrl;
+            });
+
+            db.ref('ops_comm/org_subtitle').on('value', snapshot => {
+                const subtitle = snapshot.val() || "ฝสส.บก.ควบคุม 2";
+                document.getElementById('orgSubtitle').innerText = subtitle;
+            });
+
+            db.ref('ops_comm/org_structure').on('value', snapshot => {
+                orgData = snapshot.val() || [
+                    { name: "ส.อ.สรรเสริญ แก้วพรม", pos: "จนท.ศสส.บก.ควบคุม 2", img: "" },
+                    { name: "ส.อ.ชาติชาย ตรีแสน", pos: "จนท.ศสส.บก.ควบคุม 2", img: "" }
+                ];
+                renderOrg();
+            });
+
+            db.ref('ops_comm/mission').on('value', snapshot => {
+                const mission = snapshot.val() || "ภารกิจปฏิบัติการทางการสื่อสารในการดำเนินการติดต่อสื่อสาร ระหว่าง บก.ควบคุม 2 กับ นขต., บก.ควบคุม 2 กับ นสศ. และ บก.ควบคุม 2 กับ กกล.ฯ";
+                document.getElementById('missionText').innerText = `"${mission}"`;
+            });
+
+            db.ref('ops_comm/duties').on('value', snapshot => {
+                const duties = snapshot.val() || [];
+                renderDuties(duties);
+            });
+
+            db.ref('ops_comm/tasks').on('value', snapshot => {
+                const tasks = snapshot.val() || [];
+                renderTasks(tasks);
+            });
+
+            db.ref('ops_comm/daily_plan').on('value', snapshot => {
+                const plan = snapshot.val() || [];
+                renderDailyPlan(plan);
+            });
+
+            db.ref('ops_comm/transmission').on('value', snapshot => {
+                const trans = snapshot.val() || { t1: [], t2: [] };
+                renderTransmission(trans);
+            });
+
+            db.ref('ops_comm/contacts').on('value', snapshot => {
+                const contacts = snapshot.val() || { c1: [], c2: [] };
+                renderContacts(contacts);
+            });
+        }
+
+        // Run
+        loadData();
+    </script>
+</body>
+</html>

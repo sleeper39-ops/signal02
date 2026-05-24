@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บัญชีรายชื่อกำลังพล บก.ควบคุม 2 | Communication Dept</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; }
+        .category-header { background: #f1f5f9; border-left: 5px solid #3b82f6; }
+        .sticky-header { position: sticky; top: 64px; z-index: 40; }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+    <nav class="bg-[#1e293b] text-white shadow-xl sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="bg-blue-500/20 p-2 rounded-xl border border-blue-500/30 hover:bg-blue-500/40 transition-all">
+                    <i class="ph-bold ph-arrow-left text-xl text-blue-400"></i>
+                </a>
+                <div>
+                    <div class="flex items-center gap-2 group">
+                        <h1 id="pageTitleDisplay" class="font-bold text-lg leading-none text-white">บัญชีรายชื่อกำลังพลปฏิบัติหน้าที่ บก.ควบคุม 2</h1>
+                        <button onclick="editPageTitle()" class="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-white">
+                            <i class="ph ph-pencil-simple"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="seedInitialData()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2 rounded-xl flex items-center gap-2 text-sm transition-all shadow-lg shadow-amber-500/20">
+                    <i class="ph-bold ph-magic-wand"></i> โหลดข้อมูลตามรูปภาพ
+                </button>
+                <button onclick="openCategoryModal()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-2 rounded-xl flex items-center gap-2 text-sm transition-all border border-slate-600">
+                    <i class="ph-bold ph-folder-plus"></i> จัดการหมวดหมู่
+                </button>
+                <button onclick="openPersonnelModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl flex items-center gap-2 text-sm transition-all shadow-lg shadow-blue-500/20">
+                    <i class="ph-bold ph-user-plus"></i> เพิ่มรายชื่อ
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-6 py-8 w-full flex-grow">
+        <!-- Search and Filter -->
+        <div class="mb-8 relative group">
+            <i class="ph ph-magnifying-glass absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 text-xl group-focus-within:text-blue-500 transition-colors"></i>
+            <input type="text" id="searchInput" onkeyup="filterPersonnel()" placeholder="ค้นหาชื่อ-สกุล, ตำแหน่ง, เบอร์โทรศัพท์..." class="w-full pl-14 pr-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-500 bg-white shadow-sm outline-none transition-all text-base font-medium">
+        </div>
+
+        <!-- Table Content -->
+        <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-500 border-b border-slate-100">
+                            <th class="px-8 py-5 text-sm font-black uppercase tracking-widest">ยศ - ชื่อ - สกุล</th>
+                            <th class="px-8 py-5 text-sm font-black uppercase tracking-widest">ตำแหน่งในสนาม</th>
+                            <th class="px-8 py-5 text-sm font-black uppercase tracking-widest">เบอร์โทรศัพท์</th>
+                            <th class="px-8 py-5 text-sm font-black uppercase tracking-widest">หมายเหตุ</th>
+                            <th class="px-8 py-5 text-center text-sm font-black uppercase tracking-widest w-32">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="personnelTableBody">
+                        <!-- Content will be injected by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Personnel Modal -->
+    <div id="personnelModal" class="fixed inset-0 z-[100] hidden bg-slate-900/60 backdrop-blur-sm flex justify-center items-center p-4">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
+            <div class="px-8 py-5 bg-white border-b border-slate-100 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-800" id="personnelModalTitle">เพิ่มข้อมูลกำลังพล</h3>
+                <button onclick="closePersonnelModal()" class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-400">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+            </div>
+            <form id="personnelForm" onsubmit="handleSavePersonnel(event)" class="p-8 space-y-4">
+                <input type="hidden" id="personnelId">
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 pl-1">หมวดหมู่ / ฝ่าย</label>
+                    <select id="categorySelect" required class="w-full px-5 py-3 rounded-xl border border-slate-200 focus:border-blue-500 outline-none bg-slate-50 font-semibold"></select>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 pl-1">ยศ - ชื่อ - สกุล</label>
+                    <input type="text" id="fullName" required class="w-full px-5 py-3 rounded-xl border border-slate-200 focus:border-blue-500 outline-none bg-slate-50 font-semibold" placeholder="เช่น พ.อ. สมชาย ใจดี">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 pl-1">ตำแหน่งในสนาม</label>
+                    <input type="text" id="position" required class="w-full px-5 py-3 rounded-xl border border-slate-200 focus:border-blue-500 outline-none bg-slate-50 font-semibold" placeholder="เช่น ผบ.บก.ควบคุม 2">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 pl-1">เบอร์โทรศัพท์</label>
+                    <input type="text" id="phone" class="w-full px-5 py-3 rounded-xl border border-slate-200 focus:border-blue-500 outline-none bg-slate-50 font-bold text-blue-600" placeholder="08x-xxxxxxx">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 pl-1">หมายเหตุ</label>
+                    <input type="text" id="note" class="w-full px-5 py-3 rounded-xl border border-slate-200 focus:border-blue-500 outline-none bg-slate-50 font-semibold">
+                </div>
+                <div class="pt-4 flex gap-3">
+                    <button type="button" onclick="closePersonnelModal()" class="flex-1 py-3 rounded-xl font-bold bg-slate-100 text-slate-500 hover:bg-slate-200">ยกเลิก</button>
+                    <button type="submit" class="flex-1 py-3 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-500/20">บันทึกข้อมูล</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Category Modal -->
+    <div id="categoryModal" class="fixed inset-0 z-[100] hidden bg-slate-900/60 backdrop-blur-sm flex justify-center items-center p-4">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-slate-200">
+            <div class="px-8 py-5 bg-white border-b border-slate-100 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-800">จัดการหมวดหมู่</h3>
+                <button onclick="closeCategoryModal()" class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-400">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+            </div>
+            <div class="p-8 space-y-4">
+                <div class="flex gap-2">
+                    <input type="text" id="newCategoryName" class="flex-1 px-4 py-2 rounded-xl border border-slate-200 outline-none focus:border-blue-500 bg-slate-50 text-sm font-semibold" placeholder="เพิ่มหมวดหมู่ใหม่...">
+                    <button onclick="addCategory()" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-blue-700 transition-all">เพิ่ม</button>
+                </div>
+                <div id="categoryList" class="max-h-80 overflow-y-auto space-y-2 pr-2">
+                    <!-- Category list items -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDnbOpvNTZ1bNFzReLXMq_wW4kp5iB5oiE",
+            authDomain: "signal02-f4d85.firebaseapp.com",
+            databaseURL: "https://signal02-f4d85-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "signal02-f4d85",
+            storageBucket: "signal02-f4d85.firebasestorage.app",
+            messagingSenderId: "653019128612",
+            appId: "1:653019128612:web:41d283659202787c4689b1",
+            measurementId: "G-3G3TQ0VLXM"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let personnel = [];
+        let categories = [];
+
+        function loadData() {
+            // Load Page Title
+            db.ref('personnel_settings/page_title').on('value', snapshot => {
+                const title = snapshot.val();
+                if (title) {
+                    document.getElementById('pageTitleDisplay').innerText = title;
+                }
+            });
+
+            // Load Categories
+            db.ref('personnel_settings/categories').on('value', snapshot => {
+                const data = snapshot.val();
+                categories = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+                renderCategoryOptions();
+                renderCategoryList();
+                renderPersonnel();
+            });
+
+            // Load Personnel
+            db.ref('personnel').on('value', snapshot => {
+                const data = snapshot.val();
+                personnel = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+                renderPersonnel();
+            });
+        }
+
+        function renderPersonnel() {
+            const tbody = document.getElementById('personnelTableBody');
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            
+            // Filter
+            const filtered = personnel.filter(p => 
+                p.fullName.toLowerCase().includes(q) || 
+                p.position.toLowerCase().includes(q) || 
+                (p.phone && p.phone.toLowerCase().includes(q))
+            );
+
+            // Sort categories by order
+            const sortedCategories = [...categories].sort((a, b) => (a.order || 0) - (b.order || 0));
+            
+            let html = '';
+            sortedCategories.forEach(cat => {
+                const catMembers = filtered.filter(p => p.categoryId === cat.id);
+                if (catMembers.length > 0 || q === '') {
+                    html += `
+                        <tr class="category-header">
+                            <td colspan="5" class="px-8 py-3 font-black text-blue-800 text-sm tracking-wide uppercase">${cat.name}</td>
+                        </tr>
+                    `;
+                    catMembers.forEach(p => {
+                        html += `
+                            <tr class="hover:bg-slate-50 transition-all border-b border-slate-50">
+                                <td class="px-8 py-4 font-bold text-slate-800">${p.fullName}</td>
+                                <td class="px-8 py-4 text-sm font-semibold text-slate-600">${p.position}</td>
+                                <td class="px-8 py-4 font-bold text-blue-600">${p.phone || '-'}</td>
+                                <td class="px-8 py-4 text-xs font-medium text-slate-400">${p.note || ''}</td>
+                                <td class="px-8 py-4 text-center">
+                                    <div class="flex justify-center gap-2">
+                                        <button onclick="editPersonnel('${p.id}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-all"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                                        <button onclick="deletePersonnel('${p.id}')" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white flex items-center justify-center transition-all"><i class="ph-bold ph-trash text-sm"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+            });
+
+            if (html === '') {
+                html = '<tr><td colspan="5" class="py-20 text-center text-slate-300 font-bold uppercase tracking-widest italic">ไม่พบข้อมูลรายชื่อ</td></tr>';
+            }
+            tbody.innerHTML = html;
+        }
+
+        function filterPersonnel() { renderPersonnel(); }
+
+        // Personnel Management
+        function openPersonnelModal(id = null) {
+            const form = document.getElementById('personnelForm');
+            form.reset();
+            document.getElementById('personnelId').value = '';
+            document.getElementById('personnelModalTitle').innerText = 'เพิ่มข้อมูลกำลังพล';
+            
+            if(id) {
+                const p = personnel.find(x => x.id === id);
+                document.getElementById('personnelId').value = p.id;
+                document.getElementById('categorySelect').value = p.categoryId;
+                document.getElementById('fullName').value = p.fullName;
+                document.getElementById('position').value = p.position;
+                document.getElementById('phone').value = p.phone || '';
+                document.getElementById('note').value = p.note || '';
+                document.getElementById('personnelModalTitle').innerText = 'แก้ไขข้อมูลกำลังพล';
+            }
+            document.getElementById('personnelModal').classList.remove('hidden');
+        }
+
+        function closePersonnelModal() { document.getElementById('personnelModal').classList.add('hidden'); }
+
+        async function handleSavePersonnel(event) {
+            event.preventDefault();
+            const id = document.getElementById('personnelId').value;
+            const data = {
+                categoryId: document.getElementById('categorySelect').value,
+                fullName: document.getElementById('fullName').value,
+                position: document.getElementById('position').value,
+                phone: document.getElementById('phone').value,
+                note: document.getElementById('note').value,
+                updatedAt: Date.now()
+            };
+            
+            try {
+                if(id) await db.ref('personnel/' + id).update(data);
+                else await db.ref('personnel').push(data);
+                closePersonnelModal();
+            } catch (err) { alert('Error: ' + err.message); }
+        }
+
+        function editPersonnel(id) { openPersonnelModal(id); }
+        function deletePersonnel(id) {
+            if(confirm('ยืนยันการลบรายชื่อนี้?')) db.ref('personnel/' + id).remove();
+        }
+
+        // Page Title Management
+        function editPageTitle() {
+            const currentTitle = document.getElementById('pageTitleDisplay').innerText;
+            const newTitle = prompt('แก้ไขชื่อหัวข้อระบบ:', currentTitle);
+            if (newTitle !== null && newTitle.trim() !== '') {
+                db.ref('personnel_settings/page_title').set(newTitle.trim());
+            }
+        }
+
+        // Category Management
+        function openCategoryModal() { document.getElementById('categoryModal').classList.remove('hidden'); }
+        function closeCategoryModal() { document.getElementById('categoryModal').classList.add('hidden'); }
+
+        function renderCategoryOptions() {
+            const select = document.getElementById('categorySelect');
+            const sorted = [...categories].sort((a, b) => (a.order || 0) - (b.order || 0));
+            select.innerHTML = '<option value="" disabled selected>เลือกหมวดหมู่ / ฝ่าย</option>' + 
+                sorted.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
+
+        function renderCategoryList() {
+            const list = document.getElementById('categoryList');
+            const sorted = [...categories].sort((a, b) => (a.order || 0) - (b.order || 0));
+            list.innerHTML = sorted.map(c => `
+                <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <span class="text-sm font-bold text-slate-700">${c.name}</span>
+                    <div class="flex gap-1">
+                        <button onclick="moveCategory('${c.id}', -1)" class="p-1.5 text-slate-400 hover:text-blue-500"><i class="ph ph-caret-up"></i></button>
+                        <button onclick="moveCategory('${c.id}', 1)" class="p-1.5 text-slate-400 hover:text-blue-500"><i class="ph ph-caret-down"></i></button>
+                        <button onclick="deleteCategory('${c.id}')" class="p-1.5 text-red-400 hover:text-red-600"><i class="ph ph-trash"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function addCategory() {
+            const name = document.getElementById('newCategoryName').value.trim();
+            if(!name) return;
+            const order = categories.length > 0 ? Math.max(...categories.map(c => c.order || 0)) + 1 : 0;
+            await db.ref('personnel_settings/categories').push({ name, order });
+            document.getElementById('newCategoryName').value = '';
+        }
+
+        async function deleteCategory(id) {
+            if(confirm('การลบหมวดหมู่จะทำให้รายชื่อในหมวดนี้ไม่แสดงผล ยืนยันการลบ?')) {
+                await db.ref('personnel_settings/categories/' + id).remove();
+            }
+        }
+
+        async function moveCategory(id, direction) {
+            const sorted = [...categories].sort((a, b) => (a.order || 0) - (b.order || 0));
+            const idx = sorted.findIndex(c => c.id === id);
+            const nextIdx = idx + direction;
+            if(nextIdx >= 0 && nextIdx < sorted.length) {
+                const tempOrder = sorted[idx].order;
+                sorted[idx].order = sorted[nextIdx].order;
+                sorted[nextIdx].order = tempOrder;
+                await db.ref('personnel_settings/categories/' + sorted[idx].id).update({ order: sorted[idx].order });
+                await db.ref('personnel_settings/categories/' + sorted[nextIdx].id).update({ order: sorted[nextIdx].order });
+            }
+        }
+
+        async function seedInitialData() {
+            if (!confirm('ยืนยันการโหลดข้อมูลตั้งต้นทั้งหมดจากรูปภาพ? (ข้อมูลเดิมในหมวดหมู่ที่ซ้ำกันอาจทับซ้อนได้)')) return;
+            
+            const data = [
+                {
+                    category: "ส่วนบังคับบัญชา",
+                    members: [
+                        { name: "พ.อ. โสฬส รัตนผ่องใส", pos: "ผบ.บก.ควบคุม 2", tel: "086-3211581" },
+                        { name: "พ.อ. สถาพร ชูศรี", pos: "รอง ผบ.บก.ควบคุม 2", tel: "" },
+                        { name: "พ.อ. เกรียงไกร เกษรวย", pos: "เสธ.บก.ควบคุม 2", tel: "098-2523143" }
+                    ]
+                },
+                {
+                    category: "ศยก.บก.ควบคุม 2",
+                    members: [{ name: "พ.ต. สันติ วรสาร", pos: "หน.ศยก.บก.ควบคุม 2", tel: "095-8455159" }]
+                },
+                {
+                    category: "ฝยก.บก.ควบคุม 2",
+                    members: [
+                        { name: "ร.อ. ศิณพ เย็นใจ", pos: "น.ฝยก.ฯ/หน.ศสส.", tel: "094-5596246" },
+                        { name: "จ.ส.อ. ชัยฤทธิ์ ชูบุตร", pos: "ผช.น.ฝยก.บก.ควบคุม 2", tel: "087-0450078" },
+                        { name: "จ.ส.อ. วันเฉลิม โพธิ์ศรี", pos: "ส.ยุทธการ", tel: "098-0014149" },
+                        { name: "จ.ส.อ. กิตติ พลลม", pos: "ส.ยุทธการ", tel: "096-0960220" },
+                        { name: "ส.อ. ปิยะณัฐ สีทัน", pos: "ส.งบประมาณ", tel: "096-2940714" }
+                    ]
+                },
+                {
+                    category: "ฝ่ายสื่อสาร",
+                    members: [
+                        { name: "ส.อ. ชาติชาย ตรีแสน", pos: "ส.ศูนย์ข่าว", tel: "086-3547267" },
+                        { name: "ส.อ. สรรเสริญ แก้วพรม", pos: "ส.ศูนย์ข่าว", tel: "092-5141911" }
+                    ]
+                },
+                {
+                    category: "ฝขว.บก.ควบคุม 2",
+                    members: [{ name: "ร.ท. สรศักดิ์ อยู่ยง", pos: "น.ฝขว.บก.ควบคุม 2", tel: "088-4585732" }]
+                },
+                {
+                    category: "ส่วนวางแผนและรวบรวมข้อมูล",
+                    members: [
+                        { name: "จ.ส.อ. ณัฐกร ปะทะวัง", pos: "ผช.น.ฝขว.บก.ควบคุม 2", tel: "092-6785463" },
+                        { name: "ส.อ. อิสระพงษ์ สืบสุนทร", pos: "ส.การข่าว", tel: "096-0702873" },
+                        { name: "ส.อ. ณัฐเอก สูมา", pos: "ส.การข่าว", tel: "092-9729670" }
+                    ]
+                },
+                {
+                    category: "ส่วนกรรมวิธีและวิเคราะห์ข้อมูล",
+                    members: [
+                        { name: "ร.ท. อาณัติพงษ์ ลันบุตร", pos: "น.กรรมวิธีและวิเคราะห์ข้อมูล", tel: "093-6465289" },
+                        { name: "ส.อ. วงกต วันตา", pos: "ส.กรรมวิธีและวิเคราะห์ข้อมูล", tel: "099-4243443" },
+                        { name: "ส.อ. วิเชียร สวาทพร", pos: "ส.กรรมวิธีและวิเคราะห์ข้อมูล", tel: "092-5135212" },
+                        { name: "ส.อ. สมเกียรติ เหล่าพรหม", pos: "ส.กรรมวิธีและวิเคราะห์ข้อมูล", tel: "062-5948879" }
+                    ]
+                },
+                {
+                    category: "ชุดเครือข่ายสื่อสารข้อมูล",
+                    members: [
+                        { name: "ส.อ. จักรกฤษณ์ คุณสมบัติ", pos: "จนท.เครือข่ายสื่อสารข้อมูล", tel: "092-9729670" },
+                        { name: "ส.อ. ปิยะพงษ์ เขียนปัญญา", pos: "จนท.เครือข่ายสื่อสารข้อมูล", tel: "094-2418699" }
+                    ]
+                },
+                {
+                    category: "ชุดข่าวกรองทางการสื่อสาร",
+                    members: [
+                        { name: "จ.ส.อ. วิศเวศ ยามประโคน", pos: "หน.ชุดดักฟัง", tel: "061-5738851" },
+                        { name: "จ.ส.อ. สุดใจ ภูสายขาว", pos: "หน.ฝ่ายสื่อสาร/พนักงานวิทยุ", tel: "095-3468830" },
+                        { name: "จ.ส.อ. เสกสรร ศรีลาลัย", pos: "พนักงานวิทยุ", tel: "080-6938090" },
+                        { name: "ส.อ. ธีระ จำปาเทศ", pos: "พนักงานวิทยุ", tel: "096-5707193" }
+                    ]
+                },
+                {
+                    category: "ฝ่ายข่าวกรองยาเสพติด",
+                    members: [
+                        { name: "จ.ส.อ. ฐิติพงษ์ กุศล", pos: "หน.ฝยส.", tel: "087-0833422" },
+                        { name: "จ.ส.อ. อัมฤทธิ์ พุ่มสวัสดิ์", pos: "ผช.หน.ฝยส.", tel: "092-4959539" },
+                        { name: "ส.อ. อนุชิต ใบขุนทด", pos: "ส.ยุทธการและการข่าว", tel: "097-9656467" }
+                    ]
+                },
+                {
+                    category: "ฝ่ายกิจการพลเรือน",
+                    members: [
+                        { name: "จ.ส.อ. พรหมมาศ ทรงประสิทธิ์", pos: "ส.กิจการพลเรือน", tel: "063-1059710" },
+                        { name: "ส.อ. กฤษณัส สุรันนา", pos: "ส.กิจการพลเรือน", tel: "090-8164867" },
+                        { name: "ส.อ. วรัญญู แขนขุนทด", pos: "ส.กิจการพลเรือน", tel: "063-6480297" }
+                    ]
+                },
+                {
+                    category: "ชุดปฏิบัติการสารนิเทศ",
+                    members: [
+                        { name: "ร.ต. นพฤทธิ์ ฉายอรุณ", pos: "หน.ชป.ปส./น.ฝกร.", tel: "086-6559582" },
+                        { name: "จ.ส.อ. คำสอน พงษ์พันธ์", pos: "รอง หน.ชป.ปส.", tel: "086-7573690" },
+                        { name: "ส.อ. ณรงค์กร ผ่องลา", pos: "ส.ปฏิบัติการข่าว", tel: "087-2382298" },
+                        { name: "ส.อ. ประชา หนูราช", pos: "ส.ปฏิบัติการข่าว", tel: "061-0822506" }
+                    ]
+                },
+                {
+                    category: "ศูนย์สนับสนุน",
+                    members: [{ name: "ร.ต. ณฤธร สุคนธชาติ", pos: "หน.ศูนย์สนับสนุน/ผช.หน.นปพ.", tel: "098-3317952" }]
+                },
+                {
+                    category: "ฝกพ.บก.ควบคุม 2",
+                    members: [{ name: "จ.ส.อ. ทินกร เหลาพรม", pos: "น.ฝกพ.บก.ควบคุม 2", tel: "063-4955356" }]
+                },
+                {
+                    category: "ฝบก.บก.ควบคุม 2",
+                    members: [
+                        { name: "จ.ส.อ. สิทธิพงษ์ สิงหพันธ์", pos: "น.ฝบก./ส.การเงิน", tel: "092-6408687" },
+                        { name: "จ.ส.ต. ปรัชญา ขาลพรหม", pos: "ส.ส่งกำลังบำรุง", tel: "092-8403426" }
+                    ]
+                },
+                {
+                    category: "ตอนยานยนต์",
+                    members: [
+                        { name: "จ.ส.อ. อดิศร เรียงเสนาะ", pos: "หน.ตอนยานยนต์", tel: "098-0383623" },
+                        { name: "ส.อ. เมธี มิตราช", pos: "พลขับรถ/ส.งบประมาณ", tel: "081-1903465" }
+                    ]
+                },
+                {
+                    category: "ฝกง.บก.ควบคุม 2",
+                    members: [
+                        { name: "พ.ต. ไพโรจน์ จันทร์ศรี", pos: "น.ฝกง.บก.ควบคุม 2", tel: "" },
+                        { name: "จ.ส.อ. นันทวัฒน์ โกศัยกานนท์", pos: "ส.การเงิน", tel: "081-3623935" }
+                    ]
+                },
+                {
+                    category: "หน่วยปฏิบัติการพิเศษ (250)",
+                    members: [
+                        { name: "จ.ส.ท. สมควร เดชบุวัฒนชัย", pos: "ส.ปฏิบัติการ", tel: "081-3832629" },
+                        { name: "ส.อ. กุลวัชร สัจจาเฟื่องกิจการ", pos: "ขปล.1", tel: "" },
+                        { name: "ส.อ. บุญธรรม ท้าววัฒนากุล", pos: "ขปล.2", tel: "" },
+                        { name: "ร.ท. วรัลย์บวร วิภาพสุริพล", pos: "ขปล.4", tel: "" },
+                        { name: "ร.อ. บรรเจิด คำพัน", pos: "ขปล.5", tel: "" },
+                        { name: "จ.ส.อ. วิศาล บุญตา", pos: "ขปล.6", tel: "097-0428292" },
+                        { name: "ส.อ. มีชัย ศรีนวน", pos: "ขปล.7", tel: "098-2629175" }
+                    ]
+                },
+                {
+                    category: "ข่ายปฏิบัติการทางทหาร",
+                    members: [
+                        { name: "จ.ส.อ. ณัฐกิตติ์ อุตริน", pos: "ข่ายปฏิบัติการทางทหารที่ 1", tel: "092-2492662", note: "ขปท." },
+                        { name: "จ.ส.อ. พิทักษ์ โก๊ะสูงเนิน", pos: "ข่ายปฏิบัติการทางทหารที่ 2", tel: "087-8254728", note: "ขปท." },
+                        { name: "จ.ส.ต. อนุทิน โมตา", pos: "ข่ายปฏิบัติการทางทหารที่ 5", tel: "080-1034058", note: "ขปท." }
+                    ]
+                },
+                {
+                    category: "ข่ายเฝ้าตรวจ/แจ้งเตือน",
+                    members: [
+                        { name: "ส.อ. ไกรวัลย์ อ่อนศรี", pos: "ข่ายเฝ้าตรวจ/แจ้งเตือนที่ 1", tel: "093-6899296", note: "ขฝต." },
+                        { name: "ส.อ. กฤษณะ วิเศษการ", pos: "ข่ายเฝ้าตรวจ/แจ้งเตือนที่ 3", tel: "092-8819972", note: "ขฝต." },
+                        { name: "ส.อ. วีระศักดิ์ ยืนสุข", pos: "ข่ายเฝ้าตรวจ/แจ้งเตือนที่ 4", tel: "098-3541595", note: "ขฝต." },
+                        { name: "ส.อ. อนุชา บุญฤทธิ์", pos: "ข่ายเฝ้าตรวจ/แจ้งเตือนที่ 5", tel: "091-6954439", note: "ขฝต." }
+                    ]
+                },
+                {
+                    category: "ข่ายรวบรวมภัยคุกคามรูปแบบใหม่",
+                    members: [
+                        { name: "ส.อ. พงศ์ศิริ แช่มล้วน", pos: "ข่ายรวบรวมภัยคุกคามรูปแบบใหม่ที่ 1", tel: "080-8348493", note: "ขภค." },
+                        { name: "ส.อ. ขจรยศ เทพจันตา", pos: "ข่ายรวบรวมภัยคุกคามรูปแบบใหม่ที่ 2", tel: "098-7701637", note: "ขภค." }
+                    ]
+                },
+                {
+                    category: "ชุดปฏิบัติการที่ 1",
+                    members: [
+                        { name: "ร.ต. พิชัย รองพักตร์", pos: "หน.ชุดปฏิบัติการ", tel: "092-6301656" },
+                        { name: "จ.ส.อ. สายฝน โตพิทักษ์", pos: "ส.ยุทธการ", tel: "081-7953001" },
+                        { name: "จ.ส.อ. ไพรพนา ไชยปัญญา", pos: "ส.การข่าว", tel: "083-6586498" },
+                        { name: "ส.อ. ชนินทร์ จันทร์ศิริ", pos: "ส.พยาบาล", tel: "087-5664847" },
+                        { name: "ส.อ. ธวัชชัย ราชชื่น", pos: "พงว.", tel: "097-0282902" }
+                    ]
+                },
+                {
+                    category: "ชุดปฏิบัติการที่ 2",
+                    members: [
+                        { name: "ร.อ. สายชล ธรรมโม", pos: "หน.ชุดปฏิบัติการ", tel: "085-5182813" },
+                        { name: "จ.ส.อ. วุฒิชัย อินสองใจ", pos: "ส.ยุทธการ", tel: "086-9341700" },
+                        { name: "ส.อ. ยงยุทธ ต่านนวล", pos: "ส.การข่าว", tel: "093-0387230" },
+                        { name: "ส.อ. อนุวัฒน์ สันสะท้าน", pos: "ส.พยาบาล", tel: "062-6092990" },
+                        { name: "ส.อ. อติชาติ อัมพวา", pos: "พงว.", tel: "062-4825985" }
+                    ]
+                },
+                {
+                    category: "ชุดปฏิบัติการที่ 3",
+                    members: [
+                        { name: "จ.ส.อ. เกรียงศักดิ์ กาสินธุ์พิลา", pos: "หน.ชุดปฏิบัติการ", tel: "099-4143544" },
+                        { name: "จ.ส.อ. สิทธิชัย ดวงมณี", pos: "ส.ยุทธการ", tel: "063-9573405" },
+                        { name: "ส.อ. ศิโรตม์ วงศ์คลัง", pos: "ส.การข่าว", tel: "098-3911543" },
+                        { name: "ส.อ. ภูมินทร์ รินไธสง", pos: "ส.พยาบาล", tel: "065-7362464" },
+                        { name: "ส.อ. ชานนท์ วงศ์ศักดิ์สิทธิ์", pos: "พงว.", tel: "092-4754757" }
+                    ]
+                },
+                {
+                    category: "ชุดปฏิบัติการที่ 4",
+                    members: [
+                        { name: "ร.ท. พิชิต รองพักตร์", pos: "หน.ชุดปฏิบัติการ", tel: "080-6644637" },
+                        { name: "จ.ส.ท. ภาสสุ พุ่มใบศรี", pos: "ส.ยุทธการ", tel: "092-6244062" },
+                        { name: "ส.อ. อาทิวัฒน์ อริกุล", pos: "ส.การข่าว", tel: "085-3151472" },
+                        { name: "ส.อ. จตุรงค์ จุลนันท์", pos: "ส.พยาบาล", tel: "089-0634849" },
+                        { name: "ส.อ. เดชาบดินทร์ ทับทิมา", pos: "พงว.", tel: "098-0293299" }
+                    ]
+                },
+                {
+                    category: "ชุดปฏิบัติการที่ 5",
+                    members: [
+                        { name: "จ.ส.อ. พิเชษฐ์ จันทยไชย", pos: "หน.ชุดปฏิบัติการ", tel: "086-1438086" },
+                        { name: "จ.ส.อ. อรรถชัย สาธุกาค", pos: "ส.ยุทธการ", tel: "091-7024433" },
+                        { name: "ส.อ. อธิป โคตะมา", pos: "ส.การข่าว", tel: "096-1646995" },
+                        { name: "ส.อ. คุณาธิป พานิชกิจ", pos: "ส.พยาบาล", tel: "061-6454661" },
+                        { name: "ส.อ. ปิยวุฒิ อวยพร", pos: "พงว.", tel: "064-2855192" }
+                    ]
+                }
+            ];
+
+            try {
+                // Clear existing first for a clean seed (optional but recommended for initial load)
+                if (confirm('ต้องการล้างข้อมูลเดิมก่อนโหลดใหม่หรือไม่?')) {
+                    await db.ref('personnel_settings/categories').remove();
+                    await db.ref('personnel').remove();
+                }
+
+                for (let i = 0; i < data.length; i++) {
+                    const catRef = await db.ref('personnel_settings/categories').push({
+                        name: data[i].category,
+                        order: i
+                    });
+                    
+                    for (const m of data[i].members) {
+                        await db.ref('personnel').push({
+                            categoryId: catRef.key,
+                            fullName: m.name,
+                            position: m.pos,
+                            phone: m.tel,
+                            note: m.note || "",
+                            updatedAt: Date.now()
+                        });
+                    }
+                }
+                alert('โหลดข้อมูลกำลังพลทั้งหมดตามรูปภาพเรียบร้อยแล้ว!');
+            } catch (err) {
+                alert('เกิดข้อผิดพลาด: ' + err.message);
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

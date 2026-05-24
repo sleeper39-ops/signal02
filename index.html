@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>คลังระบบ ฝ่ายสื่อสาร | Communication Department Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f8fafc;
+            background-image: radial-gradient(#e2e8f0 0.5px, transparent 0.5px);
+            background-size: 24px 24px;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .system-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header Section -->
+    <header class="bg-[#1e293b] text-white py-12 shadow-2xl relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10">
+            <div class="absolute top-0 left-0 w-64 h-64 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl animate-pulse"></div>
+            <div class="absolute bottom-0 right-0 w-96 h-96 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl animate-pulse delay-700"></div>
+        </div>
+        
+        <div class="max-w-6xl mx-auto px-6 relative z-10 text-center">
+            <h1 class="text-4xl md:text-5xl font-black tracking-tight mb-4 flex items-center justify-center gap-4">
+                <i class="ph-bold ph-broadcast text-blue-400"></i>
+                คลังระบบงาน ฝ่ายสื่อสาร
+            </h1>
+            <p class="text-slate-400 text-lg font-medium max-w-2xl mx-auto">
+                ศูนย์รวมระบบจัดการเทคโนโลยีสารสนเทศและเครือข่ายคอมพิวเตอร์ <br class="hidden md:block"> สำหรับเจ้าหน้าที่และผู้ปฏิบัติงาน
+            </p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-[85rem] mx-auto px-6 py-16 w-full">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            
+            <!-- System 0: Ops FSS System -->
+            <a href="ops_comm.html" class="system-card group transition-all duration-300">
+                <div class="glass-card h-full p-8 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col items-center text-center border-blue-200/50">
+                    <div class="w-20 h-20 rounded-3xl bg-blue-500/10 text-blue-600 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-blue-500/10">
+                        <i class="ph-bold ph-strategy text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-3">การปฏิบัติงาน ฝสส.ฯ</h3>
+                    <p class="text-slate-500 text-xs leading-relaxed mb-8 flex-grow">
+                        โครงสร้างการจัดกำลัง ภารกิจหน้าที่ และแผนการปฏิบัติงานประจำวันของ ฝสส.บก.ควบคุม 2
+                    </p>
+                    <div class="inline-flex items-center gap-2 text-blue-600 font-bold text-xs bg-blue-50 px-5 py-2.5 rounded-xl group-hover:bg-blue-100 transition-colors">
+                        เข้าใช้งาน <i class="ph-bold ph-arrow-right"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- System 1: Network System -->
+            <a href="network_system.html" class="system-card group transition-all duration-300">
+                <div class="glass-card h-full p-8 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col items-center text-center border-indigo-200/50">
+                    <div class="w-20 h-20 rounded-3xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-indigo-500/10">
+                        <i class="ph-bold ph-network text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-3">ระบบเครือข่าย</h3>
+                    <p class="text-slate-500 text-xs leading-relaxed mb-8 flex-grow">
+                        จัดการฐานข้อมูลอุปกรณ์ แผนผัง IP และตรวจสอบสถานะอุปกรณ์ภายในเครือข่าย
+                    </p>
+                    <div class="inline-flex items-center gap-2 text-indigo-600 font-bold text-xs bg-indigo-50 px-5 py-2.5 rounded-xl group-hover:bg-indigo-100 transition-colors">
+                        เข้าใช้งาน <i class="ph-bold ph-arrow-right"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- System 2: Meeting Record System -->
+            <a href="meeting_record.html" class="system-card group transition-all duration-300">
+                <div class="glass-card h-full p-8 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col items-center text-center border-emerald-200/50">
+                    <div class="w-20 h-20 rounded-3xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-emerald-500/10">
+                        <i class="ph-bold ph-microphone-stage text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-3">บันทึกเสียงประชุม</h3>
+                    <p class="text-slate-500 text-xs leading-relaxed mb-8 flex-grow">
+                        บันทึกเสียงสด จัดเก็บไฟล์ และสรุปวาระการประชุมในรูปแบบดิจิทัล
+                    </p>
+                    <div class="inline-flex items-center gap-2 text-emerald-600 font-bold text-xs bg-emerald-50 px-5 py-2.5 rounded-xl group-hover:bg-emerald-100 transition-colors">
+                        เข้าใช้งาน <i class="ph-bold ph-arrow-right"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- System 3: Personnel List System -->
+            <a href="personnel_list.html" class="system-card group transition-all duration-300">
+                <div class="glass-card h-full p-8 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col items-center text-center border-violet-200/50">
+                    <div class="w-20 h-20 rounded-3xl bg-violet-500/10 text-violet-600 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-violet-500/10">
+                        <i class="ph-bold ph-users-three text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-3">บัญชีรายชื่อกำลังพล</h3>
+                    <p class="text-slate-500 text-xs leading-relaxed mb-8 flex-grow">
+                        รายชื่อกำลังพลปฏิบัติหน้าที่ บก.ควบคุม 2
+                    </p>
+                    <div class="inline-flex items-center gap-2 text-violet-600 font-bold text-xs bg-violet-50 px-5 py-2.5 rounded-xl group-hover:bg-violet-100 transition-colors">
+                        เข้าใช้งาน <i class="ph-bold ph-arrow-right"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- System 4: SIM Card System -->
+            <a href="sim_cards.html" class="system-card group transition-all duration-300">
+                <div class="glass-card h-full p-8 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col items-center text-center border-cyan-200/50">
+                    <div class="w-20 h-20 rounded-3xl bg-cyan-500/10 text-cyan-600 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-cyan-500/10">
+                        <i class="ph-bold ph-sim-card text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-3">ข้อมูลซิมโทรศัพท์</h3>
+                    <p class="text-slate-500 text-xs leading-relaxed mb-8 flex-grow">
+                        จัดการข้อมูลซิมโทรศัพท์ บก.ควบคุม 2 และรายละเอียดแพ็กเกจการใช้งาน
+                    </p>
+                    <div class="inline-flex items-center gap-2 text-cyan-600 font-bold text-xs bg-cyan-50 px-5 py-2.5 rounded-xl group-hover:bg-cyan-100 transition-colors">
+                        เข้าใช้งาน <i class="ph-bold ph-arrow-right"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- System 5: WiFi Password System -->
+            <a href="wifi_passwords.html" class="system-card group transition-all duration-300">
+                <div class="glass-card h-full p-8 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col items-center text-center border-rose-200/50">
+                    <div class="w-20 h-20 rounded-3xl bg-rose-500/10 text-rose-600 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-rose-500/10">
+                        <i class="ph-bold ph-wifi-high text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-3">รหัสไวไฟ</h3>
+                    <p class="text-slate-500 text-xs leading-relaxed mb-8 flex-grow">
+                        รวบรวมชื่อสัญญาณไวไฟ (SSID) และรหัสผ่านแยกตามพื้นที่และชั้นต่างๆ
+                    </p>
+                    <div class="inline-flex items-center gap-2 text-rose-600 font-bold text-xs bg-rose-50 px-5 py-2.5 rounded-xl group-hover:bg-rose-100 transition-colors">
+                        เข้าใช้งาน <i class="ph-bold ph-arrow-right"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- System 6: Security Guard System -->
+            <a href="https://sf02.vercel.app/" target="_blank" class="system-card group transition-all duration-300">
+                <div class="glass-card h-full p-8 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col items-center text-center border-orange-200/50">
+                    <div class="w-20 h-20 rounded-3xl bg-orange-500/10 text-orange-600 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-orange-500/10">
+                        <i class="ph-bold ph-shield-check text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-3">ระบบรักษาการณ์</h3>
+                    <p class="text-slate-500 text-xs leading-relaxed mb-8 flex-grow">
+                        จัดการเวรยามและรายงานความปลอดภัย (External Link)
+                    </p>
+                    <div class="inline-flex items-center gap-2 text-orange-600 font-bold text-xs bg-orange-50 px-5 py-2.5 rounded-xl group-hover:bg-orange-100 transition-colors">
+                        เข้าใช้งาน <i class="ph-bold ph-arrow-square-out"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- System 0.5: Credentials System -->
+            <a href="credentials.html" class="system-card group transition-all duration-300">
+                <div class="glass-card h-full p-8 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col items-center text-center border-amber-200/50">
+                    <div class="w-20 h-20 rounded-3xl bg-amber-500/10 text-amber-600 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-amber-500/10">
+                        <i class="ph-bold ph-key text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-3">จัดการ Email และรหัสผ่าน</h3>
+                    <p class="text-slate-500 text-xs leading-relaxed mb-8 flex-grow">
+                        ระบบจัดเก็บและจัดการข้อมูลบัญชีผู้ใช้งาน รหัสผ่านอีเมล และระบบสำคัญต่างๆ อย่างปลอดภัย
+                    </p>
+                    <div class="inline-flex items-center gap-2 text-amber-600 font-bold text-xs bg-amber-50 px-5 py-2.5 rounded-xl group-hover:bg-amber-100 transition-colors">
+                        เข้าใช้งาน <i class="ph-bold ph-arrow-right"></i>
+                    </div>
+                </div>
+            </a>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-8">
+        <div class="max-w-6xl mx-auto px-6 text-center">
+            <p class="text-slate-400 text-xs font-medium">
+                &copy; 2026 ฝ่ายสื่อสาร บก.ควบคุม 2. All rights reserved.
+            </p>
+        </div>
+    </footer>
+
+</body>
+</html>

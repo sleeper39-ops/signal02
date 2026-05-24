@@ -190,6 +190,9 @@
                 (p.phone && p.phone.toLowerCase().includes(q))
             );
 
+            // Sort personnel by order field
+            filtered.sort((a, b) => (a.order || 0) - (b.order || 0));
+
             // Sort categories by order
             const sortedCategories = [...categories].sort((a, b) => (a.order || 0) - (b.order || 0));
             
@@ -202,7 +205,7 @@
                             <td colspan="5" class="px-8 py-3 font-black text-blue-800 text-sm tracking-wide uppercase">${cat.name}</td>
                         </tr>
                     `;
-                    catMembers.forEach(p => {
+                    catMembers.forEach((p, idx) => {
                         html += `
                             <tr class="hover:bg-slate-50 transition-all border-b border-slate-50">
                                 <td class="px-8 py-4 font-bold text-slate-800">${p.fullName}</td>
@@ -211,8 +214,10 @@
                                 <td class="px-8 py-4 text-xs font-medium text-slate-400">${p.note || ''}</td>
                                 <td class="px-8 py-4 text-center">
                                     <div class="flex justify-center gap-2">
-                                        <button onclick="editPersonnel('${p.id}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-all"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
-                                        <button onclick="deletePersonnel('${p.id}')" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white flex items-center justify-center transition-all"><i class="ph-bold ph-trash text-sm"></i></button>
+                                        <button onclick="movePersonnel('${p.id}', -1)" class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-all ${idx === 0 ? 'opacity-30 cursor-not-allowed' : ''}" ${idx === 0 ? 'disabled' : ''} title="เลื่อนขึ้น"><i class="ph ph-caret-up"></i></button>
+                                        <button onclick="movePersonnel('${p.id}', 1)" class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-all ${idx === catMembers.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}" ${idx === catMembers.length - 1 ? 'disabled' : ''} title="เลื่อนลง"><i class="ph ph-caret-down"></i></button>
+                                        <button onclick="editPersonnel('${p.id}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-all" title="แก้ไข"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                                        <button onclick="deletePersonnel('${p.id}')" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white flex items-center justify-center transition-all" title="ลบ"><i class="ph-bold ph-trash text-sm"></i></button>
                                     </div>
                                 </td>
                             </tr>
@@ -254,14 +259,25 @@
         async function handleSavePersonnel(event) {
             event.preventDefault();
             const id = document.getElementById('personnelId').value;
+            const categoryId = document.getElementById('categorySelect').value;
+            
+            // Get max order in this category if it's a new entry
+            let order = 0;
+            if(!id) {
+                const sameCat = personnel.filter(p => p.categoryId === categoryId);
+                order = sameCat.length > 0 ? Math.max(...sameCat.map(p => p.order || 0)) + 1 : 0;
+            }
+
             const data = {
-                categoryId: document.getElementById('categorySelect').value,
+                categoryId: categoryId,
                 fullName: document.getElementById('fullName').value,
                 position: document.getElementById('position').value,
                 phone: document.getElementById('phone').value,
                 note: document.getElementById('note').value,
                 updatedAt: Date.now()
             };
+
+            if(!id) data.order = order;
             
             try {
                 if(id) await db.ref('personnel/' + id).update(data);
@@ -273,6 +289,31 @@
         function editPersonnel(id) { openPersonnelModal(id); }
         function deletePersonnel(id) {
             if(confirm('ยืนยันการลบรายชื่อนี้?')) db.ref('personnel/' + id).remove();
+        }
+
+        async function movePersonnel(id, direction) {
+            const p = personnel.find(x => x.id === id);
+            if(!p) return;
+
+            // Get all members in the same category, sorted by order
+            const sameCat = personnel
+                .filter(x => x.categoryId === p.categoryId)
+                .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+            const idx = sameCat.findIndex(x => x.id === id);
+            const nextIdx = idx + direction;
+
+            if(nextIdx >= 0 && nextIdx < sameCat.length) {
+                const other = sameCat[nextIdx];
+                
+                // Swap order values
+                const currentOrder = p.order || 0;
+                const nextOrder = other.order || 0;
+
+                // Update both in Firebase
+                await db.ref('personnel/' + p.id).update({ order: nextOrder });
+                await db.ref('personnel/' + other.id).update({ order: currentOrder });
+            }
         }
 
         // Page Title Management
@@ -562,13 +603,15 @@
                         order: i
                     });
                     
-                    for (const m of data[i].members) {
+                    for (let j = 0; j < data[i].members.length; j++) {
+                        const m = data[i].members[j];
                         await db.ref('personnel').push({
                             categoryId: catRef.key,
                             fullName: m.name,
                             position: m.pos,
                             phone: m.tel,
                             note: m.note || "",
+                            order: j,
                             updatedAt: Date.now()
                         });
                     }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการงานไอที | Communication Dept</title>
+    <title>ระบบแจ้งซ่อม | Communication Dept</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -28,21 +28,34 @@
     <nav class="bg-[#1e293b] text-white shadow-xl sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
             <div class="flex items-center gap-4">
-                <a href="index.html" class="bg-teal-500/20 p-2 rounded-xl border border-teal-500/30 hover:bg-teal-500/40 transition-all">
-                    <i class="ph-bold ph-arrow-left text-xl text-teal-400"></i>
+                <a href="index.html" class="bg-orange-500/20 p-2 rounded-xl border border-orange-500/30 hover:bg-orange-500/40 transition-all">
+                    <i class="ph-bold ph-arrow-left text-xl text-orange-400"></i>
                 </a>
                 <div>
-                    <h1 class="font-bold text-lg leading-none text-white">ระบบจัดการงานไอที</h1>
-                    <span class="text-[10px] text-slate-400 font-medium tracking-widest uppercase">IT Work Management System</span>
+                    <h1 class="font-bold text-lg leading-none text-white">ระบบแจ้งซ่อม</h1>
+                    <span class="text-[10px] text-slate-400 font-medium tracking-widest uppercase">Repair Request System</span>
                 </div>
             </div>
-            <button onclick="openTaskModal()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-4 py-2 rounded-xl flex items-center gap-2 text-sm transition-all shadow-lg shadow-teal-500/20">
-                <i class="ph-bold ph-plus-circle"></i> เพิ่มงานใหม่
-            </button>
+            <div class="flex items-center gap-3">
+                <span id="userDisplay" class="text-sm text-slate-300"></span>
+                <button onclick="openRequestModal()" class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-4 py-2 rounded-xl flex items-center gap-2 text-sm transition-all shadow-lg shadow-orange-500/20">
+                    <i class="ph-bold ph-wrench"></i> แจ้งซ่อม
+                </button>
+            </div>
         </div>
     </nav>
 
     <main class="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8 w-full flex-grow">
+        <!-- Role Tabs -->
+        <div class="flex gap-2 mb-6">
+            <button id="tabUser" onclick="switchRole('user')" class="px-6 py-3 rounded-xl font-bold transition-all bg-orange-600 text-white">
+                <i class="ph-bold ph-user mr-2"></i>ผู้แจ้ง
+            </button>
+            <button id="tabAdmin" onclick="switchRole('admin')" class="px-6 py-3 rounded-xl font-bold transition-all bg-white text-slate-600 border border-slate-200">
+                <i class="ph-bold ph-gear mr-2"></i>ช่างซ่อม
+            </button>
+        </div>
+
         <!-- Dashboard Stats -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 mb-8">
             <div class="bg-white p-4 rounded-[1.5rem] shadow-sm border border-slate-200">
@@ -50,7 +63,7 @@
                     <div class="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
                         <i class="ph-bold ph-list-checks text-sm"></i>
                     </div>
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">งานทั้งหมด</p>
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">รายการทั้งหมด</p>
                 </div>
                 <h2 id="totalCount" class="text-2xl font-black text-slate-800">0</h2>
             </div>
@@ -68,7 +81,7 @@
                     <div class="w-7 h-7 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
                         <i class="ph-bold ph-spinner text-sm"></i>
                     </div>
-                    <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest">กำลังดำเนินการ</p>
+                    <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest">กำลังซ่อม</p>
                 </div>
                 <h2 id="inProgressCount" class="text-2xl font-black text-blue-700">0</h2>
             </div>
@@ -77,7 +90,7 @@
                     <div class="w-7 h-7 rounded-lg bg-green-100 text-green-600 flex items-center justify-center">
                         <i class="ph-bold ph-check-circle text-sm"></i>
                     </div>
-                    <p class="text-[10px] font-black text-green-600 uppercase tracking-widest">เสร็จสิ้น</p>
+                    <p class="text-[10px] font-black text-green-600 uppercase tracking-widest">ซ่อมเสร็จ</p>
                 </div>
                 <h2 id="completedCount" class="text-2xl font-black text-green-700">0</h2>
             </div>
@@ -85,88 +98,82 @@
 
         <!-- Filter and Search -->
         <div class="flex flex-col sm:flex-row gap-3 mb-6">
-            <select id="statusFilter" onchange="filterTasks()" class="px-4 py-3 rounded-xl border border-slate-200 focus:border-teal-500 outline-none bg-white font-semibold text-sm">
+            <select id="statusFilter" onchange="filterRequests()" class="px-4 py-3 rounded-xl border border-slate-200 focus:border-orange-500 outline-none bg-white font-semibold text-sm">
                 <option value="all">ทุกสถานะ</option>
                 <option value="pending">รอดำเนินการ</option>
-                <option value="in-progress">กำลังดำเนินการ</option>
-                <option value="completed">เสร็จสิ้น</option>
+                <option value="in-progress">กำลังซ่อม</option>
+                <option value="completed">ซ่อมเสร็จ</option>
                 <option value="cancelled">ยกเลิก</option>
             </select>
-            <select id="priorityFilter" onchange="filterTasks()" class="px-4 py-3 rounded-xl border border-slate-200 focus:border-teal-500 outline-none bg-white font-semibold text-sm">
-                <option value="all">ทุกความสำคัญ</option>
-                <option value="high">สูง</option>
-                <option value="medium">กลาง</option>
-                <option value="low">ต่ำ</option>
-            </select>
             <div class="relative group flex-1">
-                <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg group-focus-within:text-teal-500 transition-colors"></i>
-                <input type="text" id="searchInput" onkeyup="filterTasks()" placeholder="ค้นหางาน..." class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 focus:border-teal-500 bg-white shadow-sm outline-none transition-all text-sm font-medium">
+                <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg group-focus-within:text-orange-500 transition-colors"></i>
+                <input type="text" id="searchInput" onkeyup="filterRequests()" placeholder="ค้นหารายการแจ้งซ่อม..." class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 focus:border-orange-500 bg-white shadow-sm outline-none transition-all text-sm font-medium">
             </div>
         </div>
 
-        <!-- Tasks List -->
-        <div class="grid grid-cols-1 gap-4" id="tasksContainer">
-            <!-- Tasks will be rendered here -->
+        <!-- Requests List -->
+        <div class="grid grid-cols-1 gap-4" id="requestsContainer">
+            <!-- Requests will be rendered here -->
         </div>
     </main>
 
-    <!-- Task Modal -->
-    <div id="taskModal" class="fixed inset-0 z-[100] hidden bg-slate-900/60 backdrop-blur-sm flex justify-center items-center p-4">
+    <!-- Request Modal -->
+    <div id="requestModal" class="fixed inset-0 z-[100] hidden bg-slate-900/60 backdrop-blur-sm flex justify-center items-center p-4">
         <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
             <div class="px-8 py-5 bg-white border-b border-slate-100 flex justify-between items-center">
-                <h3 class="text-lg font-bold text-slate-800" id="taskModalTitle">เพิ่มงานใหม่</h3>
-                <button onclick="closeTaskModal()" class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-400">
+                <h3 class="text-lg font-bold text-slate-800">แจ้งซ่อม</h3>
+                <button onclick="closeRequestModal()" class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-400">
                     <i class="ph-bold ph-x"></i>
                 </button>
             </div>
-            <form id="taskForm" onsubmit="handleSaveTask(event)" class="p-8 space-y-4">
-                <input type="hidden" id="taskId">
+            <form id="requestForm" onsubmit="handleSubmitRequest(event)" class="p-8 space-y-4">
                 <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 pl-1">หัวข้องาน</label>
-                    <input type="text" id="taskTitle" required class="w-full px-5 py-3 rounded-xl border border-slate-200 focus:border-teal-500 outline-none bg-slate-50 font-semibold" placeholder="ชื่องานที่ต้องทำ">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 pl-1">ชื่อผู้แจ้ง</label>
+                    <input type="text" id="requesterName" required class="w-full px-5 py-3 rounded-xl border border-slate-200 focus:border-orange-500 outline-none bg-slate-50 font-semibold" placeholder="กรุณากรอกชื่อของคุณ">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 pl-1">รายละเอียด</label>
-                    <textarea id="taskDescription" rows="3" class="w-full px-5 py-3 rounded-xl border border-slate-200 focus:border-teal-500 outline-none bg-slate-50 font-semibold resize-none" placeholder="รายละเอียดเพิ่มเติม..."></textarea>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 pl-1">สถานที่ / ห้อง</label>
+                    <input type="text" id="requestLocation" required class="w-full px-5 py-3 rounded-xl border border-slate-200 focus:border-orange-500 outline-none bg-slate-50 font-semibold" placeholder="เช่น ห้อง IT, ชั้น 3">
                 </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 pl-1">สถานะ</label>
-                        <select id="taskStatus" required class="w-full px-5 py-3 rounded-xl border border-slate-200 focus:border-teal-500 outline-none bg-slate-50 font-semibold">
-                            <option value="pending">รอดำเนินการ</option>
-                            <option value="in-progress">กำลังดำเนินการ</option>
-                            <option value="completed">เสร็จสิ้น</option>
-                            <option value="cancelled">ยกเลิก</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 pl-1">ความสำคัญ</label>
-                        <select id="taskPriority" required class="w-full px-5 py-3 rounded-xl border border-slate-200 focus:border-teal-500 outline-none bg-slate-50 font-semibold">
-                            <option value="low">ต่ำ</option>
-                            <option value="medium">กลาง</option>
-                            <option value="high">สูง</option>
-                        </select>
-                    </div>
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 pl-1">อุปกรณ์/อาการเสีย</label>
+                    <textarea id="requestDescription" rows="4" required class="w-full px-5 py-3 rounded-xl border border-slate-200 focus:border-orange-500 outline-none bg-slate-50 font-semibold resize-none" placeholder="อธิบายอุปกรณ์และอาการที่พบ..."></textarea>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 pl-1">วันกำหนดส่ง</label>
-                        <input type="date" id="taskDueDate" class="w-full px-5 py-3 rounded-xl border border-slate-200 focus:border-teal-500 outline-none bg-slate-50 font-semibold">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 pl-1">ผู้รับผิดชอบ</label>
-                        <input type="text" id="taskAssignee" class="w-full px-5 py-3 rounded-xl border border-slate-200 focus:border-teal-500 outline-none bg-slate-50 font-semibold" placeholder="ชื่อผู้รับผิดชอบ">
-                    </div>
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 pl-1">ความเร่งด่วน</label>
+                    <select id="requestPriority" required class="w-full px-5 py-3 rounded-xl border border-slate-200 focus:border-orange-500 outline-none bg-slate-50 font-semibold">
+                        <option value="low">ทั่วไป</option>
+                        <option value="medium">เร่งด่วน</option>
+                        <option value="high">ด่วนมาก</option>
+                    </select>
                 </div>
                 <div class="pt-4 flex gap-3">
-                    <button type="button" onclick="closeTaskModal()" class="flex-1 py-3 rounded-xl font-bold bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all">ยกเลิก</button>
-                    <button type="submit" class="flex-1 py-3 rounded-xl font-bold bg-teal-600 text-white hover:bg-teal-700 shadow-lg shadow-teal-500/20 transition-all">บันทึก</button>
+                    <button type="button" onclick="closeRequestModal()" class="flex-1 py-3 rounded-xl font-bold bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all">ยกเลิก</button>
+                    <button type="submit" class="flex-1 py-3 rounded-xl font-bold bg-orange-600 text-white hover:bg-orange-700 shadow-lg shadow-orange-500/20 transition-all">ส่งแจ้งซ่อม</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Detail Modal -->
+    <div id="detailModal" class="fixed inset-0 z-[100] hidden bg-slate-900/60 backdrop-blur-sm flex justify-center items-center p-4">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
+            <div class="px-8 py-5 bg-white border-b border-slate-100 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-800">รายละเอียดการแจ้งซ่อม</h3>
+                <button onclick="closeDetailModal()" class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-400">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+            </div>
+            <div id="detailContent" class="p-8 space-y-4">
+                <!-- Detail content will be rendered here -->
+            </div>
+        </div>
+    </div>
+
     <script>
+        const TELEGRAM_CHAT_ID = '-5407252717';
+        const TELEGRAM_TOKEN = '8934116017:AAGdWxggPOwZRTkbc15XZMM8lwm3Ezp0m4s';
+
         const firebaseConfig = {
             apiKey: "AIzaSyDnbOpvNTZ1bNFzReLXMq_wW4kp5iB5oiE",
             authDomain: "signal02-f4d85.firebaseapp.com",
@@ -180,14 +187,110 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let tasks = [];
+        let requests = [];
         let currentUser = null;
+        let currentRole = 'user';
+        let currentRequestId = null;
 
-        // โค้ดฝั่งหน้าเว็บพนักงาน (ไม่ใช่ใน Google Apps Script)
+        // === Telegram Notification Function ===
+        async function sendTelegramNotification(customMessage = null) {
+            try {
+                let message = customMessage || '🔔 แจ้งเตือนระบบแจ้งซ่อม!\n\nมีการแจ้งซ่อมใหม่เข้ามาแล้ว กรุณาตรวจสอบทันที!';
+                
+                const telegramUrl = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
+                
+                const response = await fetch(telegramUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chat_id: TELEGRAM_CHAT_ID,
+                        text: message,
+                        parse_mode: 'HTML'
+                    })
+                });
+                
+                if (response.ok) {
+                    alert('📢 ส่งแจ้งเตือน Telegram สำเร็จ!');
+                } else {
+                    const errorData = await response.json();
+                    console.error('Telegram API Error:', errorData);
+                    alert('❌ ไม่สามารถส่งแจ้งเตือน Telegram ได้ (CORS Policy)\n\nกรุณาใช้ Server-side Function เพื่อส่งแจ้งเตือนแทน');
+                }
+            } catch (error) {
+                console.error('Error sending Telegram notification:', error);
+                alert('⚠️ ไม่สามารถส่งแจ้งเตือน Telegram ได้ (CORS Policy)\n\nในการใช้งานจริง จำเป็นต้องมี Backend Server เพื่อส่งแจ้งเตือนแทน Client-side');
+            }
+        }
+
+        // === Send Telegram with Request Details - Optimized Version ===
+        function sendRequestToTelegram(request) {
+            const priorityText = {
+                'high': '🔴 ด่วนมาก',
+                'medium': '🟡 เร่งด่วน',
+                'low': '🟢 ทั่วไป'
+            };
+            
+            const message = `
+🔧 <b>แจ้งซ่อมใหม่!</b>
+
+👤 <b>ผู้แจ้ง:</b> ${request.requesterName || 'Anonymous'}
+📍 <b>สถานที่:</b> ${request.location || '-'}
+📝 <b>อุปกรณ์/อาการเสีย:</b>
+${request.description}
+
+${priorityText[request.priority]}
+
+⏰ <b>เวลา:</b> ${new Date(request.createdAt).toLocaleString('th-TH')}
+`.trim();
+
+            // Fire and forget - no await, no blocking
+            const telegramUrl = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
+            
+            // Use sendBeacon for better performance and reliability
+            if (navigator.sendBeacon) {
+                try {
+                    const formData = new FormData();
+                    formData.append('chat_id', TELEGRAM_CHAT_ID);
+                    formData.append('text', message);
+                    formData.append('parse_mode', 'HTML');
+                    navigator.sendBeacon(telegramUrl, formData);
+                } catch (e) {
+                    console.log('Beacon failed, falling back to fetch');
+                    fallbackFetch(telegramUrl, message);
+                }
+            } else {
+                fallbackFetch(telegramUrl, message);
+            }
+        }
+
+        function fallbackFetch(telegramUrl, message) {
+            fetch(telegramUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    chat_id: TELEGRAM_CHAT_ID,
+                    text: message,
+                    parse_mode: 'HTML'
+                }),
+                keepalive: true
+            }).then(response => {
+                if (response.ok) {
+                    console.log('Telegram notification sent successfully');
+                }
+            }).catch(error => {
+                console.error('Error sending Telegram:', error);
+            });
+        }
+
+        // === LIFF Initialization ===
         function initLiff() {
-            // ตรวจสอบว่า liff object มีอยู่หรือไม่ (防止在非 LINE 环境中出错)
             if (typeof liff === 'undefined') {
                 console.warn("LIFF SDK not loaded - running in non-LINE environment");
+                updateUserDisplay({ displayName: 'Guest User' });
                 return;
             }
 
@@ -195,26 +298,25 @@
                 liffId: "2010470563-CHm0x9Xa" 
             }).then(() => { 
                 if (liff.isInClient()) {
-                    // อยู่ใน LINE แอป
                     if (!liff.isLoggedIn()) { 
-                        liff.login(); // ถ้ายังไม่ได้ล็อกอิน ให้เด้งหน้าล็อกอิน LINE 
+                        liff.login(); 
                     } else { 
-                        // เริ่มทำงานดึงโปรไฟล์พนักงานมาใช้ในฟอร์มได้เลย 
                         getProfile(); 
                     } 
                 } else {
-                    console.log("Running in external browser - LIFF features limited");
+                    console.log("Running in external browser");
+                    updateUserDisplay({ displayName: 'Guest User' });
                 }
             }).catch((err) => { 
                 console.error("LIFF Initialization failed", err); 
+                updateUserDisplay({ displayName: 'Guest User' });
             });
         }
 
         async function getProfile() {
             try {
-                // ตรวจสอบว่า liff object มีอยู่และ isLoggedIn จริง
                 if (typeof liff === 'undefined' || !liff.isLoggedIn()) {
-                    console.warn("Cannot get profile: LIFF not available or user not logged in");
+                    updateUserDisplay({ displayName: 'Guest User' });
                     return;
                 }
 
@@ -225,37 +327,54 @@
                     pictureUrl: profile.pictureUrl
                 };
                 console.log("User profile loaded:", currentUser);
-                
-                // อัพเดท UI เพื่อแสดงชื่อผู้ใช้
-                updateUserDisplay();
+                updateUserDisplay(currentUser);
             } catch (err) {
                 console.error("Failed to get profile", err);
+                updateUserDisplay({ displayName: 'Guest User' });
             }
         }
 
-        function updateUserDisplay() {
-            if (currentUser) {
-                // เพิ่มชื่อผู้ใช้ที่มุมขวาบนถ้าต้องการ
-                // สำหรับตอนนี้แค่ log ไว้ก่อน
+        function updateUserDisplay(user) {
+            const display = document.getElementById('userDisplay');
+            if (user && user.displayName) {
+                display.innerHTML = `<i class="ph-bold ph-user mr-1"></i>${user.displayName}`;
             }
         }
 
+        // === Role Switching ===
+        function switchRole(role) {
+            currentRole = role;
+            const tabUser = document.getElementById('tabUser');
+            const tabAdmin = document.getElementById('tabAdmin');
+            
+            if (role === 'user') {
+                tabUser.className = 'px-6 py-3 rounded-xl font-bold transition-all bg-orange-600 text-white';
+                tabAdmin.className = 'px-6 py-3 rounded-xl font-bold transition-all bg-white text-slate-600 border border-slate-200';
+            } else {
+                tabAdmin.className = 'px-6 py-3 rounded-xl font-bold transition-all bg-orange-600 text-white';
+                tabUser.className = 'px-6 py-3 rounded-xl font-bold transition-all bg-white text-slate-600 border border-slate-200';
+            }
+            renderRequests();
+        }
+
+        // === Data Loading ===
         function loadData() {
-            db.ref('it_tasks').on('value', snapshot => {
+            db.ref('repair_requests').on('value', snapshot => {
                 const data = snapshot.val();
-                tasks = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
-                renderTasks();
+                requests = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+                renderRequests();
                 updateStats();
             });
         }
 
         function updateStats() {
-            document.getElementById('totalCount').innerText = tasks.length;
-            document.getElementById('pendingCount').innerText = tasks.filter(t => t.status === 'pending').length;
-            document.getElementById('inProgressCount').innerText = tasks.filter(t => t.status === 'in-progress').length;
-            document.getElementById('completedCount').innerText = tasks.filter(t => t.status === 'completed').length;
+            document.getElementById('totalCount').innerText = requests.length;
+            document.getElementById('pendingCount').innerText = requests.filter(r => r.status === 'pending').length;
+            document.getElementById('inProgressCount').innerText = requests.filter(r => r.status === 'in-progress').length;
+            document.getElementById('completedCount').innerText = requests.filter(r => r.status === 'completed').length;
         }
 
+        // === Status & Priority Helpers ===
         function getStatusClass(status) {
             switch(status) {
                 case 'pending': return 'status-pending';
@@ -269,8 +388,8 @@
         function getStatusText(status) {
             switch(status) {
                 case 'pending': return 'รอดำเนินการ';
-                case 'in-progress': return 'กำลังดำเนินการ';
-                case 'completed': return 'เสร็จสิ้น';
+                case 'in-progress': return 'กำลังซ่อม';
+                case 'completed': return 'ซ่อมเสร็จ';
                 case 'cancelled': return 'ยกเลิก';
                 default: return 'รอดำเนินการ';
             }
@@ -287,167 +406,290 @@
 
         function getPriorityText(priority) {
             switch(priority) {
-                case 'high': return 'สูง';
-                case 'medium': return 'กลาง';
-                case 'low': return 'ต่ำ';
-                default: return 'กลาง';
+                case 'high': return 'ด่วนมาก';
+                case 'medium': return 'เร่งด่วน';
+                case 'low': return 'ทั่วไป';
+                default: return 'ทั่วไป';
             }
         }
 
-        function renderTasks() {
-            const container = document.getElementById('tasksContainer');
-            const filtered = filterTasksData();
+        // === Rendering ===
+        function renderRequests() {
+            const container = document.getElementById('requestsContainer');
+            const filtered = filterRequestsData();
             
             if (filtered.length === 0) {
                 container.innerHTML = `
                     <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-12 text-center">
-                        <i class="ph-bold ph-list-checks text-5xl text-slate-300 mb-4"></i>
-                        <p class="text-slate-400 font-bold">ไม่พบงานที่ตรงกับเงื่อนไข</p>
+                        <i class="ph-bold ph-wrench text-5xl text-slate-300 mb-4"></i>
+                        <p class="text-slate-400 font-bold">ไม่พบรายการแจ้งซ่อม</p>
                     </div>
                 `;
                 return;
             }
 
             filtered.sort((a, b) => {
-                if (a.status === 'completed' && b.status !== 'completed') return 1;
-                if (a.status !== 'completed' && b.status === 'completed') return -1;
-                const priorityOrder = { high: 0, medium: 1, low: 2 };
-                if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
-                    return priorityOrder[a.priority] - priorityOrder[b.priority];
+                // First, sort by creation time - NEWEST FIRST
+                const timeCompare = (b.createdAt || 0) - (a.createdAt || 0);
+                if (timeCompare !== 0) {
+                    return timeCompare;
                 }
-                return (b.createdAt || 0) - (a.createdAt || 0);
+                
+                // If same time, sort by status
+                const statusOrder = { pending: 0, 'in-progress': 1, completed: 2, cancelled: 3 };
+                if (statusOrder[a.status] !== statusOrder[b.status]) {
+                    return statusOrder[a.status] - statusOrder[b.status];
+                }
+                
+                // If same status, sort by priority
+                const priorityOrder = { high: 0, medium: 1, low: 2 };
+                return priorityOrder[a.priority] - priorityOrder[b.priority];
             });
 
-            container.innerHTML = filtered.map(task => `
-                <div class="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-6 hover:shadow-md transition-all ${task.status === 'completed' ? 'opacity-75' : ''}">
+            container.innerHTML = filtered.map(request => `
+                <div class="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-6 hover:shadow-md transition-all ${request.status === 'completed' ? 'opacity-75' : ''}">
                     <div class="flex items-start justify-between gap-4">
                         <div class="flex-1">
                             <div class="flex items-center gap-3 mb-2 flex-wrap">
-                                <h3 class="text-lg font-bold text-slate-800 ${task.status === 'completed' ? 'line-through' : ''}">${task.title}</h3>
-                                <span class="px-3 py-1 rounded-lg text-[11px] font-black uppercase border ${getStatusClass(task.status)}">${getStatusText(task.status)}</span>
-                                <span class="px-3 py-1 rounded-lg text-[11px] font-black uppercase ${getPriorityClass(task.priority)}">${getPriorityText(task.priority)}</span>
+                                <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center flex-shrink-0">
+                                    <i class="ph-bold ph-wrench text-2xl text-slate-600"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="text-lg font-bold text-slate-800">ผู้แจ้ง: ${request.requesterName || 'Anonymous'}</h3>
+                                    <p class="text-sm text-slate-500">${request.location || 'ไม่ระบุสถานที่'}</p>
+                                </div>
                             </div>
-                            ${task.description ? `<p class="text-slate-500 text-sm mb-3">${task.description}</p>` : ''}
+                            <p class="text-slate-600 text-sm mb-3">${request.description}</p>
+                            <div class="flex items-center gap-3 text-xs flex-wrap mb-3">
+                                <span class="px-3 py-1 rounded-lg text-[11px] font-black uppercase border ${getStatusClass(request.status)}">${getStatusText(request.status)}</span>
+                                <span class="px-3 py-1 rounded-lg text-[11px] font-black uppercase ${getPriorityClass(request.priority)}">${getPriorityText(request.priority)}</span>
+                            </div>
                             <div class="flex items-center gap-4 text-xs text-slate-400 flex-wrap">
-                                ${task.assignee ? `<span class="flex items-center gap-1"><i class="ph-bold ph-user"></i> ${task.assignee}</span>` : ''}
-                                ${task.dueDate ? `<span class="flex items-center gap-1"><i class="ph-bold ph-calendar"></i> ${formatDate(task.dueDate)}</span>` : ''}
-                                <span class="flex items-center gap-1"><i class="ph-bold ph-clock"></i> ${formatDateTime(task.createdAt)}</span>
+                                <span class="flex items-center gap-1"><i class="ph-bold ph-clock"></i> ${formatDateTime(request.createdAt)}</span>
+                                ${request.technicianName ? `<span class="flex items-center gap-1"><i class="ph-bold ph-gear"></i> ${request.technicianName}</span>` : ''}
                             </div>
+                            ${request.adminNote ? `<p class="mt-3 pt-3 border-t border-slate-100 text-sm text-slate-500"><i class="ph-bold ph-chat-circle mr-1"></i>หมายเหตุ: ${request.adminNote}</p>` : ''}
                         </div>
-                        <div class="flex gap-2">
-                            <button onclick="editTask('${task.id}')" class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 hover:bg-teal-600 hover:text-white flex items-center justify-center transition-all" title="แก้ไข">
-                                <i class="ph-bold ph-pencil-simple"></i>
+                        <div class="flex flex-col gap-2">
+                            <button onclick="viewDetail('${request.id}')" class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-all" title="ดูรายละเอียด">
+                                <i class="ph-bold ph-eye"></i>
                             </button>
-                            <button onclick="deleteTask('${task.id}')" class="w-10 h-10 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white flex items-center justify-center transition-all" title="ลบ">
-                                <i class="ph-bold ph-trash"></i>
-                            </button>
+                            ${currentRole === 'admin' && request.status !== 'completed' && request.status !== 'cancelled' ? `
+                                <button onclick="startRepair('${request.id}')" class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-all" title="เริ่มซ่อม">
+                                    <i class="ph-bold ph-play"></i>
+                                </button>
+                                <button onclick="completeRepair('${request.id}')" class="w-10 h-10 rounded-xl bg-green-50 text-green-600 hover:bg-green-600 hover:text-white flex items-center justify-center transition-all" title="ซ่อมเสร็จ">
+                                    <i class="ph-bold ph-check"></i>
+                                </button>
+                            ` : ''}
+                            ${currentRole === 'admin' ? `
+                                <button onclick="deleteRequest('${request.id}')" class="w-10 h-10 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white flex items-center justify-center transition-all" title="ลบงาน">
+                                    <i class="ph-bold ph-trash"></i>
+                                </button>
+                            ` : ''}
+                            ${currentRole === 'user' && request.status === 'pending' ? `
+                                <button onclick="deleteRequest('${request.id}')" class="w-10 h-10 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white flex items-center justify-center transition-all" title="ยกเลิก">
+                                    <i class="ph-bold ph-trash"></i>
+                                </button>
+                            ` : ''}
                         </div>
                     </div>
                 </div>
             `).join('');
         }
 
-        function filterTasksData() {
+        function filterRequestsData() {
             const statusFilter = document.getElementById('statusFilter').value;
-            const priorityFilter = document.getElementById('priorityFilter').value;
             const q = document.getElementById('searchInput').value.toLowerCase();
 
-            return tasks.filter(task => {
-                const matchStatus = statusFilter === 'all' || task.status === statusFilter;
-                const matchPriority = priorityFilter === 'all' || task.priority === priorityFilter;
+            return requests.filter(request => {
+                const matchStatus = statusFilter === 'all' || request.status === statusFilter;
                 const matchQuery = q === '' || 
-                    task.title.toLowerCase().includes(q) || 
-                    (task.description && task.description.toLowerCase().includes(q)) ||
-                    (task.assignee && task.assignee.toLowerCase().includes(q));
-                return matchStatus && matchPriority && matchQuery;
+                    (request.description && request.description.toLowerCase().includes(q)) ||
+                    (request.location && request.location.toLowerCase().includes(q)) ||
+                    (request.requesterName && request.requesterName.toLowerCase().includes(q));
+                return matchStatus && matchQuery;
             });
         }
 
-        function filterTasks() {
-            renderTasks();
+        function filterRequests() {
+            renderRequests();
         }
 
-        function formatDate(dateStr) {
-            if (!dateStr) return '';
-            const date = new Date(dateStr);
-            return date.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
-        }
-
+        // === Date Formatting ===
         function formatDateTime(timestamp) {
             if (!timestamp) return '';
             const date = new Date(timestamp);
             return date.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
         }
 
-        function openTaskModal(id = null) {
-            const form = document.getElementById('taskForm');
-            form.reset();
-            document.getElementById('taskId').value = '';
-            document.getElementById('taskModalTitle').innerText = 'เพิ่มงานใหม่';
-            
-            if(id) {
-                const task = tasks.find(x => x.id === id);
-                document.getElementById('taskId').value = task.id;
-                document.getElementById('taskTitle').value = task.title;
-                document.getElementById('taskDescription').value = task.description || '';
-                document.getElementById('taskStatus').value = task.status;
-                document.getElementById('taskPriority').value = task.priority;
-                document.getElementById('taskDueDate').value = task.dueDate || '';
-                document.getElementById('taskAssignee').value = task.assignee || '';
-                document.getElementById('taskModalTitle').innerText = 'แก้ไขงาน';
-            } else {
-                // ถ้าเป็นเพิ่มงานใหม่ และมี currentUser ให้ใส่ชื่อผู้ใช้เป็นค่าเริ่มต้น
-                if (currentUser && currentUser.displayName) {
-                    document.getElementById('taskAssignee').value = currentUser.displayName;
-                }
-            }
-            document.getElementById('taskModal').classList.remove('hidden');
+        // === Modal Functions ===
+        function openRequestModal() {
+            document.getElementById('requestForm').reset();
+            document.getElementById('requestModal').classList.remove('hidden');
         }
 
-        function closeTaskModal() { 
-            document.getElementById('taskModal').classList.add('hidden'); 
+        function closeRequestModal() { 
+            document.getElementById('requestModal').classList.add('hidden'); 
         }
 
-        async function handleSaveTask(event) {
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+            currentRequestId = null;
+        }
+
+        // === Request Submission ===
+        async function handleSubmitRequest(event) {
             event.preventDefault();
-            const id = document.getElementById('taskId').value;
             
             const data = {
-                title: document.getElementById('taskTitle').value,
-                description: document.getElementById('taskDescription').value,
-                status: document.getElementById('taskStatus').value,
-                priority: document.getElementById('taskPriority').value,
-                dueDate: document.getElementById('taskDueDate').value,
-                assignee: document.getElementById('taskAssignee').value,
+                location: document.getElementById('requestLocation').value,
+                description: document.getElementById('requestDescription').value,
+                priority: document.getElementById('requestPriority').value,
+                status: 'pending',
+                requesterName: document.getElementById('requesterName').value,
+                requesterUserId: currentUser ? currentUser.userId : null,
+                createdAt: Date.now(),
                 updatedAt: Date.now()
             };
 
             try {
-                if(id) {
-                    await db.ref('it_tasks/' + id).update(data);
-                } else {
-                    data.createdAt = Date.now();
-                    await db.ref('it_tasks').push(data);
-                }
-                closeTaskModal();
+                const newRef = await db.ref('repair_requests').push(data);
+                closeRequestModal();
+                alert('✅ ส่งแจ้งซ่อมเรียบร้อยแล้ว!');
+                
+                // Send Telegram notification - completely async, no blocking
+                setTimeout(() => {
+                    data.id = newRef.key;
+                    sendRequestToTelegram(data);
+                }, 100);
             } catch (err) { 
                 alert('Error: ' + err.message); 
             }
         }
 
-        function editTask(id) { 
-            openTaskModal(id); 
+        // === Detail View ===
+        function viewDetail(id) {
+            currentRequestId = id;
+            const request = requests.find(r => r.id === id);
+            if (!request) return;
+
+            const content = document.getElementById('detailContent');
+            content.innerHTML = `
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center">
+                            <i class="ph-bold ph-wrench text-3xl text-slate-600"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-xl font-bold text-slate-800">${request.location || 'ไม่ระบุสถานที่'}</h4>
+                            <p class="text-slate-500">ผู้แจ้ง: ${request.requesterName || 'Anonymous'}</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <span class="px-4 py-2 rounded-lg text-[11px] font-black uppercase border ${getStatusClass(request.status)}">${getStatusText(request.status)}</span>
+                        <span class="px-4 py-2 rounded-lg text-[11px] font-black uppercase ${getPriorityClass(request.priority)}">${getPriorityText(request.priority)}</span>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl p-4">
+                        <p class="text-slate-700">${request.description}</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <p class="text-slate-400 text-[10px] font-black uppercase">ผู้แจ้ง</p>
+                            <p class="text-slate-700 font-semibold">${request.requesterName || 'Anonymous'}</p>
+                        </div>
+                        <div>
+                            <p class="text-slate-400 text-[10px] font-black uppercase">วันที่แจ้ง</p>
+                            <p class="text-slate-700 font-semibold">${formatDateTime(request.createdAt)}</p>
+                        </div>
+                        ${request.technicianName ? `
+                        <div>
+                            <p class="text-slate-400 text-[10px] font-black uppercase">ช่างซ่อม</p>
+                            <p class="text-slate-700 font-semibold">${request.technicianName}</p>
+                        </div>
+                        ` : ''}
+                    </div>
+                    ${request.adminNote ? `
+                    <div class="bg-orange-50 rounded-xl p-4 border border-orange-200">
+                        <p class="text-orange-800 text-sm"><i class="ph-bold ph-chat-circle mr-2"></i><strong>หมายเหตุ:</strong> ${request.adminNote}</p>
+                    </div>
+                    ` : ''}
+                    ${currentRole === 'admin' && request.status !== 'completed' && request.status !== 'cancelled' ? `
+                    <div class="border-t border-slate-100 pt-4 mt-4">
+                        <p class="text-[10px] font-black text-slate-400 uppercase mb-2">หมายเหตุ (ถ้ามี)</p>
+                        <textarea id="adminNote" rows="2" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-orange-500 outline-none bg-white text-sm" placeholder="เพิ่มหมายเหตุ..."></textarea>
+                        <div class="flex gap-3 mt-4">
+                            <button onclick="startRepair('${request.id}')" class="flex-1 py-3 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 transition-all flex items-center justify-center gap-2">
+                                <i class="ph-bold ph-play"></i>เริ่มซ่อม
+                            </button>
+                            <button onclick="completeRepair('${request.id}')" class="flex-1 py-3 rounded-xl font-bold bg-green-600 text-white hover:bg-green-700 transition-all flex items-center justify-center gap-2">
+                                <i class="ph-bold ph-check"></i>ซ่อมเสร็จ
+                            </button>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            document.getElementById('detailModal').classList.remove('hidden');
         }
 
-        function deleteTask(id) {
-            if(confirm('ยืนยันการลบงานนี้?')) {
-                db.ref('it_tasks/' + id).remove();
+        // === Admin Actions - Start Repair ===
+        async function startRepair(id) {
+            const noteInput = document.getElementById('adminNote');
+            const note = noteInput ? noteInput.value : '';
+            
+            const data = {
+                status: 'in-progress',
+                technicianName: currentUser ? currentUser.displayName : 'Technician',
+                technicianUserId: currentUser ? currentUser.userId : null,
+                adminNote: note,
+                startedAt: Date.now(),
+                updatedAt: Date.now()
+            };
+
+            try {
+                await db.ref('repair_requests/' + id).update(data);
+                closeDetailModal();
+                alert('✅ เริ่มดำเนินการซ่อมแล้ว!');
+            } catch (err) {
+                alert('Error: ' + err.message);
             }
         }
 
+        // === Admin Actions - Complete Repair ===
+        async function completeRepair(id) {
+            const noteInput = document.getElementById('adminNote');
+            const note = noteInput ? noteInput.value : '';
+            
+            const data = {
+                status: 'completed',
+                technicianName: currentUser ? currentUser.displayName : 'Technician',
+                technicianUserId: currentUser ? currentUser.userId : null,
+                adminNote: note,
+                completedAt: Date.now(),
+                updatedAt: Date.now()
+            };
+
+            try {
+                await db.ref('repair_requests/' + id).update(data);
+                closeDetailModal();
+                alert('✅ บันทึกสถานะซ่อมเสร็จแล้ว!');
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+        }
+
+        // === Delete Request ===
+        function deleteRequest(id) {
+            if(confirm('ยืนยันการยกเลิกรายการแจ้งซ่อมนี้?')) {
+                db.ref('repair_requests/' + id).remove();
+            }
+        }
+
+        // === Initialize ===
         window.onload = () => { 
             loadData(); 
-            initLiff(); // เริ่มต้น LIFF เมื่อโหลดหน้าเสร็จ
+            initLiff();
         };
     </script>
     

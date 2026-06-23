@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการงานไอที | Communication Dept</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; }
+        .status-pending { background: #fef3c7; color: #92400e; border-color: #f59e0b; }
+        .status-in-progress { background: #dbeafe; color: #1e40af; border-color: #3b82f6; }
+        .status-completed { background: #dcfce7; color: #166534; border-color: #22c55e; }
+        .status-cancelled { background: #fee2e2; color: #991b1b; border-color: #ef4444; }
+        .priority-high { background: #fee2e2; color: #991b1b; }
+        .priority-medium { background: #fef3c7; color: #92400e; }
+        .priority-low { background: #e0f2fe; color: #0369a1; }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+    <nav class="bg-[#1e293b] text-white shadow-xl sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="bg-teal-500/20 p-2 rounded-xl border border-teal-500/30 hover:bg-teal-500/40 transition-all">
+                    <i class="ph-bold ph-arrow-left text-xl text-teal-400"></i>
+                </a>
+                <div>
+                    <h1 class="font-bold text-lg leading-none text-white">ระบบจัดการงานไอที</h1>
+                    <span class="text-[10px] text-slate-400 font-medium tracking-widest uppercase">IT Work Management System</span>
+                </div>
+            </div>
+            <button onclick="openTaskModal()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-4 py-2 rounded-xl flex items-center gap-2 text-sm transition-all shadow-lg shadow-teal-500/20">
+                <i class="ph-bold ph-plus-circle"></i> เพิ่มงานใหม่
+            </button>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8 w-full flex-grow">
+        <!-- Dashboard Stats -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 mb-8">
+            <div class="bg-white p-4 rounded-[1.5rem] shadow-sm border border-slate-200">
+                <div class="flex items-center gap-2 mb-1">
+                    <div class="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
+                        <i class="ph-bold ph-list-checks text-sm"></i>
+                    </div>
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">งานทั้งหมด</p>
+                </div>
+                <h2 id="totalCount" class="text-2xl font-black text-slate-800">0</h2>
+            </div>
+            <div class="bg-white p-4 rounded-[1.5rem] shadow-sm border border-amber-200">
+                <div class="flex items-center gap-2 mb-1">
+                    <div class="w-7 h-7 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center">
+                        <i class="ph-bold ph-clock text-sm"></i>
+                    </div>
+                    <p class="text-[10px] font-black text-amber-600 uppercase tracking-widest">รอดำเนินการ</p>
+                </div>
+                <h2 id="pendingCount" class="text-2xl font-black text-amber-700">0</h2>
+            </div>
+            <div class="bg-white p-4 rounded-[1.5rem] shadow-sm border border-blue-200">
+                <div class="flex items-center gap-2 mb-1">
+                    <div class="w-7 h-7 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                        <i class="ph-bold ph-spinner text-sm"></i>
+                    </div>
+                    <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest">กำลังดำเนินการ</p>
+                </div>
+                <h2 id="inProgressCount" class="text-2xl font-black text-blue-700">0</h2>
+            </div>
+            <div class="bg-white p-4 rounded-[1.5rem] shadow-sm border border-green-200">
+                <div class="flex items-center gap-2 mb-1">
+                    <div class="w-7 h-7 rounded-lg bg-green-100 text-green-600 flex items-center justify-center">
+                        <i class="ph-bold ph-check-circle text-sm"></i>
+                    </div>
+                    <p class="text-[10px] font-black text-green-600 uppercase tracking-widest">เสร็จสิ้น</p>
+                </div>
+                <h2 id="completedCount" class="text-2xl font-black text-green-700">0</h2>
+            </div>
+        </div>
+
+        <!-- Filter and Search -->
+        <div class="flex flex-col sm:flex-row gap-3 mb-6">
+            <select id="statusFilter" onchange="filterTasks()" class="px-4 py-3 rounded-xl border border-slate-200 focus:border-teal-500 outline-none bg-white font-semibold text-sm">
+                <option value="all">ทุกสถานะ</option>
+                <option value="pending">รอดำเนินการ</option>
+                <option value="in-progress">กำลังดำเนินการ</option>
+                <option value="completed">เสร็จสิ้น</option>
+                <option value="cancelled">ยกเลิก</option>
+            </select>
+            <select id="priorityFilter" onchange="filterTasks()" class="px-4 py-3 rounded-xl border border-slate-200 focus:border-teal-500 outline-none bg-white font-semibold text-sm">
+                <option value="all">ทุกความสำคัญ</option>
+                <option value="high">สูง</option>
+                <option value="medium">กลาง</option>
+                <option value="low">ต่ำ</option>
+            </select>
+            <div class="relative group flex-1">
+                <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg group-focus-within:text-teal-500 transition-colors"></i>
+                <input type="text" id="searchInput" onkeyup="filterTasks()" placeholder="ค้นหางาน..." class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 focus:border-teal-500 bg-white shadow-sm outline-none transition-all text-sm font-medium">
+            </div>
+        </div>
+
+        <!-- Tasks List -->
+        <div class="grid grid-cols-1 gap-4" id="tasksContainer">
+            <!-- Tasks will be rendered here -->
+        </div>
+    </main>
+
+    <!-- Task Modal -->
+    <div id="taskModal" class="fixed inset-0 z-[100] hidden bg-slate-900/60 backdrop-blur-sm flex justify-center items-center p-4">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
+            <div class="px-8 py-5 bg-white border-b border-slate-100 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-800" id="taskModalTitle">เพิ่มงานใหม่</h3>
+                <button onclick="closeTaskModal()" class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-400">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+            </div>
+            <form id="taskForm" onsubmit="handleSaveTask(event)" class="p-8 space-y-4">
+                <input type="hidden" id="taskId">
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 pl-1">หัวข้องาน</label>
+                    <input type="text" id="taskTitle" required class="w-full px-5 py-3 rounded-xl border border-slate-200 focus:border-teal-500 outline-none bg-slate-50 font-semibold" placeholder="ชื่องานที่ต้องทำ">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 pl-1">รายละเอียด</label>
+                    <textarea id="taskDescription" rows="3" class="w-full px-5 py-3 rounded-xl border border-slate-200 focus:border-teal-500 outline-none bg-slate-50 font-semibold resize-none" placeholder="รายละเอียดเพิ่มเติม..."></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 pl-1">สถานะ</label>
+                        <select id="taskStatus" required class="w-full px-5 py-3 rounded-xl border border-slate-200 focus:border-teal-500 outline-none bg-slate-50 font-semibold">
+                            <option value="pending">รอดำเนินการ</option>
+                            <option value="in-progress">กำลังดำเนินการ</option>
+                            <option value="completed">เสร็จสิ้น</option>
+                            <option value="cancelled">ยกเลิก</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 pl-1">ความสำคัญ</label>
+                        <select id="taskPriority" required class="w-full px-5 py-3 rounded-xl border border-slate-200 focus:border-teal-500 outline-none bg-slate-50 font-semibold">
+                            <option value="low">ต่ำ</option>
+                            <option value="medium">กลาง</option>
+                            <option value="high">สูง</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 pl-1">วันกำหนดส่ง</label>
+                        <input type="date" id="taskDueDate" class="w-full px-5 py-3 rounded-xl border border-slate-200 focus:border-teal-500 outline-none bg-slate-50 font-semibold">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 pl-1">ผู้รับผิดชอบ</label>
+                        <input type="text" id="taskAssignee" class="w-full px-5 py-3 rounded-xl border border-slate-200 focus:border-teal-500 outline-none bg-slate-50 font-semibold" placeholder="ชื่อผู้รับผิดชอบ">
+                    </div>
+                </div>
+                <div class="pt-4 flex gap-3">
+                    <button type="button" onclick="closeTaskModal()" class="flex-1 py-3 rounded-xl font-bold bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all">ยกเลิก</button>
+                    <button type="submit" class="flex-1 py-3 rounded-xl font-bold bg-teal-600 text-white hover:bg-teal-700 shadow-lg shadow-teal-500/20 transition-all">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDnbOpvNTZ1bNFzReLXMq_wW4kp5iB5oiE",
+            authDomain: "signal02-f4d85.firebaseapp.com",
+            databaseURL: "https://signal02-f4d85-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "signal02-f4d85",
+            storageBucket: "signal02-f4d85.firebasestorage.app",
+            messagingSenderId: "653019128612",
+            appId: "1:653019128612:web:41d283659202787c4689b1",
+            measurementId: "G-3G3TQ0VLXM"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let tasks = [];
+        let currentUser = null;
+
+        // โค้ดฝั่งหน้าเว็บพนักงาน (ไม่ใช่ใน Google Apps Script)
+        function initLiff() {
+            liff.init({ 
+                liffId: "2010470563-CHm0x9Xa" 
+            }).then(() => { 
+                if (!liff.isLoggedIn()) { 
+                    liff.login(); // ถ้ายังไม่ได้ล็อกอิน ให้เด้งหน้าล็อกอิน LINE 
+                } else { 
+                    // เริ่มทำงานดึงโปรไฟล์พนักงานมาใช้ในฟอร์มได้เลย 
+                    getProfile(); 
+                } 
+            }).catch((err) => { 
+                console.error("LIFF Initialization failed", err); 
+            });
+        }
+
+        async function getProfile() {
+            try {
+                const profile = await liff.getProfile();
+                currentUser = {
+                    userId: profile.userId,
+                    displayName: profile.displayName,
+                    pictureUrl: profile.pictureUrl
+                };
+                console.log("User profile loaded:", currentUser);
+                
+                // อัพเดท UI เพื่อแสดงชื่อผู้ใช้
+                updateUserDisplay();
+            } catch (err) {
+                console.error("Failed to get profile", err);
+            }
+        }
+
+        function updateUserDisplay() {
+            if (currentUser) {
+                // เพิ่มชื่อผู้ใช้ที่มุมขวาบนถ้าต้องการ
+                // สำหรับตอนนี้แค่ log ไว้ก่อน
+            }
+        }
+
+        function loadData() {
+            db.ref('it_tasks').on('value', snapshot => {
+                const data = snapshot.val();
+                tasks = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+                renderTasks();
+                updateStats();
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('totalCount').innerText = tasks.length;
+            document.getElementById('pendingCount').innerText = tasks.filter(t => t.status === 'pending').length;
+            document.getElementById('inProgressCount').innerText = tasks.filter(t => t.status === 'in-progress').length;
+            document.getElementById('completedCount').innerText = tasks.filter(t => t.status === 'completed').length;
+        }
+
+        function getStatusClass(status) {
+            switch(status) {
+                case 'pending': return 'status-pending';
+                case 'in-progress': return 'status-in-progress';
+                case 'completed': return 'status-completed';
+                case 'cancelled': return 'status-cancelled';
+                default: return 'status-pending';
+            }
+        }
+
+        function getStatusText(status) {
+            switch(status) {
+                case 'pending': return 'รอดำเนินการ';
+                case 'in-progress': return 'กำลังดำเนินการ';
+                case 'completed': return 'เสร็จสิ้น';
+                case 'cancelled': return 'ยกเลิก';
+                default: return 'รอดำเนินการ';
+            }
+        }
+
+        function getPriorityClass(priority) {
+            switch(priority) {
+                case 'high': return 'priority-high';
+                case 'medium': return 'priority-medium';
+                case 'low': return 'priority-low';
+                default: return 'priority-medium';
+            }
+        }
+
+        function getPriorityText(priority) {
+            switch(priority) {
+                case 'high': return 'สูง';
+                case 'medium': return 'กลาง';
+                case 'low': return 'ต่ำ';
+                default: return 'กลาง';
+            }
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('tasksContainer');
+            const filtered = filterTasksData();
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-12 text-center">
+                        <i class="ph-bold ph-list-checks text-5xl text-slate-300 mb-4"></i>
+                        <p class="text-slate-400 font-bold">ไม่พบงานที่ตรงกับเงื่อนไข</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.sort((a, b) => {
+                if (a.status === 'completed' && b.status !== 'completed') return 1;
+                if (a.status !== 'completed' && b.status === 'completed') return -1;
+                const priorityOrder = { high: 0, medium: 1, low: 2 };
+                if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
+                    return priorityOrder[a.priority] - priorityOrder[b.priority];
+                }
+                return (b.createdAt || 0) - (a.createdAt || 0);
+            });
+
+            container.innerHTML = filtered.map(task => `
+                <div class="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-6 hover:shadow-md transition-all ${task.status === 'completed' ? 'opacity-75' : ''}">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-2 flex-wrap">
+                                <h3 class="text-lg font-bold text-slate-800 ${task.status === 'completed' ? 'line-through' : ''}">${task.title}</h3>
+                                <span class="px-3 py-1 rounded-lg text-[11px] font-black uppercase border ${getStatusClass(task.status)}">${getStatusText(task.status)}</span>
+                                <span class="px-3 py-1 rounded-lg text-[11px] font-black uppercase ${getPriorityClass(task.priority)}">${getPriorityText(task.priority)}</span>
+                            </div>
+                            ${task.description ? `<p class="text-slate-500 text-sm mb-3">${task.description}</p>` : ''}
+                            <div class="flex items-center gap-4 text-xs text-slate-400 flex-wrap">
+                                ${task.assignee ? `<span class="flex items-center gap-1"><i class="ph-bold ph-user"></i> ${task.assignee}</span>` : ''}
+                                ${task.dueDate ? `<span class="flex items-center gap-1"><i class="ph-bold ph-calendar"></i> ${formatDate(task.dueDate)}</span>` : ''}
+                                <span class="flex items-center gap-1"><i class="ph-bold ph-clock"></i> ${formatDateTime(task.createdAt)}</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="editTask('${task.id}')" class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 hover:bg-teal-600 hover:text-white flex items-center justify-center transition-all" title="แก้ไข">
+                                <i class="ph-bold ph-pencil-simple"></i>
+                            </button>
+                            <button onclick="deleteTask('${task.id}')" class="w-10 h-10 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white flex items-center justify-center transition-all" title="ลบ">
+                                <i class="ph-bold ph-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterTasksData() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const priorityFilter = document.getElementById('priorityFilter').value;
+            const q = document.getElementById('searchInput').value.toLowerCase();
+
+            return tasks.filter(task => {
+                const matchStatus = statusFilter === 'all' || task.status === statusFilter;
+                const matchPriority = priorityFilter === 'all' || task.priority === priorityFilter;
+                const matchQuery = q === '' || 
+                    task.title.toLowerCase().includes(q) || 
+                    (task.description && task.description.toLowerCase().includes(q)) ||
+                    (task.assignee && task.assignee.toLowerCase().includes(q));
+                return matchStatus && matchPriority && matchQuery;
+            });
+        }
+
+        function filterTasks() {
+            renderTasks();
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function formatDateTime(timestamp) {
+            if (!timestamp) return '';
+            const date = new Date(timestamp);
+            return date.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        function openTaskModal(id = null) {
+            const form = document.getElementById('taskForm');
+            form.reset();
+            document.getElementById('taskId').value = '';
+            document.getElementById('taskModalTitle').innerText = 'เพิ่มงานใหม่';
+            
+            if(id) {
+                const task = tasks.find(x => x.id === id);
+                document.getElementById('taskId').value = task.id;
+                document.getElementById('taskTitle').value = task.title;
+                document.getElementById('taskDescription').value = task.description || '';
+                document.getElementById('taskStatus').value = task.status;
+                document.getElementById('taskPriority').value = task.priority;
+                document.getElementById('taskDueDate').value = task.dueDate || '';
+                document.getElementById('taskAssignee').value = task.assignee || '';
+                document.getElementById('taskModalTitle').innerText = 'แก้ไขงาน';
+            } else {
+                // ถ้าเป็นเพิ่มงานใหม่ และมี currentUser ให้ใส่ชื่อผู้ใช้เป็นค่าเริ่มต้น
+                if (currentUser && currentUser.displayName) {
+                    document.getElementById('taskAssignee').value = currentUser.displayName;
+                }
+            }
+            document.getElementById('taskModal').classList.remove('hidden');
+        }
+
+        function closeTaskModal() { 
+            document.getElementById('taskModal').classList.add('hidden'); 
+        }
+
+        async function handleSaveTask(event) {
+            event.preventDefault();
+            const id = document.getElementById('taskId').value;
+            
+            const data = {
+                title: document.getElementById('taskTitle').value,
+                description: document.getElementById('taskDescription').value,
+                status: document.getElementById('taskStatus').value,
+                priority: document.getElementById('taskPriority').value,
+                dueDate: document.getElementById('taskDueDate').value,
+                assignee: document.getElementById('taskAssignee').value,
+                updatedAt: Date.now()
+            };
+
+            try {
+                if(id) {
+                    await db.ref('it_tasks/' + id).update(data);
+                } else {
+                    data.createdAt = Date.now();
+                    await db.ref('it_tasks').push(data);
+                }
+                closeTaskModal();
+            } catch (err) { 
+                alert('Error: ' + err.message); 
+            }
+        }
+
+        function editTask(id) { 
+            openTaskModal(id); 
+        }
+
+        function deleteTask(id) {
+            if(confirm('ยืนยันการลบงานนี้?')) {
+                db.ref('it_tasks/' + id).remove();
+            }
+        }
+
+        window.onload = () => { 
+            loadData(); 
+            initLiff(); // เริ่มต้น LIFF เมื่อโหลดหน้าเสร็จ
+        };
+    </script>
+    
+</body>
+</html>

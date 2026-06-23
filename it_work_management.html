@@ -237,9 +237,7 @@
 
 👤 <b>ผู้แจ้ง:</b> ${request.requesterName || 'Anonymous'}
 📍 <b>สถานที่:</b> ${request.location || '-'}
-📝 <b>อุปกรณ์/อาการเสีย:</b>
-${request.description}
-
+📝 <b>อุปกรณ์/อาการเสีย:</b> ${request.description}
 ${priorityText[request.priority]}
 
 ⏰ <b>เวลา:</b> ${new Date(request.createdAt).toLocaleString('th-TH')}

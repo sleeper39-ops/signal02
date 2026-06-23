@@ -10,7 +10,7 @@
     
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://static.line-scdn.net/liff/edge/v2/sdk.js"></script>
     
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; }
@@ -185,15 +185,26 @@
 
         // โค้ดฝั่งหน้าเว็บพนักงาน (ไม่ใช่ใน Google Apps Script)
         function initLiff() {
+            // ตรวจสอบว่า liff object มีอยู่หรือไม่ (防止在非 LINE 环境中出错)
+            if (typeof liff === 'undefined') {
+                console.warn("LIFF SDK not loaded - running in non-LINE environment");
+                return;
+            }
+
             liff.init({ 
                 liffId: "2010470563-CHm0x9Xa" 
             }).then(() => { 
-                if (!liff.isLoggedIn()) { 
-                    liff.login(); // ถ้ายังไม่ได้ล็อกอิน ให้เด้งหน้าล็อกอิน LINE 
-                } else { 
-                    // เริ่มทำงานดึงโปรไฟล์พนักงานมาใช้ในฟอร์มได้เลย 
-                    getProfile(); 
-                } 
+                if (liff.isInClient()) {
+                    // อยู่ใน LINE แอป
+                    if (!liff.isLoggedIn()) { 
+                        liff.login(); // ถ้ายังไม่ได้ล็อกอิน ให้เด้งหน้าล็อกอิน LINE 
+                    } else { 
+                        // เริ่มทำงานดึงโปรไฟล์พนักงานมาใช้ในฟอร์มได้เลย 
+                        getProfile(); 
+                    } 
+                } else {
+                    console.log("Running in external browser - LIFF features limited");
+                }
             }).catch((err) => { 
                 console.error("LIFF Initialization failed", err); 
             });
@@ -201,6 +212,12 @@
 
         async function getProfile() {
             try {
+                // ตรวจสอบว่า liff object มีอยู่และ isLoggedIn จริง
+                if (typeof liff === 'undefined' || !liff.isLoggedIn()) {
+                    console.warn("Cannot get profile: LIFF not available or user not logged in");
+                    return;
+                }
+
                 const profile = await liff.getProfile();
                 currentUser = {
                     userId: profile.userId,

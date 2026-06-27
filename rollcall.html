@@ -1056,13 +1056,16 @@ function renderRoster(mode){
       const modeAttr = e.target.dataset.mode;
       if(modeAttr === "work"){
         statusMapWork[id] = e.target.value;
-        await saveStateWork();
       } else {
         statusMapRoll[id] = e.target.value;
-        await saveStateRoll();
       }
       e.target.closest(".person").dataset.status = e.target.value;
       renderAll(false);
+      if(modeAttr === "work"){
+        await saveStateWork();
+      } else {
+        await saveStateRoll();
+      }
     });
   });
   container.querySelectorAll("[data-edit-person]").forEach(btn => {

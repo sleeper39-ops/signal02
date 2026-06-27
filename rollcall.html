@@ -541,15 +541,6 @@ footer{text-align:center; padding:30px 0 10px; color:var(--txt-faint); font-size
       </div>
     </div>
 
-    <div class="section admin-only hidden" id="groupAdminSection">
-      <div class="section-head">
-        <h3>ตั้งค่าหน่วย/กลุ่ม</h3>
-        <div class="actions">
-          <button class="btn sm" id="addGroupBtn">+ เพิ่มหน่วย/กลุ่ม</button>
-        </div>
-      </div>
-      <div class="panel" id="groupAdminList"></div>
-    </div>
   </div>
 
   <footer>เช็คยอดกำลังพล บก.ควบคุม 2 · ข้อมูลบันทึกอัตโนมัติ</footer>
@@ -946,7 +937,6 @@ function setAdminUI(){
   const t = document.getElementById("adminToggle");
   t.textContent = isAdmin ? "ออกจากแอดมิน" : "โหมดแอดมิน";
   t.classList.toggle("on", isAdmin);
-  if(isAdmin) renderGroupAdminList();
 }
 function openModal(id){ document.getElementById(id).classList.remove("hidden"); }
 function closeModal(id){ document.getElementById(id).classList.add("hidden"); }
@@ -1197,7 +1187,6 @@ async function saveGroupModal(){
     await saveExtraGroups();
     closeModal("groupModal");
     renderAll(true);
-    renderGroupAdminList();
     showToast("เพิ่มหน่วย/กลุ่มแล้ว — ใช้ตอนเพิ่มกำลังพลได้ทันที");
     return;
   }
@@ -1212,7 +1201,6 @@ async function saveGroupModal(){
   await saveExtraGroups();
   closeModal("groupModal");
   renderAll(true);
-  renderGroupAdminList();
   showToast("แก้ไขชื่อหน่วย/กลุ่มแล้ว");
 }
 async function deleteGroup(name){
@@ -1232,32 +1220,7 @@ async function deleteGroup(name){
   await saveExtraGroups();
 
   renderAll(true);
-  renderGroupAdminList();
   showToast(members.length > 0 ? `ลบหน่วย/กลุ่มและกำลังพล ${members.length} คนแล้ว` : "ลบหน่วย/กลุ่มแล้ว");
-}
-function renderGroupAdminList(){
-  const el = document.getElementById("groupAdminList");
-  if(!el) return;
-  const names = allGroupNames();
-  if(names.length === 0){
-    el.innerHTML = `<div class="empty">ยังไม่มีหน่วย/กลุ่ม</div>`;
-    return;
-  }
-  el.innerHTML = names.map(g => {
-    const count = ROSTER.filter(p=>p.g===g).length;
-    return `<div class="grouprow">
-      <div class="grouprow-info">
-        <div class="grouprow-name">${g}</div>
-        <div class="grouprow-count">${count} คน</div>
-      </div>
-      <div class="grouprow-actions">
-        <button class="picon-btn edit" data-gedit="${g}" title="แก้ไขชื่อ">✎</button>
-        <button class="picon-btn" data-gdel="${g}" title="ลบหน่วย/กลุ่ม">✕</button>
-      </div>
-    </div>`;
-  }).join("");
-  el.querySelectorAll("[data-gedit]").forEach(btn => btn.addEventListener("click", () => openGroupModal(btn.dataset.gedit)));
-  el.querySelectorAll("[data-gdel]").forEach(btn => btn.addEventListener("click", () => deleteGroup(btn.dataset.gdel)));
 }
 
 /* ================= COMPUTE SUMMARY ================= */
@@ -1602,7 +1565,6 @@ async function init(){
   /* group modal */
   document.getElementById("groupSaveBtn").addEventListener("click", saveGroupModal);
   document.getElementById("groupCancelBtn").addEventListener("click", () => closeModal("groupModal"));
-  document.getElementById("addGroupBtn").addEventListener("click", () => openGroupModal(null));
   document.getElementById("addGroupBtnTopWork").addEventListener("click", () => openGroupModal(null));
   document.getElementById("addGroupBtnTopRoll").addEventListener("click", () => openGroupModal(null));
   /* Enter key in group modal */

@@ -1583,7 +1583,7 @@ function updateHeroHeadline(){
   } else if(tab === "checkin-roll"){
     el.textContent = el.dataset.roll || "";
   } else if(tab === "summary"){
-    el.textContent = (el.dataset.work || "") + " · " + (el.dataset.roll || "");
+    el.textContent = ringMode === "roll" ? (el.dataset.roll || "") : (el.dataset.work || "");
   } else {
     el.textContent = "";
   }

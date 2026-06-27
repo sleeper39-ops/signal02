@@ -1324,7 +1324,7 @@ function renderSummaryTable(mode){
   const head = `<thead><tr>
     <th>กำลังพล</th><th>ยอด</th>
     ${cols.map(c => `<th>${SUMMARY_COLS_SHORT[c]||c}</th>`).join("")}
-    <th>จำหน่าย</th><th>แถว</th>
+    <th>จำหน่าย</th><th>รวมแถว</th>
   </tr></thead>`;
 
   function row(label, data){

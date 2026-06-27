@@ -434,7 +434,7 @@ footer{text-align:center; padding:30px 0 10px; color:var(--txt-faint); font-size
       </svg>
       <div class="ring-label">
         <div class="n" id="ringPct">0%</div>
-        <div class="d">รวมแถว</div>
+        <div class="d" id="ringModeLabel">ปฏิบัติงาน</div>
       </div>
     </div>
     <div class="hero-text">
@@ -521,6 +521,20 @@ footer{text-align:center; padding:30px 0 10px; color:var(--txt-faint); font-size
 
   <!-- TELEGRAM SETTINGS TAB -->
   <div class="tabpane" id="tab-report">
+    <div class="section">
+      <div class="section-head"><h3>การแสดงผลวงแหวน %</h3></div>
+      <div class="panel">
+        <div class="field">
+          <label>แสดงผล % จากยอด</label>
+          <select id="ringModeSelect">
+            <option value="work" selected>ยอดปฏิบัติงาน</option>
+            <option value="roll">ยอดรวมแถว</option>
+          </select>
+          <div class="hint">เลือกว่าวงแหวนเปอร์เซ็นต์ที่หน้าหลักจะคิดจากยอดไหน — เปลี่ยนมีผลทันที</div>
+        </div>
+      </div>
+    </div>
+
     <div class="section">
       <div class="section-head"><h3>ตั้งค่า Telegram</h3></div>
       <div class="panel">
@@ -761,6 +775,10 @@ const EXTRA_GROUPS_KEY = "extra-groups";
 /* backward compat */
 const STORAGE_KEY = STORAGE_KEY_WORK;
 
+/* ================= RING MODE ================= */
+/* "work" = ยอดปฏิบัติงาน (default), "roll" = ยอดรวมแถว */
+let ringMode = "work";
+
 function thaiDateLabel(){
   const d = new Date();
   const months = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
@@ -911,6 +929,10 @@ async function loadState(){
     const s = JSON.parse(settingsRes.value.value);
     document.getElementById("botToken").value = s.botToken || "";
     document.getElementById("chatId").value = s.chatId || "";
+    if(s.ringMode && (s.ringMode === "work" || s.ringMode === "roll")){
+      ringMode = s.ringMode;
+      document.getElementById("ringModeSelect").value = ringMode;
+    }
   }
 }
 async function saveStateWork(){
@@ -925,8 +947,9 @@ async function saveState(){ await saveStateWork(); }
 async function saveSettings(){
   const botToken = document.getElementById("botToken").value.trim();
   const chatId = document.getElementById("chatId").value.trim();
+  const ringModeSel = document.getElementById("ringModeSelect").value;
   try{
-    await window.storage.set(SETTINGS_KEY, JSON.stringify({botToken, chatId}), true);
+    await window.storage.set(SETTINGS_KEY, JSON.stringify({botToken, chatId, ringMode: ringModeSel}), true);
     showToast("บันทึกการตั้งค่าแล้ว");
   }catch(e){ showToast("บันทึกการตั้งค่าไม่สำเร็จ", true); }
 }
@@ -1253,8 +1276,7 @@ function computeCounts(group, mode){
 
 /* ================= RENDER: HERO ================= */
 function renderHero(){
-  /* Hero shows combined stats from both systems — use roll system for "รวมแถว" ring */
-  /* Roll excludes conscript (r==="conscript") from total */
+  /* Hero ring shows % based on ringMode setting */
   const totalWork = ROSTER.length;
   const rollRoster = ROSTER.filter(p => p.r !== "conscript");
   const totalRoll = rollRoster.length;
@@ -1263,12 +1285,20 @@ function renderHero(){
   const presentRoll = totalRoll - offRoll;
   const offWork = ROSTER.filter(p => SUMMARY_COLS_WORK.includes(statusMapWork[p.id])).length;
   const presentWork = totalWork - offWork;
-  const pct = totalRoll ? Math.round((presentRoll/totalRoll)*100) : 0;
+
+  /* pick values based on ringMode */
+  const pctBase  = ringMode === "roll" ? totalRoll : totalWork;
+  const pctPres  = ringMode === "roll" ? presentRoll : presentWork;
+  const pct = pctBase ? Math.round((pctPres / pctBase) * 100) : 0;
 
   const circumference = 339;
-  const offset = circumference - (circumference * pct/100);
-  document.getElementById("ringFg").setAttribute("stroke-dashoffset", offset);
+  const offset = pct >= 100 ? -1 : circumference - (circumference * pct / 100);
+  const ringEl = document.getElementById("ringFg");
+  ringEl.setAttribute("stroke-dashoffset", offset);
+  ringEl.style.strokeLinecap = pct >= 100 ? "butt" : "round";
   document.getElementById("ringPct").textContent = pct + "%";
+  document.getElementById("ringModeLabel").textContent = ringMode === "roll" ? "รวมแถว" : "ปฏิบัติงาน";
+
   document.getElementById("heroHeadline").dataset.work = `ยอดปฏิบัติงาน ${presentWork}/${totalWork} นาย`;
   document.getElementById("heroHeadline").dataset.roll = `ยอดรวมแถว ${presentRoll}/${totalRoll} นาย`;
   updateHeroHeadline();
@@ -1549,6 +1579,12 @@ async function init(){
   document.getElementById("saveSettingsBtn").addEventListener("click", saveSettings);
   document.getElementById("testSendBtn").addEventListener("click", async () => {
     await sendToTelegram("ทดสอบการเชื่อมต่อ — ระบบเช็คยอดกำลังพล บก.ควบคุม 2 พร้อมใช้งาน");
+  });
+
+  /* ring mode selector — change takes effect immediately */
+  document.getElementById("ringModeSelect").addEventListener("change", (e) => {
+    ringMode = e.target.value;
+    renderHero();
   });
 
   /* send/copy work */

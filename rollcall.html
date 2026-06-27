@@ -1370,10 +1370,14 @@ function renderHero(){
   document.getElementById("heroHeadline").dataset.roll = `ยอดรวมแถว ${presentRoll}/${totalRoll} นาย`;
   updateHeroHeadline();
 
-  const byStatusRoll = {};
-  SUMMARY_COLS_ROLL.forEach(c => byStatusRoll[c] = rollRoster.filter(p => statusMapRoll[p.id]===c).length);
-  const statsHtml = STATUSES_ROLL.filter(s=>s.key!=="ปกติ").map(s => `
-    <div class="hstat"><span class="dot" style="background:${s.color}"></span>${s.label} <b class="mono">${byStatusRoll[s.key]||0}</b></div>
+  const activeStatuses = ringMode === "roll" ? STATUSES_ROLL : STATUSES_WORK;
+  const activeSumCols  = ringMode === "roll" ? SUMMARY_COLS_ROLL : SUMMARY_COLS_WORK;
+  const activeSMap     = ringMode === "roll" ? statusMapRoll : statusMapWork;
+  const activeRoster   = ringMode === "roll" ? rollRoster : ROSTER;
+  const byStatus = {};
+  activeSumCols.forEach(c => byStatus[c] = activeRoster.filter(p => activeSMap[p.id]===c).length);
+  const statsHtml = activeStatuses.filter(s=>s.key!=="ปกติ").map(s => `
+    <div class="hstat"><span class="dot" style="background:${s.color}"></span>${s.label} <b class="mono">${byStatus[s.key]||0}</b></div>
   `).join("");
   document.getElementById("heroStats").innerHTML = statsHtml;
   document.getElementById("dateChip").textContent = thaiDateLabel();

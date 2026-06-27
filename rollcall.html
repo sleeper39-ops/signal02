@@ -95,6 +95,7 @@ body{
 .ring-box{position:relative; width:128px; height:128px; flex-shrink:0;}
 .ring-box svg{transform:rotate(-90deg); width:100%; height:100%;}
 .ring-bg{fill:none; stroke:var(--line); stroke-width:10;}
+.ring-full{fill:none; stroke:var(--sage); stroke-width:10;}
 .ring-fg{fill:none; stroke:var(--sage); stroke-width:10; stroke-linecap:round; transition:stroke-dashoffset 0.6s cubic-bezier(.2,.8,.2,1);}
 .ring-label{
   position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -430,6 +431,7 @@ footer{text-align:center; padding:30px 0 10px; color:var(--txt-faint); font-size
     <div class="ring-box">
       <svg width="128" height="128" viewBox="0 0 128 128">
         <circle class="ring-bg" cx="64" cy="64" r="54"></circle>
+        <circle class="ring-full" id="ringFull" cx="64" cy="64" r="54" style="display:none;"></circle>
         <circle class="ring-fg" id="ringFg" cx="64" cy="64" r="54" stroke-dasharray="339" stroke-dashoffset="339"></circle>
       </svg>
       <div class="ring-label">
@@ -730,6 +732,7 @@ const DEFAULT_ROSTER = [
 let ROSTER = [];
 let nextIdCounter = DEFAULT_ROSTER.length + 1;
 let EXTRA_GROUPS = []; /* groups created by admin with zero members so far */
+let GROUP_ORDER = []; /* explicit group display order */
 
 /* สถานะระบบรวมแถว (ไม่มีทหารกองประจำการ) */
 const STATUSES_ROLL = [
@@ -902,6 +905,30 @@ async function saveExtraGroups(){
   try{ await window.storage.set(EXTRA_GROUPS_KEY, JSON.stringify(EXTRA_GROUPS), true); }
   catch(e){ showToast("บันทึกหน่วย/กลุ่มไม่สำเร็จ", true); }
 }
+const GROUP_ORDER_KEY = "group-order";
+async function loadGroupOrder(){
+  try{
+    const res = await window.storage.get(GROUP_ORDER_KEY, true);
+    if(res && res.value){ GROUP_ORDER = JSON.parse(res.value); return; }
+  }catch(e){}
+  GROUP_ORDER = [];
+}
+async function saveGroupOrder(){
+  try{ await window.storage.set(GROUP_ORDER_KEY, JSON.stringify(GROUP_ORDER), true); }
+  catch(e){ showToast("บันทึกลำดับหน่วย/กลุ่มไม่สำเร็จ", true); }
+}
+/* resolve the ordered list of all group names */
+function orderedGroupNames(){
+  const all = [];
+  const set = new Set();
+  ROSTER.forEach(p => { if(!set.has(p.g)){ set.add(p.g); all.push(p.g); } });
+  EXTRA_GROUPS.forEach(g => { if(!set.has(g)){ set.add(g); all.push(g); } });
+  /* apply GROUP_ORDER: names in GROUP_ORDER come first (in that order),
+     any remaining names (new groups not yet in order) go at the end */
+  const ordered = GROUP_ORDER.filter(g => set.has(g));
+  const rest    = all.filter(g => !ordered.includes(g));
+  return [...ordered, ...rest];
+}
 async function loadState(){
   const [stateWorkRes, stateRollRes, settingsRes] = await Promise.allSettled([
     window.storage.get(STORAGE_KEY_WORK, true),
@@ -1035,10 +1062,10 @@ function renderRoster(mode){
     return;
   }
 
-  const groupOrder = [];
+  const groupOrder = orderedGroupNames().filter(g => list.some(p => p.g === g));
   const groups = {};
   list.forEach(p => {
-    if(!groups[p.g]){ groups[p.g]=[]; groupOrder.push(p.g); }
+    if(!groups[p.g]) groups[p.g] = [];
     groups[p.g].push(p);
   });
 
@@ -1046,6 +1073,8 @@ function renderRoster(mode){
     <div class="group">
       <div class="group-title">${g}<div class="ln"></div>
         <div class="gactions admin-only ${isAdmin?'':'hidden'}">
+          <button class="picon-btn" data-move-group-up="${g}" data-mode="${isWork?'work':'roll'}" title="เลื่อนขึ้น" ${groupOrder.indexOf(g)===0?'disabled style="opacity:0.3;pointer-events:none;"':''}>↑</button>
+          <button class="picon-btn" data-move-group-dn="${g}" data-mode="${isWork?'work':'roll'}" title="เลื่อนลง" ${groupOrder.indexOf(g)===groupOrder.length-1?'disabled style="opacity:0.3;pointer-events:none;"':''}>↓</button>
           <button class="picon-btn edit" data-rename-group="${g}" data-mode="${isWork?'work':'roll'}" title="แก้ไขชื่อกลุ่ม">✎</button>
           <button class="picon-btn" data-del-group="${g}" data-mode="${isWork?'work':'roll'}" title="ลบหน่วย/กลุ่มนี้ทั้งหมด">✕</button>
         </div>
@@ -1108,6 +1137,12 @@ function renderRoster(mode){
   });
   container.querySelectorAll("[data-del-group]").forEach(btn => {
     btn.addEventListener("click", () => deleteGroup(btn.dataset.delGroup));
+  });
+  container.querySelectorAll("[data-move-group-up]").forEach(btn => {
+    btn.addEventListener("click", () => moveGroup(btn.dataset.moveGroupUp, -1));
+  });
+  container.querySelectorAll("[data-move-group-dn]").forEach(btn => {
+    btn.addEventListener("click", () => moveGroup(btn.dataset.moveGroupDn, 1));
   });
 }
 
@@ -1188,12 +1223,7 @@ async function movePerson(id, dir){
 }
 
 /* ================= ADMIN: GROUP MANAGEMENT ================= */
-function allGroupNames(){
-  const set = new Set();
-  ROSTER.forEach(p => set.add(p.g));
-  EXTRA_GROUPS.forEach(g => set.add(g));
-  return Array.from(set);
-}
+function allGroupNames(){ return orderedGroupNames(); }
 function openGroupModal(name){
   editingGroupName = name; /* null = adding a brand-new group, string = renaming an existing one */
   document.getElementById("groupModalTitle").textContent = name ? "แก้ไขชื่อหน่วย/กลุ่ม" : "เพิ่มหน่วย/กลุ่มใหม่";
@@ -1248,6 +1278,18 @@ async function deleteGroup(name){
   renderAll(true);
   showToast(members.length > 0 ? `ลบหน่วย/กลุ่มและกำลังพล ${members.length} คนแล้ว` : "ลบหน่วย/กลุ่มแล้ว");
 }
+async function moveGroup(name, dir){
+  /* build current order, swap target with neighbour */
+  const order = orderedGroupNames();
+  const idx = order.indexOf(name);
+  if(idx < 0) return;
+  const swap = idx + dir;
+  if(swap < 0 || swap >= order.length) return;
+  [order[idx], order[swap]] = [order[swap], order[idx]];
+  GROUP_ORDER = order;
+  await saveGroupOrder();
+  renderAll(true);
+}
 
 /* ================= COMPUTE SUMMARY ================= */
 function computeCounts(group, mode){
@@ -1292,10 +1334,17 @@ function renderHero(){
   const pct = pctBase ? Math.round((pctPres / pctBase) * 100) : 0;
 
   const circumference = 339;
-  const offset = pct >= 100 ? -1 : circumference - (circumference * pct / 100);
   const ringEl = document.getElementById("ringFg");
-  ringEl.setAttribute("stroke-dashoffset", offset);
-  ringEl.style.strokeLinecap = pct >= 100 ? "butt" : "round";
+  const ringFull = document.getElementById("ringFull");
+  if(pct >= 100){
+    ringFull.style.display = "";
+    ringEl.style.display = "none";
+  } else {
+    ringFull.style.display = "none";
+    ringEl.style.display = "";
+    const offset = circumference - (circumference * pct / 100);
+    ringEl.setAttribute("stroke-dashoffset", offset);
+  }
   document.getElementById("ringPct").textContent = pct + "%";
   document.getElementById("ringModeLabel").textContent = ringMode === "roll" ? "รวมแถว" : "ปฏิบัติงาน";
 
@@ -1357,6 +1406,22 @@ function renderSummaryTable(mode){
 }
 
 /* name-list renderer for summary tab */
+/* ===== RANK SORT ORDER (พ.อ. = 0, ทหารกองประจำการ = highest index) ===== */
+const RANK_ORDER = [
+  "พ.อ.","พ.อ.(พิเศษ)","พ.ท.","พ.ต.",
+  "ร.อ.","ร.ท.","ร.ต.",
+  "จ.ส.อ.","จ.ส.ท.","จ.ส.ต.",
+  "ส.อ.","ส.ท.","ส.ต.",
+  "ทหารกองประจำการ"
+];
+function rankOf(fullName){
+  for(let i=0;i<RANK_ORDER.length;i++){
+    if(fullName && fullName.startsWith(RANK_ORDER[i])) return i;
+  }
+  return RANK_ORDER.length; /* unknown rank goes to bottom */
+}
+function sortByRank(arr){ return [...arr].sort((a,b)=>rankOf(a.n)-rankOf(b.n)); }
+
 function buildNameListHtml(mode){
   const isWork = mode !== "roll";
   const sMap = isWork ? statusMapWork : statusMapRoll;
@@ -1367,7 +1432,7 @@ function buildNameListHtml(mode){
     return `<div class="empty">วันนี้ทุกคนปกติ ไม่มีรายชื่อจำหน่าย</div>`;
   }
   return cats.map(c => {
-    const people = ROSTER.filter(p => sMap[p.id]===c);
+    const people = sortByRank(ROSTER.filter(p => sMap[p.id]===c));
     const st = statuses.find(s=>s.key===c);
     const color = st ? st.color : "#888";
     return `<div class="namelist-group">
@@ -1403,10 +1468,10 @@ function buildReportHtml(mode){
   h += '<span style="font-weight:700;color:#1E2A24;">รายชื่อกำลังพลที่จำหน่าย</span>' + N;
   var any = false;
   cols.forEach(function(c){
-    var people = ROSTER.filter(function(p){
+    var people = sortByRank(ROSTER.filter(function(p){
       if(!isWork && p.r === "conscript") return false;
       return sMap[p.id] === c;
-    });
+    }));
     if(!people.length) return;
     any = true;
     var color = colorMap[c] || "#888";
@@ -1546,7 +1611,7 @@ async function init(){
   const online = await probeFirebaseConnection();
   if(!online) fbReady = false;
 
-  await Promise.all([loadRoster(), loadExtraGroups()]);
+  await Promise.all([loadRoster(), loadExtraGroups(), loadGroupOrder()]);
   await loadState();
   renderFilters("work");
   renderFilters("roll");

@@ -1253,8 +1253,10 @@ async function saveGroupModal(){
   }
   ROSTER.forEach(p => { if(p.g === editingGroupName) p.g = newName; });
   EXTRA_GROUPS = EXTRA_GROUPS.map(g => g === editingGroupName ? newName : g);
+  GROUP_ORDER = GROUP_ORDER.map(g => g === editingGroupName ? newName : g);
   await saveRoster();
   await saveExtraGroups();
+  await saveGroupOrder();
   closeModal("groupModal");
   renderAll(true);
   showToast("แก้ไขชื่อหน่วย/กลุ่มแล้ว");

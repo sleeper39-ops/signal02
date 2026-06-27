@@ -93,7 +93,7 @@ body{
   display:flex; align-items:center; gap:24px; flex-wrap:wrap;
 }
 .ring-box{position:relative; width:128px; height:128px; flex-shrink:0;}
-.ring-box svg{transform:rotate(-90deg);}
+.ring-box svg{transform:rotate(-90deg); width:100%; height:100%;}
 .ring-bg{fill:none; stroke:var(--line); stroke-width:10;}
 .ring-fg{fill:none; stroke:var(--sage); stroke-width:10; stroke-linecap:round; transition:stroke-dashoffset 0.6s cubic-bezier(.2,.8,.2,1);}
 .ring-label{
@@ -269,7 +269,8 @@ table.sumtable tbody tr.total-row td{border-top:1px solid var(--line-strong); fo
   position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
   background:var(--sage); color:#fff; font-weight:700; font-size:13.5px;
   padding:12px 20px; border-radius:10px; opacity:0; pointer-events:none; transition:all 0.25s;
-  z-index:200; white-space:nowrap; box-shadow:0 4px 16px rgba(0,0,0,0.12);
+  z-index:200; white-space:normal; max-width:calc(100vw - 32px); text-align:center;
+  box-shadow:0 4px 16px rgba(0,0,0,0.12);
 }
 .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
 .toast.error{background:var(--coral);}
@@ -306,13 +307,118 @@ table.sumtable tbody tr.total-row td{border-top:1px solid var(--line-strong); fo
 .modal-wide{max-width:440px;}
 
 footer{text-align:center; padding:30px 0 10px; color:var(--txt-faint); font-size:11.5px;}
-@media (max-width:480px){
-  .hero{gap:16px;}
-  .ring-box{width:104px; height:104px;}
-  .ring-label .n{font-size:21px;}
-  table.sumtable{font-size:10.5px;}
+
+/* ===== RESPONSIVE: TABLET (iPad / 768px) ===== */
+@media (max-width:820px){
+  .wrap{padding:0 14px;}
+  .topbar-inner{padding:12px 14px;}
+  .hero{padding:20px 0 8px; gap:18px;}
+  .hero-text h2{font-size:19px;}
+  .hero-stats{gap:8px;}
+  .hstat{font-size:11.5px; padding:6px 10px;}
+  table.sumtable{font-size:11.5px;}
+  table.sumtable th, table.sumtable td{padding:9px 4px;}
+  .section-head .actions{flex-wrap:wrap; gap:6px;}
+  .modal{padding:20px;}
+}
+
+/* ===== RESPONSIVE: MOBILE (≤600px) ===== */
+@media (max-width:600px){
+  :root{--radius:12px;}
+  body{padding-bottom:60px;}
+  .wrap{padding:0 12px;}
+
+  /* topbar */
+  .topbar-inner{padding:10px 12px; gap:8px;}
+  .brand-text h1{font-size:14px;}
+  .brand-text p{display:none;}
+  .date-chip{font-size:11px; padding:5px 8px;}
+  .admin-toggle{font-size:11px; padding:5px 9px;}
+
+  /* hero */
+  .hero{padding:16px 0 6px; gap:14px; flex-wrap:nowrap; align-items:center;}
+  .ring-box{width:96px; height:96px; flex-shrink:0;}
+  .ring-box svg{width:96px; height:96px;}
+  .ring-label .n{font-size:20px;}
+  .ring-label .d{font-size:10px;}
+  .hero-text{min-width:0; flex:1;}
+  .hero-text .eyebrow{font-size:10.5px; margin-bottom:3px;}
+  .hero-text h2{font-size:15px; line-height:1.3; margin-bottom:4px;}
+  .hero-text p{font-size:12px; line-height:1.4;}
+  .hero-stats{gap:6px; margin-top:8px;}
+  .hstat{font-size:11px; padding:5px 8px; gap:5px;}
+
+  /* tabs */
+  .tabbar{gap:4px; padding:3px; border-radius:10px; margin-bottom:14px;}
+  .tabbtn{font-size:11.5px; padding:8px 2px;}
+
+  /* section head */
+  .section{margin-top:20px;}
+  .section-head{margin-bottom:10px;}
+  .section-head h3{font-size:11.5px;}
+  .section-head .actions{gap:5px;}
+  .section-head .actions .btn.sm{font-size:11px; padding:6px 9px;}
+
+  /* filter chips */
+  .filters{gap:6px;}
+  .chip{font-size:11.5px; padding:6px 10px;}
+
+  /* search */
+  .searchbox input{font-size:13.5px; padding:10px 12px 10px 36px;}
+  .searchbox::before{font-size:15px; left:11px;}
+
+  /* person card */
+  .person{padding:10px 11px; gap:9px;}
+  .avatar{width:34px; height:34px; font-size:12px; border-radius:9px;}
+  .pinfo .pname{font-size:13px;}
+  .pinfo .prole{font-size:11px;}
+  .pstatus-select{font-size:11.5px; padding:6px 7px; max-width:96px;}
+  .picon-btn{width:28px; height:28px; font-size:12px;}
+
+  /* summary table — horizontal scroll wrapper */
+  .summary-card{overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  table.sumtable{font-size:10.5px; min-width:420px;}
   table.sumtable th, table.sumtable td{padding:8px 3px;}
-  .tabbtn{font-size:12px;}
+  table.sumtable th:first-child, table.sumtable td:first-child{width:22%; padding-left:10px;}
+  table.sumtable td:last-child, table.sumtable th:last-child{padding-right:10px;}
+
+  /* buttons */
+  .btn{font-size:13px; padding:10px 14px;}
+  .btn.sm{font-size:11px; padding:6px 10px;}
+  .btnrow{gap:8px; margin-top:12px;}
+  .btnrow .btn{flex:1; justify-content:center;}
+
+  /* modal */
+  .modal-overlay{padding:12px;}
+  .modal{padding:18px; border-radius:14px;}
+  .modal h3{font-size:15px; margin-bottom:12px;}
+  .modal-wide{max-width:100%;}
+  .field-row{grid-template-columns:1fr; gap:0;}
+  .field input, .field textarea, .field select{font-size:13px; padding:9px 11px;}
+
+  /* toast */
+  .toast{
+    font-size:12.5px; padding:10px 16px;
+    left:12px; right:12px; bottom:16px;
+    transform:translateY(10px); width:auto;
+    white-space:normal; text-align:center;
+  }
+  .toast.show{transform:translateY(0);}
+
+  /* group admin list */
+  .grouprow{padding:9px 0;}
+  .grouprow-name{font-size:13px;}
+  .grouprow-count{font-size:11px;}
+}
+
+/* ===== RESPONSIVE: SMALL MOBILE (≤380px) ===== */
+@media (max-width:380px){
+  .ring-box{width:82px; height:82px;}
+  .ring-box svg{width:82px; height:82px;}
+  .ring-label .n{font-size:17px;}
+  .hero-text h2{font-size:13.5px;}
+  .tabbtn{font-size:10.5px;}
+  .pstatus-select{max-width:82px; font-size:10.5px;}
 }
 </style>
 </head>
@@ -661,7 +767,6 @@ const STATUSES_WORK = [
   {key:"ขออนุญาต", label:"ขออนุญาต", color:"#6E62C9"},
   {key:"ขาด", label:"ขาด", color:"#C92A2A"},
   {key:"ราชการ", label:"ราชการ", color:"#1C8C76"},
-  {key:"ทหารกองประจำการ", label:"ทกป.", color:"#9333EA"},
 ];
 /* ใช้ STATUSES เป็น default (ปฏิบัติงาน) */
 const STATUSES = STATUSES_WORK;
@@ -932,6 +1037,7 @@ function renderRoster(mode){
   const searchTerm = isWork ? searchTermWork : searchTermRoll;
 
   let list = ROSTER.filter(p => {
+    if(!isWork && p.r === "conscript") return false; /* ไม่แสดง ทกป. ในระบบรวมแถว */
     if(activeFilter !== "all" && sMap[p.id] !== activeFilter) return false;
     if(searchTerm){
       const hay = (p.n + " " + p.role + " " + p.g).toLowerCase();
@@ -1164,8 +1270,14 @@ function computeCounts(group, mode){
   const isWork = mode !== "roll";
   const sMap = isWork ? statusMapWork : statusMapRoll;
   const cols = isWork ? SUMMARY_COLS_WORK : SUMMARY_COLS_ROLL;
-  /* group can be "officer", "nco", "conscript", or "all" */
-  const people = group === "all" ? ROSTER : ROSTER.filter(p => p.r === group);
+  /* group can be "officer", "nco", "conscript", or "all"
+     In roll mode, conscript is excluded entirely */
+  let people;
+  if(!isWork && (group === "all" || group === "conscript")){
+    people = group === "all" ? ROSTER.filter(p => p.r !== "conscript") : [];
+  } else {
+    people = group === "all" ? ROSTER : ROSTER.filter(p => p.r === group);
+  }
   const total = people.length;
   const counts = {};
   cols.forEach(c => counts[c] = 0);
@@ -1181,21 +1293,25 @@ function computeCounts(group, mode){
 /* ================= RENDER: HERO ================= */
 function renderHero(){
   /* Hero shows combined stats from both systems — use roll system for "รวมแถว" ring */
-  const total = ROSTER.length;
-  const offRoll = ROSTER.filter(p => SUMMARY_COLS_ROLL.includes(statusMapRoll[p.id])).length;
-  const presentRoll = total - offRoll;
+  /* Roll excludes conscript (r==="conscript") from total */
+  const totalWork = ROSTER.length;
+  const rollRoster = ROSTER.filter(p => p.r !== "conscript");
+  const totalRoll = rollRoster.length;
+
+  const offRoll = rollRoster.filter(p => SUMMARY_COLS_ROLL.includes(statusMapRoll[p.id])).length;
+  const presentRoll = totalRoll - offRoll;
   const offWork = ROSTER.filter(p => SUMMARY_COLS_WORK.includes(statusMapWork[p.id])).length;
-  const presentWork = total - offWork;
-  const pct = total ? Math.round((presentRoll/total)*100) : 0;
+  const presentWork = totalWork - offWork;
+  const pct = totalRoll ? Math.round((presentRoll/totalRoll)*100) : 0;
 
   const circumference = 339;
   const offset = circumference - (circumference * pct/100);
   document.getElementById("ringFg").setAttribute("stroke-dashoffset", offset);
   document.getElementById("ringPct").textContent = pct + "%";
-  document.getElementById("heroHeadline").textContent = `รวมแถว ${presentRoll} · ปฏิบัติงาน ${presentWork} / ${total} นาย`;
+  document.getElementById("heroHeadline").textContent = `รวมแถว ${presentRoll}/${totalRoll} · ปฏิบัติงาน ${presentWork}/${totalWork} นาย`;
 
   const byStatusRoll = {};
-  SUMMARY_COLS_ROLL.forEach(c => byStatusRoll[c] = ROSTER.filter(p => statusMapRoll[p.id]===c).length);
+  SUMMARY_COLS_ROLL.forEach(c => byStatusRoll[c] = rollRoster.filter(p => statusMapRoll[p.id]===c).length);
   const statsHtml = STATUSES_ROLL.filter(s=>s.key!=="ปกติ").map(s => `
     <div class="hstat"><span class="dot" style="background:${s.color}"></span>${s.label} <b class="mono">${byStatusRoll[s.key]||0}</b></div>
   `).join("");
@@ -1226,17 +1342,16 @@ function renderSummaryTable(mode){
     </tr>`;
   }
 
-  const conscript = computeCounts("conscript", mode);
-  const hasConscript = conscript.total > 0;
-  const totalAll = officer.total + nco.total + conscript.total;
-  const deductedAll = officer.deducted + nco.deducted + conscript.deducted;
-  const presentAll = officer.present + nco.present + conscript.present;
-  cols.forEach(c => rowsTotal[c] = (officer.counts[c]||0) + (nco.counts[c]||0) + (conscript.counts[c]||0));
+  const conscript = isWork ? computeCounts("conscript", mode) : null;
+  const totalAll = officer.total + nco.total + (isWork ? conscript.total : 0);
+  const deductedAll = officer.deducted + nco.deducted + (isWork ? conscript.deducted : 0);
+  const presentAll = officer.present + nco.present + (isWork ? conscript.present : 0);
+  cols.forEach(c => rowsTotal[c] = (officer.counts[c]||0) + (nco.counts[c]||0) + (isWork ? (conscript.counts[c]||0) : 0));
 
   const body = `<tbody>
     ${row("สัญญาบัตร", officer)}
     ${row("ประทวน", nco)}
-    ${row("ทหารกองประจำการ", conscript)}
+    ${isWork ? row("ทหารกองประจำการ", conscript) : ""}
     <tr class="total-row">
       <td>รวม</td><td>${totalAll}</td>
       ${cols.map(c => `<td>${rowsTotal[c]}</td>`).join("")}
@@ -1287,12 +1402,12 @@ function buildReportText(mode){
   const modeLabel = isWork ? "ปฏิบัติงาน" : "รวมแถว";
   const officer = computeCounts("officer", mode);
   const nco = computeCounts("nco", mode);
-  const conscript = computeCounts("conscript", mode);
-  const totalAll = officer.total + nco.total + conscript.total;
-  const presentAll = officer.present + nco.present + conscript.present;
-  const deductedAll = officer.deducted + nco.deducted + conscript.deducted;
+  const conscript = isWork ? computeCounts("conscript", mode) : null;
+  const totalAll = officer.total + nco.total + (isWork ? conscript.total : 0);
+  const presentAll = officer.present + nco.present + (isWork ? conscript.present : 0);
+  const deductedAll = officer.deducted + nco.deducted + (isWork ? conscript.deducted : 0);
   const rowsTotal = {};
-  cols.forEach(c => rowsTotal[c] = (officer.counts[c]||0) + (nco.counts[c]||0) + (conscript.counts[c]||0));
+  cols.forEach(c => rowsTotal[c] = (officer.counts[c]||0) + (nco.counts[c]||0) + (isWork ? (conscript.counts[c]||0) : 0));
 
   let txt = `สถานภาพกำลังพล (${modeLabel}) บก.ควบคุม 2\nประจำวันที่ ${thaiDateLabel()}\n\n`;
   const colHdrs = cols.map(c => SUMMARY_COLS_SHORT[c]||c).join(" ");
@@ -1303,7 +1418,7 @@ function buildReportText(mode){
   }
   txt += line("สัญญาบัตร", officer) + "\n";
   txt += line("ประทวน", nco) + "\n";
-  txt += line("ทหารกองประจำการ", conscript) + "\n";
+  if(isWork) txt += line("ทหารกองประจำการ", conscript) + "\n";
   txt += line("รวม", {total:totalAll, counts:rowsTotal, deducted:deductedAll, present:presentAll}) + "\n\n";
   txt += `รายชื่อกำลังพลที่จำหน่าย\n`;
   let any = false;

@@ -1470,6 +1470,7 @@ function buildReportHtml(mode){
   h += DIM + N;
   h += '<span style="font-weight:700;color:#1E2A24;">รายชื่อกำลังพลที่จำหน่าย</span>' + N;
   var any = false;
+  var first = true;
   cols.forEach(function(c){
     var people = sortByRank(ROSTER.filter(function(p){
       if(!isWork && p.r === "conscript") return false;
@@ -1478,7 +1479,8 @@ function buildReportHtml(mode){
     if(!people.length) return;
     any = true;
     var color = colorMap[c] || "#888";
-    h += N + '<span style="color:' + color + ';font-weight:700;">' + c + ' (' + people.length + ' นาย)</span>' + N;
+    h += (first ? "" : N) + '<span style="color:' + color + ';font-weight:700;">' + c + ' (' + people.length + ' นาย)</span>' + N;
+    first = false;
     people.forEach(function(p){
       h += '  <span style="color:#5C6B62;">-</span> ' + p.n + N;
     });

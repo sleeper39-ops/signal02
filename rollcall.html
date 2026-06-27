@@ -496,7 +496,7 @@ footer{text-align:center; padding:30px 0 10px; color:var(--txt-faint); font-size
     </div>
     <div class="section">
       <div class="section-head"><h3>รายชื่อจำหน่าย (ปฏิบัติงาน)</h3></div>
-      <div class="panel" id="statusBreakdownWork"></div>
+      <div class="preview-box" id="statusBreakdownWork" style="background:#fff;"></div>
       <div class="btnrow">
         <button class="btn primary" id="sendReportBtnWork"><span>ส่ง Telegram (ปฏิบัติงาน)</span></button>
         <button class="btn ghost" id="copyReportBtnWork">คัดลอก (ปฏิบัติงาน)</button>
@@ -511,7 +511,7 @@ footer{text-align:center; padding:30px 0 10px; color:var(--txt-faint); font-size
     </div>
     <div class="section">
       <div class="section-head"><h3>รายชื่อจำหน่าย (รวมแถว)</h3></div>
-      <div class="panel" id="statusBreakdownRoll"></div>
+      <div class="preview-box" id="statusBreakdownRoll" style="background:#fff;"></div>
       <div class="btnrow">
         <button class="btn primary" id="sendReportBtnRoll"><span>ส่ง Telegram (รวมแถว)</span></button>
         <button class="btn ghost" id="copyReportBtnRoll">คัดลอก (รวมแถว)</button>
@@ -719,7 +719,7 @@ let EXTRA_GROUPS = []; /* groups created by admin with zero members so far */
 
 /* สถานะระบบรวมแถว (ไม่มีทหารกองประจำการ) */
 const STATUSES_ROLL = [
-  {key:"ปกติ", label:"ปกติ", color:"#5C6B62"},
+  {key:"ปกติ", label:"รวมแถว", color:"#5C6B62"},
   {key:"ลาพัก", label:"ลาพัก", color:"#2563A8"},
   {key:"ลากิจ", label:"ลากิจ", color:"#C9712B"},
   {key:"ป่วย", label:"ป่วย", color:"#EAB308"},
@@ -729,7 +729,7 @@ const STATUSES_ROLL = [
 ];
 /* สถานะระบบปฏิบัติงาน (มีทหารกองประจำการเพิ่ม) */
 const STATUSES_WORK = [
-  {key:"ปกติ", label:"ปกติ", color:"#5C6B62"},
+  {key:"ปกติ", label:"รวมแถว", color:"#5C6B62"},
   {key:"ลาพัก", label:"ลาพัก", color:"#2563A8"},
   {key:"ลากิจ", label:"ลากิจ", color:"#C9712B"},
   {key:"ป่วย", label:"ป่วย", color:"#EAB308"},
@@ -1266,7 +1266,9 @@ function renderHero(){
   const offset = circumference - (circumference * pct/100);
   document.getElementById("ringFg").setAttribute("stroke-dashoffset", offset);
   document.getElementById("ringPct").textContent = pct + "%";
-  document.getElementById("heroHeadline").textContent = `รวมแถว ${presentRoll}/${totalRoll} · ปฏิบัติงาน ${presentWork}/${totalWork} นาย`;
+  document.getElementById("heroHeadline").dataset.work = `ยอดปฏิบัติงาน ${presentWork}/${totalWork} นาย`;
+  document.getElementById("heroHeadline").dataset.roll = `ยอดรวมแถว ${presentRoll}/${totalRoll} นาย`;
+  updateHeroHeadline();
 
   const byStatusRoll = {};
   SUMMARY_COLS_ROLL.forEach(c => byStatusRoll[c] = rollRoster.filter(p => statusMapRoll[p.id]===c).length);
@@ -1341,11 +1343,54 @@ function buildNameListHtml(mode){
     </div>`;
   }).join("");
 }
+function buildReportHtml(mode){
+  var isWork = mode !== "roll";
+  var sMap = isWork ? statusMapWork : statusMapRoll;
+  var cols = isWork ? SUMMARY_COLS_WORK : SUMMARY_COLS_ROLL;
+  var statuses = isWork ? STATUSES_WORK : STATUSES_ROLL;
+  var modeLabel = isWork ? "ปฏิบัติงาน" : "รวมแถว";
+  var officer = computeCounts("officer", mode);
+  var nco = computeCounts("nco", mode);
+  var conscript = isWork ? computeCounts("conscript", mode) : null;
+  var totalAll = officer.total + nco.total + (isWork ? conscript.total : 0);
+  var presentAll = officer.present + nco.present + (isWork ? conscript.present : 0);
+  var deductedAll = officer.deducted + nco.deducted + (isWork ? conscript.deducted : 0);
+  var colorMap = {};
+  statuses.forEach(function(s){ colorMap[s.key] = s.color; });
+  var N = "\n";
+  var DIM = '<span style="color:#CBD3CE;">──────────────────────────────</span>';
+  var h = "";
+  h += '<span style="font-weight:700;color:#1E2A24;">สถานภาพกำลังพล (' + modeLabel + ') บก.ควบคุม 2</span>' + N;
+  h += '<span style="color:#5C6B62;">ประจำวันที่ ' + thaiDateLabel() + '</span>' + N;
+  h += DIM + N;
+  h += 'ยอดเดิม    : <span style="color:#2563A8;font-weight:700;">' + totalAll + ' นาย</span>' + N;
+  h += 'จำหน่าย   : <span style="color:#C92A2A;font-weight:700;">' + deductedAll + ' นาย</span>' + N;
+  h += modeLabel + '  : <span style="color:#1C8C76;font-weight:700;">' + presentAll + ' นาย</span>' + N;
+  h += DIM + N;
+  h += '<span style="font-weight:700;color:#1E2A24;">รายชื่อกำลังพลที่จำหน่าย</span>' + N;
+  var any = false;
+  cols.forEach(function(c){
+    var people = ROSTER.filter(function(p){
+      if(!isWork && p.r === "conscript") return false;
+      return sMap[p.id] === c;
+    });
+    if(!people.length) return;
+    any = true;
+    var color = colorMap[c] || "#888";
+    h += N + '<span style="color:' + color + ';font-weight:700;">' + c + ' (' + people.length + ' นาย)</span>' + N;
+    people.forEach(function(p){
+      h += '  <span style="color:#5C6B62;">-</span> ' + p.n + N;
+    });
+  });
+  if(!any) h += N + '<span style="color:#94A09A;font-style:italic;">  - ไม่มี (ทุกคนปกติ)</span>' + N;
+  return h;
+}
+
 function renderNameLists(){
   const elWork = document.getElementById("statusBreakdownWork");
   const elRoll = document.getElementById("statusBreakdownRoll");
-  if(elWork) elWork.innerHTML = buildNameListHtml("work");
-  if(elRoll) elRoll.innerHTML = buildNameListHtml("roll");
+  if(elWork) elWork.innerHTML = buildReportHtml("work");
+  if(elRoll) elRoll.innerHTML = buildReportHtml("roll");
 }
 
 /* ================= REPORT TEXT ================= */
@@ -1364,28 +1409,25 @@ function buildReportText(mode){
   const totalAll = officer.total + nco.total + (isWork ? conscript.total : 0);
   const presentAll = officer.present + nco.present + (isWork ? conscript.present : 0);
   const deductedAll = officer.deducted + nco.deducted + (isWork ? conscript.deducted : 0);
-  const rowsTotal = {};
-  cols.forEach(c => rowsTotal[c] = (officer.counts[c]||0) + (nco.counts[c]||0) + (isWork ? (conscript.counts[c]||0) : 0));
 
-  let txt = `สถานภาพกำลังพล (${modeLabel}) บก.ควบคุม 2\nประจำวันที่ ${thaiDateLabel()}\n\n`;
-  const colHdrs = cols.map(c => SUMMARY_COLS_SHORT[c]||c).join(" ");
-  txt += `กำลังพล      ยอด ${colHdrs} จำหน่าย แถว\n`;
-  function line(lbl, d){
-    const colVals = cols.map(c => pad(d.counts[c]||0, 4)).join(" ");
-    return `${lbl.padEnd(11," ")} ${pad(d.total,3)} ${colVals} ${pad(d.deducted,7)} ${pad(d.present,3)}`;
-  }
-  txt += line("สัญญาบัตร", officer) + "\n";
-  txt += line("ประทวน", nco) + "\n";
-  if(isWork) txt += line("ทหารกองประจำการ", conscript) + "\n";
-  txt += line("รวม", {total:totalAll, counts:rowsTotal, deducted:deductedAll, present:presentAll}) + "\n\n";
+  const line = "─".repeat(30);
+  let txt = `สถานภาพกำลังพล (${modeLabel}) บก.ควบคุม 2\n`;
+  txt += `ประจำวันที่ ${thaiDateLabel()}\n`;
+  txt += `${line}\n`;
+  txt += `ยอดเดิม    : ${totalAll} นาย\n`;
+  txt += `จำหน่าย   : ${deductedAll} นาย\n`;
+  txt += `${modeLabel.padEnd(10," ")}: ${presentAll} นาย\n`;
+  txt += `${line}\n`;
   txt += `รายชื่อกำลังพลที่จำหน่าย\n`;
   let any = false;
   cols.forEach(c => {
-    const people = ROSTER.filter(p=>sMap[p.id]===c);
-    if(people.length){ any = true; txt += `\n${c} (${people.length})\n` + people.map(p=>"  - " + p.n).join("\n") + "\n"; }
+    const people = ROSTER.filter(p => {
+      if(!isWork && p.r === "conscript") return false;
+      return sMap[p.id] === c;
+    });
+    if(people.length){ any = true; txt += `\n${c} (${people.length} นาย)\n` + people.map(p=>"  - " + p.n).join("\n") + "\n"; }
   });
   if(!any) txt += `\n  - ไม่มี (ทุกคนปกติ)\n`;
-  txt += `\nสรุป: ${modeLabel} ${presentAll} / ${totalAll} นาย`;
   return txt;
 }
 
@@ -1428,6 +1470,22 @@ function showToast(msg, isError){
   toastTimer = setTimeout(() => { t.className = "toast"; }, 3200);
 }
 
+/* ================= HERO HEADLINE ================= */
+function updateHeroHeadline(){
+  const activeTab = document.querySelector(".tabbtn.active");
+  const tab = activeTab ? activeTab.dataset.tab : "checkin-roll";
+  const el = document.getElementById("heroHeadline");
+  if(tab === "checkin-work"){
+    el.textContent = el.dataset.work || "";
+  } else if(tab === "checkin-roll"){
+    el.textContent = el.dataset.roll || "";
+  } else if(tab === "summary"){
+    el.textContent = (el.dataset.work || "") + " · " + (el.dataset.roll || "");
+  } else {
+    el.textContent = "";
+  }
+}
+
 /* ================= TABS ================= */
 function setupTabs(){
   document.querySelectorAll(".tabbtn").forEach(btn => {
@@ -1436,6 +1494,7 @@ function setupTabs(){
       document.querySelectorAll(".tabpane").forEach(p=>p.classList.remove("active"));
       btn.classList.add("active");
       document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+      updateHeroHeadline();
     });
   });
 }

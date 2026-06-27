@@ -757,8 +757,8 @@ const STATUSES_ROLL = [
   {key:"ลากิจ", label:"ลากิจ", color:"#C9712B"},
   {key:"ป่วย", label:"ป่วย", color:"#EAB308"},
   {key:"ขออนุญาต", label:"ขออนุญาต", color:"#6E62C9"},
-  {key:"ราชการ", label:"ราชการ", color:"#1C8C76"},
   {key:"ขาด", label:"ขาด", color:"#C92A2A"},
+  {key:"ราชการ", label:"ราชการ", color:"#1C8C76"},
 ];
 /* สถานะระบบปฏิบัติงาน (มีทหารกองประจำการเพิ่ม) */
 const STATUSES_WORK = [
@@ -767,16 +767,15 @@ const STATUSES_WORK = [
   {key:"ลากิจ", label:"ลากิจ", color:"#C9712B"},
   {key:"ป่วย", label:"ป่วย", color:"#EAB308"},
   {key:"ขออนุญาต", label:"ขออนุญาต", color:"#6E62C9"},
-  {key:"ราชการ", label:"ราชการ", color:"#1C8C76"},
   {key:"ขาด", label:"ขาด", color:"#C92A2A"},
-  {key:"สูทกรรม", label:"สูทกรรม", color:"#D4720A"},
+  {key:"ราชการ", label:"ราชการ", color:"#1C8C76"},
 ];
 /* ใช้ STATUSES เป็น default (ปฏิบัติงาน) */
 const STATUSES = STATUSES_WORK;
-const SUMMARY_COLS_ROLL = ["ลาพัก","ลากิจ","ป่วย","ขออนุญาต","ราชการ","ขาด"];
-const SUMMARY_COLS_WORK = ["ลาพัก","ลากิจ","ป่วย","ขออนุญาต","ราชการ","ขาด","สูทกรรม"];
+const SUMMARY_COLS_ROLL = ["ลาพัก","ลากิจ","ป่วย","ขออนุญาต","ขาด","ราชการ"];
+const SUMMARY_COLS_WORK = ["ลาพัก","ลากิจ","ป่วย","ขออนุญาต","ขาด","ราชการ"];
 const SUMMARY_COLS = SUMMARY_COLS_WORK;
-const SUMMARY_COLS_SHORT = {"ลาพัก":"ลาพัก","ลากิจ":"ลากิจ","ป่วย":"ป่วย","ขออนุญาต":"ขออนุญาต","ราชการ":"ราชการ","ขาด":"ขาด","สูทกรรม":"สูทกรรม","ทหารกองประจำการ":"ทกป."};
+const SUMMARY_COLS_SHORT = {"ลาพัก":"ลาพัก","ลากิจ":"ลากิจ","ป่วย":"ป่วย","ขออนุญาต":"ขออนุญาต","ขาด":"ขาด","ราชการ":"ราชการ","ทหารกองประจำการ":"ทกป."};
 
 /* ================= STATE ================= */
 let statusMapWork = {}; /* ระบบปฏิบัติงาน */
@@ -1104,7 +1103,7 @@ function renderRoster(mode){
               <div class="pname">${p.n}</div>
               <div class="prole">${p.role}</div>
             </div>
-            <select class="pstatus-select" data-id="${p.id}" data-mode="${isWork?'work':'roll'}" style="background-color:${(statuses.find(s=>s.key===sMap[p.id])||statuses[0]).color}20; border-color:${(statuses.find(s=>s.key===sMap[p.id])||statuses[0]).color}60;">
+            <select class="pstatus-select" data-id="${p.id}" data-mode="${isWork?'work':'roll'}">
               ${statuses.map(s => `<option value="${s.key}" ${sMap[p.id]===s.key?'selected':''}>${s.label}</option>`).join("")}
             </select>
             <div class="admin-only ${isAdmin?'':'hidden'}" style="gap:4px; ${isAdmin?'display:flex;':'display:none;'}">
@@ -1120,30 +1119,6 @@ function renderRoster(mode){
   `).join("");
 
   container.querySelectorAll(".pstatus-select").forEach(sel => {
-    const updateColor = (el) => {
-      const allStatuses = [...STATUSES_WORK, ...STATUSES_ROLL];
-      const found = allStatuses.find(s => s.key === el.value);
-      el.style.backgroundColor = found ? found.color + "20" : "";
-      el.style.borderColor = found ? found.color + "60" : "";
-      el.style.color = "";
-      /* style only the selected option */
-      Array.from(el.options).forEach(opt => {
-        const s = allStatuses.find(st => st.key === opt.value);
-        if(opt.value === el.value && s){
-          opt.style.backgroundColor = s.color + "20";
-          opt.style.color = "";
-        } else {
-          opt.style.backgroundColor = "";
-          opt.style.color = "";
-        }
-      });
-    };
-    /* reset to neutral when opening, restore color after closing */
-    sel.addEventListener("mousedown", () => {
-      sel.style.backgroundColor = "";
-      sel.style.borderColor = "";
-    });
-    sel.addEventListener("blur", () => { updateColor(sel); });
     sel.addEventListener("change", async (e) => {
       const id = e.target.dataset.id;
       const modeAttr = e.target.dataset.mode;
@@ -1152,7 +1127,6 @@ function renderRoster(mode){
       } else {
         statusMapRoll[id] = e.target.value;
       }
-      updateColor(e.target);
       e.target.closest(".person").dataset.status = e.target.value;
       renderAll(false);
       if(modeAttr === "work"){

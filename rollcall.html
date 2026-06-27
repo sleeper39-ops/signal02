@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>เช็คยอด บก.ควบคุม 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/12.3.0/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/12.3.0/firebase-database-compat.min.js"></script>
+<style>
+:root{
+  --bg:#F4F6F5;
+  --panel:#FFFFFF;
+  --panel2:#F7F9F8;
+  --line:#E1E6E3;
+  --line-strong:#CBD3CE;
+  --txt:#1E2A24;
+  --txt-dim:#5C6B62;
+  --txt-faint:#94A09A;
+  --sage:#4F8B5B;
+  --sage-dim:#3D7048;
+  --sage-tint:#E7F3E9;
+  --coral:#D2484F;
+  --coral-tint:#FBE9EA;
+  --violet:#6E62C9;
+  --violet-tint:#ECEAFA;
+  --amber:#B5790B;
+  --amber-tint:#FBF1DD;
+  --rust:#C9712B;
+  --rust-tint:#FBEEE2;
+  --rose:#B8245A;
+  --rose-tint:#FAE3EC;
+  --blue:#2563A8;
+  --blue-tint:#E5EFF8;
+  --yellow:#EAB308;
+  --yellow-tint:#FEF9C3;
+  --red:#C92A2A;
+  --red-tint:#FAE1E1;
+  --teal:#1C8C76;
+  --teal-tint:#E2F4EF;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(30,42,36,0.04), 0 1px 8px rgba(30,42,36,0.04);
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{
+  background:var(--bg);
+  color:var(--txt);
+  font-family:'Anuphan', sans-serif;
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:80px;
+}
+.mono{font-family:'JetBrains Mono', monospace;}
+.wrap{max-width:880px; margin:0 auto; padding:0 16px;}
+
+/* ===== HEADER ===== */
+.topbar{
+  position:sticky; top:0; z-index:50;
+  background:rgba(244,246,245,0.92);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+}
+.topbar-inner{
+  max-width:880px; margin:0 auto; padding:14px 16px;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+}
+.brand{display:flex; align-items:center; gap:10px;}
+.brand-mark{
+  width:36px; height:36px; border-radius:10px;
+  background:var(--sage);
+  display:flex; align-items:center; justify-content:center;
+  font-weight:800; font-size:14px; color:#fff; font-family:'JetBrains Mono',monospace;
+  flex-shrink:0;
+}
+.brand-text h1{font-size:15px; font-weight:700; letter-spacing:-0.01em; line-height:1.2;}
+.brand-text p{font-size:11.5px; color:var(--txt-dim); margin-top:1px;}
+.topbar-right{display:flex; align-items:center; gap:8px;}
+.date-chip{
+  font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--sage-dim);
+  background:var(--sage-tint); border:1px solid #CFE6D3;
+  padding:6px 10px; border-radius:8px; white-space:nowrap;
+}
+.admin-toggle{
+  font-size:12px; font-weight:700; padding:6px 11px; border-radius:8px;
+  border:1px solid var(--line-strong); background:var(--panel); color:var(--txt-dim);
+  cursor:pointer; white-space:nowrap;
+}
+.admin-toggle.on{background:var(--red); color:#fff; border-color:var(--red);}
+
+/* ===== HERO RING ===== */
+.hero{
+  padding:28px 0 8px;
+  display:flex; align-items:center; gap:24px; flex-wrap:wrap;
+}
+.ring-box{position:relative; width:128px; height:128px; flex-shrink:0;}
+.ring-box svg{transform:rotate(-90deg);}
+.ring-bg{fill:none; stroke:var(--line); stroke-width:10;}
+.ring-fg{fill:none; stroke:var(--sage); stroke-width:10; stroke-linecap:round; transition:stroke-dashoffset 0.6s cubic-bezier(.2,.8,.2,1);}
+.ring-label{
+  position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+}
+.ring-label .n{font-family:'JetBrains Mono',monospace; font-size:26px; font-weight:700; line-height:1; color:var(--txt);}
+.ring-label .d{font-size:11px; color:var(--txt-dim); margin-top:2px;}
+.hero-text{flex:1; min-width:180px;}
+.hero-text .eyebrow{font-size:11.5px; color:var(--sage); font-weight:600; letter-spacing:0.04em; text-transform:uppercase; margin-bottom:4px;}
+.hero-text h2{font-size:22px; font-weight:700; letter-spacing:-0.01em; margin-bottom:6px;}
+.hero-text p{font-size:13.5px; color:var(--txt-dim); line-height:1.5;}
+.hero-stats{display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;}
+.hstat{
+  background:var(--panel); border:1px solid var(--line); border-radius:10px;
+  padding:7px 12px; font-size:12px; display:flex; align-items:center; gap:6px; box-shadow:var(--shadow);
+}
+.hstat .dot{width:7px; height:7px; border-radius:50%; flex-shrink:0;}
+.hstat b{font-family:'JetBrains Mono',monospace; font-weight:700;}
+
+/* ===== SECTION HEADERS ===== */
+.section{margin-top:26px;}
+.section-head{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:12px; gap:10px; flex-wrap:wrap;
+}
+.section-head h3{font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--txt-dim);}
+.section-head .actions{display:flex; gap:8px;}
+
+/* ===== FILTER CHIPS ===== */
+.filters{display:flex; gap:8px; flex-wrap:wrap;}
+.chip{
+  flex-shrink:0;
+  font-size:12.5px; font-weight:600; padding:7px 13px; border-radius:999px;
+  border:1px solid var(--line-strong); background:var(--panel); color:var(--txt-dim);
+  cursor:pointer; transition:all 0.15s; white-space:nowrap;
+}
+.chip:hover{border-color:var(--txt-dim);}
+.chip.active{background:var(--sage); color:#fff; border-color:var(--sage);}
+.searchbox{margin:12px 0; position:relative;}
+.searchbox input{
+  width:100%; background:var(--panel); border:1px solid var(--line-strong);
+  border-radius:10px; padding:11px 14px 11px 38px; color:var(--txt); font-size:14px; font-family:inherit;
+}
+.searchbox input::placeholder{color:var(--txt-faint);}
+.searchbox input:focus{outline:none; border-color:var(--sage);}
+.searchbox::before{
+  content:'⌕'; position:absolute; left:13px; top:50%; transform:translateY(-50%);
+  color:var(--txt-faint); font-size:16px;
+}
+
+/* ===== GROUPS / ROSTER ===== */
+.group{margin-bottom:18px;}
+.group-title{
+  font-size:12px; font-weight:700; color:var(--blue); text-transform:uppercase; letter-spacing:0.04em;
+  padding:8px 4px; display:flex; align-items:center; gap:8px;
+}
+.group-title .ln{flex:1; height:1px; background:var(--line);}
+.group-title .gactions{display:flex; gap:4px; flex-shrink:0;}
+.roster{display:flex; flex-direction:column; gap:8px;}
+
+.person{
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  padding:12px 14px; display:flex; align-items:center; gap:12px; box-shadow:var(--shadow);
+}
+.avatar{
+  width:38px; height:38px; border-radius:10px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-weight:700; font-size:13px; font-family:'JetBrains Mono',monospace;
+  background:var(--panel2); color:var(--txt-dim); border:1px solid var(--line);
+}
+.pinfo{flex:1; min-width:0;}
+.pinfo .pname{font-size:14px; font-weight:600; line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.pinfo .prole{font-size:11.5px; color:var(--txt-dim); line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.pstatus-select{
+  flex-shrink:0; font-size:12px; font-weight:600; padding:7px 9px; border-radius:8px;
+  border:1px solid var(--line-strong); background:var(--panel2); color:var(--txt); font-family:inherit;
+  max-width:106px;
+}
+.pstatus-select:focus{outline:none; border-color:var(--sage);}
+.picon-btn{
+  flex-shrink:0; width:30px; height:30px; border-radius:8px; border:1px solid var(--line-strong);
+  background:var(--panel); color:var(--txt-dim); cursor:pointer; font-size:13px;
+  display:flex; align-items:center; justify-content:center;
+}
+.picon-btn:hover{border-color:var(--coral); color:var(--coral);}
+.picon-btn.edit:hover{border-color:var(--violet); color:var(--violet);}
+
+.grouprow{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:11px 0; border-bottom:1px solid var(--line);
+}
+.grouprow:last-child{border-bottom:none;}
+.grouprow-name{font-size:14px; font-weight:600;}
+.grouprow-count{font-size:11.5px; color:var(--txt-dim); margin-top:1px;}
+.grouprow-actions{display:flex; gap:4px; flex-shrink:0;}
+
+.person[data-status="ลาพัก"] .pstatus-select{color:var(--blue); border-color:#A9C7E3; background:var(--blue-tint);}
+.person[data-status="ลากิจ"] .pstatus-select{color:var(--rust); border-color:#EAB888; background:var(--rust-tint);}
+.person[data-status="ป่วย"] .pstatus-select{color:var(--yellow); border-color:#F5DC4D; background:var(--yellow-tint);}
+.person[data-status="ขออนุญาต"] .pstatus-select{color:var(--violet); border-color:#C6C0EC; background:var(--violet-tint);}
+.person[data-status="ขาด"] .pstatus-select{color:var(--red); border-color:#E6A8A8; background:var(--red-tint);}
+.person[data-status="ราชการ"] .pstatus-select{color:var(--teal); border-color:#A7DBCC; background:var(--teal-tint);}
+.person[data-status="ทหารกองประจำการ"] .pstatus-select{color:#9333EA; border-color:#D8B4FE; background:#F5F3FF;}
+
+/* ===== SUMMARY TABLE ===== */
+.summary-card{
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  overflow:hidden; box-shadow:var(--shadow);
+}
+table.sumtable{width:100%; border-collapse:collapse; font-size:12px; table-layout:fixed;}
+table.sumtable th, table.sumtable td{padding:10px 4px; text-align:right;}
+table.sumtable th:first-child, table.sumtable td:first-child{text-align:left; padding-left:14px; width:26%;}
+table.sumtable td:last-child, table.sumtable th:last-child{padding-right:14px;}
+table.sumtable thead th{
+  font-size:10.5px; font-weight:700; color:var(--txt-dim); text-transform:uppercase; letter-spacing:0.01em;
+  border-bottom:1px solid var(--line-strong); background:var(--panel2);
+}
+table.sumtable td{font-family:'JetBrains Mono',monospace; font-weight:500;}
+table.sumtable td:first-child{font-family:'Anuphan',sans-serif; font-weight:600;}
+table.sumtable tbody tr{border-bottom:1px solid var(--line);}
+table.sumtable tbody tr:last-child{border-bottom:none;}
+table.sumtable tbody tr.total-row{background:var(--panel2);}
+table.sumtable tbody tr.total-row td{border-top:1px solid var(--line-strong); font-weight:700;}
+.col-rwy{color:var(--sage-dim); font-weight:700 !important;}
+.col-rwd{color:var(--coral); font-weight:700 !important;}
+
+/* ===== NAME LIST (summary) ===== */
+.namelist-group{margin-bottom:14px;}
+.namelist-group:last-child{margin-bottom:0;}
+.namelist-head{font-size:12.5px; font-weight:700; margin-bottom:6px; display:flex; align-items:center; gap:7px;}
+.namelist-head .dot{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
+.namelist-body{font-size:13px; color:var(--txt-dim); line-height:1.9; padding-left:15px;}
+.namelist-body .nrow{display:block;}
+
+/* ===== PANELS ===== */
+.panel{
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  padding:16px; box-shadow:var(--shadow);
+}
+.field{margin-bottom:12px;}
+.field label{display:block; font-size:12px; color:var(--txt-dim); margin-bottom:6px; font-weight:600;}
+.field input, .field textarea, .field select{
+  width:100%; background:var(--panel2); border:1px solid var(--line-strong); border-radius:9px;
+  padding:10px 12px; color:var(--txt); font-size:13.5px; font-family:'JetBrains Mono',monospace;
+}
+.field input:focus, .field textarea:focus, .field select:focus{outline:none; border-color:var(--sage);}
+.field .hint{font-size:11px; color:var(--txt-faint); margin-top:5px; line-height:1.5; font-family:'Anuphan',sans-serif;}
+.field .hint a{color:var(--violet);}
+.field-row{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+
+.btnrow{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;}
+.btn{
+  font-family:inherit; font-size:13.5px; font-weight:700; padding:11px 18px; border-radius:10px;
+  border:1px solid var(--line-strong); background:var(--panel); color:var(--txt);
+  cursor:pointer; transition:all 0.15s; display:inline-flex; align-items:center; gap:7px;
+}
+.btn:hover{border-color:var(--txt-dim);}
+.btn:active{transform:scale(0.98);}
+.btn.primary{background:var(--sage); color:#fff; border-color:var(--sage);}
+.btn.primary:hover{background:var(--sage-dim);}
+.btn.danger{background:var(--coral); color:#fff; border-color:var(--coral);}
+.btn.ghost{background:transparent;}
+.btn:disabled{opacity:0.45; cursor:not-allowed;}
+.btn.sm{font-size:12px; padding:7px 12px;}
+
+.preview-box{
+  background:var(--panel2); border:1px solid var(--line-strong); border-radius:10px; padding:14px 16px;
+  font-family:'JetBrains Mono',monospace; font-size:12px; line-height:1.7; color:var(--txt);
+  white-space:pre-wrap; word-break:break-word; max-height:380px; overflow-y:auto;
+}
+
+.toast{
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+  background:var(--sage); color:#fff; font-weight:700; font-size:13.5px;
+  padding:12px 20px; border-radius:10px; opacity:0; pointer-events:none; transition:all 0.25s;
+  z-index:200; white-space:nowrap; box-shadow:0 4px 16px rgba(0,0,0,0.12);
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+.toast.error{background:var(--coral);}
+
+/* ===== TABS — fit, no scroll ===== */
+.tabbar{
+  display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;
+  margin-bottom:18px; background:var(--panel2); border:1px solid var(--line);
+  border-radius:12px; padding:4px;
+}
+.tabbtn{
+  font-family:inherit; font-size:13px; font-weight:600; padding:9px 4px;
+  background:none; border:none; color:var(--txt-dim); cursor:pointer; border-radius:9px;
+  text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.tabbtn.active{color:var(--sage-dim); background:var(--panel); box-shadow:var(--shadow); font-weight:700;}
+.tabpane{display:none;}
+.tabpane.active{display:block;}
+
+.empty{padding:30px 10px; text-align:center; color:var(--txt-faint); font-size:13px;}
+
+/* ===== ADMIN MODAL ===== */
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(20,30,24,0.45); z-index:300;
+  display:flex; align-items:center; justify-content:center; padding:20px;
+}
+.modal-overlay.hidden{display:none;}
+.hidden{display:none !important;}
+.modal{
+  background:var(--panel); border-radius:16px; padding:22px; width:100%; max-width:380px;
+  box-shadow:0 12px 40px rgba(0,0,0,0.18);
+}
+.modal h3{font-size:16px; font-weight:700; margin-bottom:14px;}
+.modal-wide{max-width:440px;}
+
+footer{text-align:center; padding:30px 0 10px; color:var(--txt-faint); font-size:11.5px;}
+@media (max-width:480px){
+  .hero{gap:16px;}
+  .ring-box{width:104px; height:104px;}
+  .ring-label .n{font-size:21px;}
+  table.sumtable{font-size:10.5px;}
+  table.sumtable th, table.sumtable td{padding:8px 3px;}
+  .tabbtn{font-size:12px;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-mark">บก2</div>
+      <div class="brand-text">
+        <h1>เช็คยอดกำลังพล</h1>
+        <p>บก.ควบคุม 2</p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="date-chip mono" id="dateChip">27 มิ.ย. 69</div>
+      <button class="admin-toggle" id="adminToggle">โหมดแอดมิน</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="hero">
+    <div class="ring-box">
+      <svg width="128" height="128" viewBox="0 0 128 128">
+        <circle class="ring-bg" cx="64" cy="64" r="54"></circle>
+        <circle class="ring-fg" id="ringFg" cx="64" cy="64" r="54" stroke-dasharray="339" stroke-dashoffset="339"></circle>
+      </svg>
+      <div class="ring-label">
+        <div class="n" id="ringPct">0%</div>
+        <div class="d">รวมแถว</div>
+      </div>
+    </div>
+    <div class="hero-text">
+      <div class="eyebrow">วันนี้ · roll call</div>
+      <h2 id="heroHeadline">ยังไม่ได้เช็คยอด</h2>
+      <p>แตะสถานะรายชื่อด้านล่างให้ครบทุกคน แล้วกดส่งรายงานเข้า Telegram ได้ทันที</p>
+      <div class="hero-stats" id="heroStats"></div>
+    </div>
+  </div>
+
+  <div class="tabbar" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+    <button class="tabbtn active" data-tab="checkin-work">ปฏิบัติงาน</button>
+    <button class="tabbtn" data-tab="checkin-roll">รวมแถว</button>
+    <button class="tabbtn" data-tab="summary">สรุปยอด</button>
+    <button class="tabbtn" data-tab="report">ตั้งค่า</button>
+  </div>
+
+  <!-- CHECK-IN TAB: ปฏิบัติงาน -->
+  <div class="tabpane active" id="tab-checkin-work">
+    <div style="background:var(--blue-tint); border:1px solid #A9C7E3; border-radius:10px; padding:8px 14px; margin-bottom:12px; font-size:12.5px; color:var(--blue); font-weight:600;">
+      📋 เช็คยอดกำลังพล (ปฏิบัติงาน)
+    </div>
+    <div class="section-head">
+      <h3>กรองตามสถานะ</h3>
+      <div class="actions">
+        <button class="btn ghost sm" id="resetAllBtnWork">ล้างเป็นปกติทั้งหมด</button>
+        <button class="btn sm admin-only hidden" id="addGroupBtnTopWork">+ เพิ่มหน่วย/กลุ่ม</button>
+        <button class="btn sm admin-only hidden" id="addPersonBtnWork">+ เพิ่มกำลังพล</button>
+      </div>
+    </div>
+    <div class="filters" id="statusFiltersWork"></div>
+    <div class="searchbox">
+      <input type="text" id="searchInputWork" placeholder="ค้นหาชื่อ ยศ หรือตำแหน่ง...">
+    </div>
+    <div id="rosterContainerWork"></div>
+  </div>
+
+  <!-- CHECK-IN TAB: รวมแถว -->
+  <div class="tabpane" id="tab-checkin-roll">
+    <div style="background:var(--sage-tint); border:1px solid #CFE6D3; border-radius:10px; padding:8px 14px; margin-bottom:12px; font-size:12.5px; color:var(--sage-dim); font-weight:600;">
+      📋 เช็คยอดกำลังพล (รวมแถว)
+    </div>
+    <div class="section-head">
+      <h3>กรองตามสถานะ</h3>
+      <div class="actions">
+        <button class="btn ghost sm" id="resetAllBtnRoll">ล้างเป็นปกติทั้งหมด</button>
+        <button class="btn sm admin-only hidden" id="addGroupBtnTopRoll">+ เพิ่มหน่วย/กลุ่ม</button>
+        <button class="btn sm admin-only hidden" id="addPersonBtnRoll">+ เพิ่มกำลังพล</button>
+      </div>
+    </div>
+    <div class="filters" id="statusFiltersRoll"></div>
+    <div class="searchbox">
+      <input type="text" id="searchInputRoll" placeholder="ค้นหาชื่อ ยศ หรือตำแหน่ง...">
+    </div>
+    <div id="rosterContainerRoll"></div>
+  </div>
+
+  <!-- SUMMARY TAB -->
+  <div class="tabpane" id="tab-summary">
+    <div class="section-head" style="margin-top:4px;">
+      <h3 style="color:var(--blue);">สถานภาพกำลังพล (ปฏิบัติงาน)</h3>
+    </div>
+    <div class="summary-card">
+      <table class="sumtable" id="summaryTableWork"></table>
+    </div>
+    <div class="section">
+      <div class="section-head"><h3>รายชื่อจำหน่าย (ปฏิบัติงาน)</h3></div>
+      <div class="panel" id="statusBreakdownWork"></div>
+      <div class="btnrow">
+        <button class="btn primary" id="sendReportBtnWork"><span>ส่ง Telegram (ปฏิบัติงาน)</span></button>
+        <button class="btn ghost" id="copyReportBtnWork">คัดลอก (ปฏิบัติงาน)</button>
+      </div>
+    </div>
+
+    <div class="section-head" style="margin-top:24px;">
+      <h3 style="color:var(--sage-dim);">สถานภาพกำลังพล (รวมแถว)</h3>
+    </div>
+    <div class="summary-card">
+      <table class="sumtable" id="summaryTableRoll"></table>
+    </div>
+    <div class="section">
+      <div class="section-head"><h3>รายชื่อจำหน่าย (รวมแถว)</h3></div>
+      <div class="panel" id="statusBreakdownRoll"></div>
+      <div class="btnrow">
+        <button class="btn primary" id="sendReportBtnRoll"><span>ส่ง Telegram (รวมแถว)</span></button>
+        <button class="btn ghost" id="copyReportBtnRoll">คัดลอก (รวมแถว)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TELEGRAM SETTINGS TAB -->
+  <div class="tabpane" id="tab-report">
+    <div class="section">
+      <div class="section-head"><h3>ตั้งค่า Telegram</h3></div>
+      <div class="panel">
+        <div class="field">
+          <label>Bot token</label>
+          <input type="text" id="botToken" placeholder="123456789:AAExxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+          <div class="hint">สร้าง bot ผ่าน <a href="https://t.me/BotFather" target="_blank">@BotFather</a> ใน Telegram แล้วคัดลอก token มาวางที่นี่</div>
+        </div>
+        <div class="field">
+          <label>Chat ID (กลุ่ม/ผู้รับรายงาน)</label>
+          <input type="text" id="chatId" placeholder="-1001234567890">
+          <div class="hint">เพิ่ม bot เข้ากลุ่ม แล้วหา chat id ผ่าน <a href="https://t.me/getidsbot" target="_blank">@getidsbot</a> หรือเปิด https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</div>
+        </div>
+        <div class="btnrow">
+          <button class="btn" id="saveSettingsBtn">บันทึกการตั้งค่า</button>
+          <button class="btn ghost" id="testSendBtn">ทดสอบส่งข้อความ</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section admin-only hidden" id="groupAdminSection">
+      <div class="section-head">
+        <h3>ตั้งค่าหน่วย/กลุ่ม</h3>
+        <div class="actions">
+          <button class="btn sm" id="addGroupBtn">+ เพิ่มหน่วย/กลุ่ม</button>
+        </div>
+      </div>
+      <div class="panel" id="groupAdminList"></div>
+    </div>
+  </div>
+
+  <footer>เช็คยอดกำลังพล บก.ควบคุม 2 · ข้อมูลบันทึกอัตโนมัติ</footer>
+</div>
+
+
+<div class="toast" id="toast"></div>
+
+<!-- ADMIN LOGIN MODAL -->
+<div class="modal-overlay hidden" id="loginModal">
+  <div class="modal">
+    <h3>เข้าสู่โหมดแอดมิน</h3>
+    <div class="field">
+      <label>ไอดี</label>
+      <input type="text" id="loginUser" placeholder="admin" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>รหัสผ่าน</label>
+      <input type="password" id="loginPass" placeholder="••••••••" autocomplete="off">
+    </div>
+    <div class="btnrow">
+      <button class="btn primary" id="loginConfirmBtn">เข้าสู่ระบบ</button>
+      <button class="btn ghost" id="loginCancelBtn">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<!-- PERSON EDIT MODAL -->
+<div class="modal-overlay hidden" id="personModal">
+  <div class="modal modal-wide">
+    <h3 id="personModalTitle">เพิ่มกำลังพล</h3>
+    <div class="field">
+      <label>ยศ - ชื่อ - สกุล</label>
+      <input type="text" id="personName" placeholder="ส.อ. ตัวอย่าง ทดสอบ">
+    </div>
+    <div class="field">
+      <label>ตำแหน่ง</label>
+      <input type="text" id="personRole" placeholder="ส.ยุทธการ">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>หน่วย/กลุ่ม</label>
+        <select id="personGroup"></select>
+      </div>
+      <div class="field">
+        <label>ชั้น</label>
+        <select id="personRank">
+          <option value="officer">สัญญาบัตร</option>
+          <option value="nco">ประทวน</option>
+          <option value="conscript">ทกป. (ทหารกองประจำการ)</option>
+        </select>
+      </div>
+    </div>
+    <div class="btnrow">
+      <button class="btn primary" id="personSaveBtn">บันทึก</button>
+      <button class="btn ghost" id="personCancelBtn">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<!-- GROUP ADD/RENAME MODAL -->
+<div class="modal-overlay hidden" id="groupModal">
+  <div class="modal">
+    <h3 id="groupModalTitle">แก้ไขชื่อหน่วย/กลุ่ม</h3>
+    <div class="field">
+      <label>ชื่อหน่วย/กลุ่ม</label>
+      <input type="text" id="groupNameInput" placeholder="เช่น ชุดปฏิบัติการที่ 6">
+    </div>
+    <div class="btnrow">
+      <button class="btn primary" id="groupSaveBtn">บันทึก</button>
+      <button class="btn ghost" id="groupCancelBtn">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL (replaces native confirm(), which is blocked inside sandboxed previews) -->
+<div class="modal-overlay hidden" id="confirmModal">
+  <div class="modal">
+    <h3 id="confirmModalTitle">ยืนยันการทำรายการ</h3>
+    <p id="confirmModalMsg" style="font-size:13.5px; color:var(--txt-dim); line-height:1.6; margin-bottom:6px;"></p>
+    <div class="btnrow">
+      <button class="btn danger" id="confirmYesBtn">ยืนยัน</button>
+      <button class="btn ghost" id="confirmNoBtn">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= ADMIN CREDENTIALS ================= */
+const ADMIN_ID = "admin";
+const ADMIN_PASS = "admin2";
+let isAdmin = false;
+
+/* ================= ROSTER DATA (from บก.ควบคุม 2 sheet) ================= */
+const DEFAULT_ROSTER = [
+  {g:"ส่วนบังคับบัญชา", n:"พ.อ. โสฬส รัตนผ่องใส", role:"ผบ.บก.ควบคุม 2", r:"officer"},
+  {g:"ส่วนบังคับบัญชา", n:"พ.อ. สถาพร ชูศรี", role:"รอง ผบ.บก.ควบคุม 2", r:"officer"},
+  {g:"ส่วนบังคับบัญชา", n:"พ.อ. เกรียงไกร เกษรวย", role:"เสธ.ผบ.บก.ควบคุม 2", r:"officer"},
+  {g:"ศยก.บก.ควบคุม 2", n:"พ.ต. สันติ วรสาร", role:"หน.ศยก.บก.ควบคุม 2", r:"officer"},
+  {g:"ฝยก.บก.ควบคุม 2", n:"ร.อ. ศิณพ เย็นใจ", role:"น.ฝยก.ฯ/หน.ศสส.", r:"officer"},
+  {g:"ฝยก.บก.ควบคุม 2", n:"จ.ส.อ. ชัยฤทธิ์ ชูบุตร", role:"ผช.น.ฝยก.บก.ควบคุม 2", r:"nco"},
+  {g:"ฝยก.บก.ควบคุม 2", n:"จ.ส.อ. วันเฉลิม โพธิ์ศรี", role:"ส.ยุทธการ", r:"nco"},
+  {g:"ฝยก.บก.ควบคุม 2", n:"จ.ส.อ. กิตติ พลลม", role:"ส.ยุทธการ", r:"nco"},
+  {g:"ฝยก.บก.ควบคุม 2", n:"ส.อ. ปิยะณัฐ สีทัน", role:"ส.งบประมาณ", r:"nco"},
+  {g:"ฝ่ายสื่อสาร", n:"ส.อ. ชาติชาย ตรีแสน", role:"ส.ศูนย์ข่าว", r:"nco"},
+  {g:"ฝ่ายสื่อสาร", n:"ส.อ. สรรเสริญ แก้วพรม", role:"ส.ศูนย์ข่าว", r:"nco"},
+  {g:"ฝขว.บก.ควบคุม 2", n:"ร.ท. สรศักดิ์ อยู่ยง", role:"น.ฝขว.บก.ควบคุม 2", r:"officer"},
+  {g:"ส่วนวางแผนและรวบรวมข้อมูล", n:"จ.ส.อ. ณัฐกร ปะทะวัง", role:"ผช.น.ฝขว.บก.ควบคุม 2", r:"nco"},
+  {g:"ส่วนวางแผนและรวบรวมข้อมูล", n:"ส.อ. อิสระพงษ์ สืบสุนทร", role:"ส.การข่าว", r:"nco"},
+  {g:"ส่วนวางแผนและรวบรวมข้อมูล", n:"ส.อ. ณัฐเอก ลูมา", role:"ส.การข่าว", r:"nco"},
+  {g:"ส่วนกรรมวิธีและวิเคราะห์ข้อมูล", n:"ร.ท. อานัติพงษ์ ลันบุตร", role:"น.กรรมวิธีและวิเคราะห์ข้อมูล", r:"officer"},
+  {g:"ส่วนกรรมวิธีและวิเคราะห์ข้อมูล", n:"ส.อ. วงกต วันตา", role:"ส.กรรมวิธีและวิเคราะห์ข้อมูล", r:"nco"},
+  {g:"ส่วนกรรมวิธีและวิเคราะห์ข้อมูล", n:"ส.อ. วิเชียร สวาทพร", role:"ส.กรรมวิธีและวิเคราะห์ข้อมูล", r:"nco"},
+  {g:"ส่วนกรรมวิธีและวิเคราะห์ข้อมูล", n:"ส.อ. สมเกียรติ เหล่าพรหม", role:"ส.กรรมวิธีและวิเคราะห์ข้อมูล", r:"nco"},
+  {g:"ชุดเครือข่ายสื่อสารข้อมูล", n:"ส.อ. จักรกฤษณ์ คุณสมบัติ", role:"จนท.เครือข่ายสื่อสารข้อมูล", r:"nco"},
+  {g:"ชุดเครือข่ายสื่อสารข้อมูล", n:"ส.อ. ปิยะพงษ์ เขียนปัญญา", role:"จนท.เครือข่ายสื่อสารข้อมูล", r:"nco"},
+  {g:"ชุดข่าวกรองทางการสื่อสาร", n:"จ.ส.อ. วิศเวศ ยามประโคน", role:"หน.ชุดดักฟัง", r:"nco"},
+  {g:"ชุดข่าวกรองทางการสื่อสาร", n:"จ.ส.อ. สุดใจ ภูลายขาว", role:"หน.ฝ่ายสื่อสาร/พนักงานวิทยุ", r:"nco"},
+  {g:"ชุดข่าวกรองทางการสื่อสาร", n:"จ.ส.อ. เสกสรร ศรีลาลัย", role:"พนักงานวิทยุ", r:"nco"},
+  {g:"ชุดข่าวกรองทางการสื่อสาร", n:"ส.อ. ธีระ จำปาเทศ", role:"พนักงานวิทยุ", r:"nco"},
+  {g:"ฝ่ายข่าวกรองยาเสพติด", n:"จ.ส.อ. ฐิติพงษ์ กุศล", role:"หน.ฝยส.", r:"nco"},
+  {g:"ฝ่ายข่าวกรองยาเสพติด", n:"จ.ส.อ. อัมฤทธิ์ พุ่มสวัสดิ์", role:"ผช.หน.ฝยส.", r:"nco"},
+  {g:"ฝ่ายข่าวกรองยาเสพติด", n:"ส.อ. อนุชิต ใบขุนทด", role:"ส.ยุทธการและการข่าว", r:"nco"},
+  {g:"ฝ่ายกิจการพลเรือน", n:"จ.ส.อ. พรหมมาศ ทรงประสิทธิ์", role:"ส.กิจการพลเรือน", r:"nco"},
+  {g:"ฝ่ายกิจการพลเรือน", n:"ส.อ. กฤษณัส สุรันนา", role:"ส.กิจการพลเรือน", r:"nco"},
+  {g:"ฝ่ายกิจการพลเรือน", n:"ส.อ. วรัญญู แบนขุนทด", role:"ส.กิจการพลเรือน", r:"nco"},
+  {g:"ชุดปฏิบัติการสารนิเทศ", n:"ร.ต. นพฤทธิ์ ฉายอรุณ", role:"หน.ชป.ปส./น.ฝกร.", r:"officer"},
+  {g:"ชุดปฏิบัติการสารนิเทศ", n:"จ.ส.อ. คำสอน พงษ์พันธ์", role:"รอง หน.ชป.ปส.", r:"nco"},
+  {g:"ชุดปฏิบัติการสารนิเทศ", n:"ส.อ. ณรงค์กร ฆ้องลา", role:"ส.ปฏิบัติการข่าว", r:"nco"},
+  {g:"ชุดปฏิบัติการสารนิเทศ", n:"ส.อ. ประชา หนูราช", role:"ส.ปฏิบัติการข่าว", r:"nco"},
+  {g:"ศูนย์สนับสนุน", n:"ร.ต. ณฤธร สุคนธชาติ", role:"หน.ศูนย์สนับสนุน/ผช.หน.นปพ.", r:"officer"},
+  {g:"ฝกพ.บก.ควบคุม 2", n:"จ.ส.อ. ทินกร เหลาพรม", role:"น.ฝกพ.บก.ควบคุม 2", r:"nco"},
+  {g:"ฝกบ.บก.ควบคุม 2", n:"จ.ส.อ. สิทธิพงษ์ สิงหพันธ์", role:"น.ฝกบ./ส.การเงิน", r:"nco"},
+  {g:"ฝกบ.บก.ควบคุม 2", n:"จ.ส.ต. ปรัชญา ขาลพรหม", role:"ส.ส่งกำลังบำรุง", r:"nco"},
+  {g:"ตอนยานยนต์", n:"จ.ส.อ. อดิศร เรียงเสนาะ", role:"หน.ตอนยานยนต์", r:"nco"},
+  {g:"ตอนยานยนต์", n:"ส.อ. เมธี มิตราช", role:"พลขับรถ/ส.งบประมาณ", r:"nco"},
+  {g:"ฝกง.บก.ควบคุม 2", n:"พ.ต. ไพโรจน์ จันทร์ศรี", role:"น.ฝกง.บก.ควบคุม 2", r:"officer"},
+  {g:"ฝกง.บก.ควบคุม 2", n:"จ.ส.อ. นันทวัฒน์ โกศัยกานนท์", role:"ส.การเงิน", r:"nco"},
+  {g:"หน่วยปฏิบัติการพิเศษ (250)", n:"จ.ส.ท. สมควร เดชนุวัฒนชัย", role:"ส.ปฏิบัติการ", r:"nco"},
+  {g:"หน่วยปฏิบัติการพิเศษ (250)", n:"ส.อ. กุลวัชร สัจจาเฟื่องกิจการ", role:"ขปล.1", r:"nco"},
+  {g:"หน่วยปฏิบัติการพิเศษ (250)", n:"ส.อ. บุญธรรม ท้าววัฒนากุล", role:"ขปล.2", r:"nco"},
+  {g:"หน่วยปฏิบัติการพิเศษ (250)", n:"ร.ท. วรัสย์บวร วิภาพรสุริพล", role:"ขปล.4", r:"officer"},
+  {g:"หน่วยปฏิบัติการพิเศษ (250)", n:"ร.อ. บรรเจิด คำพัน", role:"ขปล.5", r:"officer"},
+  {g:"หน่วยปฏิบัติการพิเศษ (250)", n:"จ.ส.อ. วิศาล บุญตา", role:"ขปล.6", r:"nco"},
+  {g:"หน่วยปฏิบัติการพิเศษ (250)", n:"ส.อ. มีชัย ศรีนวน", role:"ขปล.7", r:"nco"},
+  {g:"ชุดปฏิบัติการที่ 1", n:"ร.ต. พิชัย รองพักตร์", role:"หน.ชุดปฏิบัติการ", r:"officer"},
+  {g:"ชุดปฏิบัติการที่ 1", n:"จ.ส.อ. สายฝน โตพิทักษ์", role:"ส.ยุทธการ", r:"nco"},
+  {g:"ชุดปฏิบัติการที่ 1", n:"จ.ส.อ. ไพรพนา ไชยปัญญา", role:"ส.การข่าว", r:"nco"},
+  {g:"ชุดปฏิบัติการที่ 1", n:"ส.อ. ชนินทร์ จันทร์ศิริ", role:"ส.พยาบาล", r:"nco"},
+  {g:"ชุดปฏิบัติการที่ 1", n:"ส.อ. ธวัชชัย ราชชื่น", role:"พงว.", r:"nco"},
+  {g:"ชุดปฏิบัติการที่ 2", n:"ร.อ. สายชล ธรรมโม", role:"หน.ชุดปฏิบัติการ", r:"officer"},
+  {g:"ชุดปฏิบัติการที่ 2", n:"จ.ส.อ. วุฒิชัย อินสองใจ", role:"ส.ยุทธการ", r:"nco"},
+  {g:"ชุดปฏิบัติการที่ 2", n:"ส.อ. ยงยุทธ ต่านนวล", role:"ส.การข่าว", r:"nco"},
+  {g:"ชุดปฏิบัติการที่ 2", n:"ส.อ. อนุวัฒน์ สันสะท้าน", role:"ส.พยาบาล", r:"nco"},
+  {g:"ชุดปฏิบัติการที่ 2", n:"ส.อ. อติชาติ อัมพวา", role:"พงว.", r:"nco"},
+  {g:"ชุดปฏิบัติการที่ 3", n:"จ.ส.อ. เกรียงศักดิ์ กาสินธุ์พิลา", role:"หน.ชุดปฏิบัติการ", r:"nco"},
+  {g:"ชุดปฏิบัติการที่ 3", n:"จ.ส.อ. สิทธิชัย ดวงมณี", role:"ส.ยุทธการ", r:"nco"},
+  {g:"ชุดปฏิบัติการที่ 3", n:"ส.อ. ศิโรตม์ วงษ์คลัง", role:"ส.การข่าว", r:"nco"},
+  {g:"ชุดปฏิบัติการที่ 3", n:"ส.อ. ภูมินทร์ รินไธสง", role:"ส.พยาบาล", r:"nco"},
+  {g:"ชุดปฏิบัติการที่ 3", n:"ส.อ. ชานนท์ วงศ์ศักดิ์สิทธิ์", role:"พงว.", r:"nco"},
+  {g:"ชุดปฏิบัติการที่ 4", n:"ร.ท. พิชิต รองพักตร์", role:"หน.ชุดปฏิบัติการ", r:"officer"},
+  {g:"ชุดปฏิบัติการที่ 4", n:"จ.ส.ท. ภาษสุ พุ่มใบศรี", role:"ส.ยุทธการ", r:"nco"},
+  {g:"ชุดปฏิบัติการที่ 4", n:"ส.อ. อาทิวัฒน์ อริกุล", role:"ส.การข่าว", r:"nco"},
+  {g:"ชุดปฏิบัติการที่ 4", n:"ส.อ. จตุรงค์ จุลนันท์", role:"ส.พยาบาล", r:"nco"},
+  {g:"ชุดปฏิบัติการที่ 4", n:"ส.อ. เดชาบดินทร์ ทันทิมา", role:"พงว.", r:"nco"},
+  {g:"ชุดปฏิบัติการที่ 5", n:"จ.ส.อ. พิเชษฐ์ จันทไชย", role:"หน.ชุดปฏิบัติการ", r:"nco"},
+  {g:"ชุดปฏิบัติการที่ 5", n:"จ.ส.อ. อรรถชัย สาธุภาค", role:"ส.ยุทธการ", r:"nco"},
+  {g:"ชุดปฏิบัติการที่ 5", n:"ส.อ. อธิป โคตะมา", role:"ส.การข่าว", r:"nco"},
+  {g:"ชุดปฏิบัติการที่ 5", n:"ส.อ. คุณาธิป พานิชกิจ", role:"ส.พยาบาล", r:"nco"},
+  {g:"ชุดปฏิบัติการที่ 5", n:"ส.อ. ปิยวุฒิ อวยพร", role:"พงว.", r:"nco"},
+].map((p, i) => ({...p, id: "p" + (i + 1)}));
+
+let ROSTER = [];
+let nextIdCounter = DEFAULT_ROSTER.length + 1;
+let EXTRA_GROUPS = []; /* groups created by admin with zero members so far */
+
+/* สถานะระบบรวมแถว (ไม่มีทหารกองประจำการ) */
+const STATUSES_ROLL = [
+  {key:"ปกติ", label:"ปกติ", color:"#5C6B62"},
+  {key:"ลาพัก", label:"ลาพัก", color:"#2563A8"},
+  {key:"ลากิจ", label:"ลากิจ", color:"#C9712B"},
+  {key:"ป่วย", label:"ป่วย", color:"#EAB308"},
+  {key:"ขออนุญาต", label:"ขออนุญาต", color:"#6E62C9"},
+  {key:"ขาด", label:"ขาด", color:"#C92A2A"},
+  {key:"ราชการ", label:"ราชการ", color:"#1C8C76"},
+];
+/* สถานะระบบปฏิบัติงาน (มีทหารกองประจำการเพิ่ม) */
+const STATUSES_WORK = [
+  {key:"ปกติ", label:"ปกติ", color:"#5C6B62"},
+  {key:"ลาพัก", label:"ลาพัก", color:"#2563A8"},
+  {key:"ลากิจ", label:"ลากิจ", color:"#C9712B"},
+  {key:"ป่วย", label:"ป่วย", color:"#EAB308"},
+  {key:"ขออนุญาต", label:"ขออนุญาต", color:"#6E62C9"},
+  {key:"ขาด", label:"ขาด", color:"#C92A2A"},
+  {key:"ราชการ", label:"ราชการ", color:"#1C8C76"},
+  {key:"ทหารกองประจำการ", label:"ทกป.", color:"#9333EA"},
+];
+/* ใช้ STATUSES เป็น default (ปฏิบัติงาน) */
+const STATUSES = STATUSES_WORK;
+const SUMMARY_COLS_ROLL = ["ลาพัก","ลากิจ","ป่วย","ขออนุญาต","ขาด","ราชการ"];
+const SUMMARY_COLS_WORK = ["ลาพัก","ลากิจ","ป่วย","ขออนุญาต","ขาด","ราชการ"];
+const SUMMARY_COLS = SUMMARY_COLS_WORK;
+const SUMMARY_COLS_SHORT = {"ลาพัก":"ลาพัก","ลากิจ":"ลากิจ","ป่วย":"ป่วย","ขออนุญาต":"ขออนุญาต","ขาด":"ขาด","ราชการ":"ราชการ","ทหารกองประจำการ":"ทกป."};
+
+/* ================= STATE ================= */
+let statusMapWork = {}; /* ระบบปฏิบัติงาน */
+let statusMapRoll = {}; /* ระบบรวมแถว */
+let statusMap = statusMapWork; /* alias ใช้งาน default */
+let activeFilterWork = "all";
+let activeFilterRoll = "all";
+let searchTermWork = "";
+let searchTermRoll = "";
+let editingPersonId = null;
+let editingGroupName = null;
+const todayKey = () => new Date().toISOString().slice(0,10);
+const STORAGE_KEY_WORK = "checkin-work:" + todayKey();
+const STORAGE_KEY_ROLL = "checkin-roll:" + todayKey();
+const SETTINGS_KEY = "telegram-settings";
+const ROSTER_KEY = "roster-data";
+const EXTRA_GROUPS_KEY = "extra-groups";
+/* backward compat */
+const STORAGE_KEY = STORAGE_KEY_WORK;
+
+function thaiDateLabel(){
+  const d = new Date();
+  const months = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+  const be = d.getFullYear() + 543 - 2500;
+  return `${d.getDate()} ${months[d.getMonth()]} ${be}`;
+}
+
+/* ================= FIREBASE ================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyBsUkzENcEmeoA1LMf0OdEFAo_RISv8-1A",
+  authDomain: "rollcall-9f69f.firebaseapp.com",
+  databaseURL: "https://rollcall-9f69f-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "rollcall-9f69f",
+  storageBucket: "rollcall-9f69f.firebasestorage.app",
+  messagingSenderId: "415254248199",
+  appId: "1:415254248199:web:6681385e6989b4ae1f63a2",
+  measurementId: "G-84GBTJDGCN"
+};
+let fbDb = null;
+let fbReady = false;
+try{
+  if(typeof firebase === "undefined") throw new Error("Firebase SDK โหลดไม่สำเร็จ");
+  firebase.initializeApp(firebaseConfig);
+  fbDb = firebase.database();
+  fbReady = true;
+}catch(e){
+  console.error("Firebase init failed:", e);
+}
+const FB_ROOT = "checkin-bk-control2"; /* all app data lives under this node */
+
+function fbKey(key){
+  /* Realtime Database keys can't contain . $ # [ ] or control characters */
+  return String(key).replace(/[.$#\[\]]/g, "_");
+}
+
+/* Never let a blocked/unreachable Firebase connection hang the app forever —
+   race every call against a timeout and fall back to local defaults instead. */
+function withTimeout(promise, ms=6000){
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error("หมดเวลาเชื่อมต่อ Firebase")), ms))
+  ]);
+}
+
+/* One-time quick connectivity check (≈3s max) run before anything else. If it fails,
+   we flip fbReady off immediately so every later get/set call fails instantly instead
+   of each separately waiting out a multi-second timeout — keeps the app responsive
+   even when the network/Firebase is unreachable. */
+function probeFirebaseConnection(){
+  if(!fbReady) return Promise.resolve(false);
+  return new Promise(resolve => {
+    let done = false;
+    const ref = fbDb.ref(".info/connected");
+    const timer = setTimeout(() => { if(!done){ done = true; ref.off(); resolve(false); } }, 3000);
+    ref.on("value", snap => {
+      if(!done && snap.val() === true){
+        done = true; clearTimeout(timer); ref.off(); resolve(true);
+      }
+    }, () => { if(!done){ done = true; clearTimeout(timer); resolve(false); } });
+  });
+}
+
+/* Drop-in replacement for window.storage, backed by Firebase Realtime Database
+   so all data (roster, statuses, settings) is shared live across every device/admin
+   instead of staying local to one browser. Same get/set/delete/list contract. */
+window.storage = {
+  async get(key, shared){
+    if(!fbReady) throw new Error("Firebase ยังไม่พร้อมใช้งาน");
+    const snap = await withTimeout(fbDb.ref(`${FB_ROOT}/${fbKey(key)}`).once("value"));
+    if(!snap.exists()) throw new Error("ไม่พบข้อมูล: " + key);
+    return { key, value: snap.val(), shared: !!shared };
+  },
+  async set(key, value, shared){
+    if(!fbReady) throw new Error("Firebase ยังไม่พร้อมใช้งาน");
+    await withTimeout(fbDb.ref(`${FB_ROOT}/${fbKey(key)}`).set(value));
+    return { key, value, shared: !!shared };
+  },
+  async delete(key, shared){
+    if(!fbReady) throw new Error("Firebase ยังไม่พร้อมใช้งาน");
+    await withTimeout(fbDb.ref(`${FB_ROOT}/${fbKey(key)}`).remove());
+    return { key, deleted: true, shared: !!shared };
+  },
+  async list(prefix, shared){
+    if(!fbReady) throw new Error("Firebase ยังไม่พร้อมใช้งาน");
+    const snap = await withTimeout(fbDb.ref(FB_ROOT).once("value"));
+    const all = snap.val() || {};
+    const p = prefix ? fbKey(prefix) : "";
+    const keys = Object.keys(all).filter(k => k.startsWith(p));
+    return { keys, prefix, shared: !!shared };
+  }
+};
+
+/* ================= STORAGE ================= */
+async function loadRoster(){
+  try{
+    const res = await window.storage.get(ROSTER_KEY, true);
+    if(res && res.value){
+      ROSTER = JSON.parse(res.value);
+      const maxNum = ROSTER.reduce((m,p)=>{
+        const n = parseInt((p.id||"").replace("p",""))||0;
+        return Math.max(m,n);
+      },0);
+      nextIdCounter = maxNum + 1;
+      return;
+    }
+  }catch(e){}
+  ROSTER = JSON.parse(JSON.stringify(DEFAULT_ROSTER));
+}
+async function saveRoster(){
+  try{ await window.storage.set(ROSTER_KEY, JSON.stringify(ROSTER), true); }
+  catch(e){ showToast("บันทึกรายชื่อไม่สำเร็จ", true); }
+}
+async function loadExtraGroups(){
+  try{
+    const res = await window.storage.get(EXTRA_GROUPS_KEY, true);
+    if(res && res.value){ EXTRA_GROUPS = JSON.parse(res.value); return; }
+  }catch(e){}
+  EXTRA_GROUPS = [];
+}
+async function saveExtraGroups(){
+  try{ await window.storage.set(EXTRA_GROUPS_KEY, JSON.stringify(EXTRA_GROUPS), true); }
+  catch(e){ showToast("บันทึกหน่วย/กลุ่มไม่สำเร็จ", true); }
+}
+async function loadState(){
+  const [stateWorkRes, stateRollRes, settingsRes] = await Promise.allSettled([
+    window.storage.get(STORAGE_KEY_WORK, true),
+    window.storage.get(STORAGE_KEY_ROLL, true),
+    window.storage.get(SETTINGS_KEY, true)
+  ]);
+
+  if(stateWorkRes.status === "fulfilled" && stateWorkRes.value && stateWorkRes.value.value){
+    statusMapWork = JSON.parse(stateWorkRes.value.value);
+  }else{
+    statusMapWork = {};
+  }
+  if(stateRollRes.status === "fulfilled" && stateRollRes.value && stateRollRes.value.value){
+    statusMapRoll = JSON.parse(stateRollRes.value.value);
+  }else{
+    statusMapRoll = {};
+  }
+  ROSTER.forEach(p => {
+    if(!statusMapWork[p.id]) statusMapWork[p.id] = "ปกติ";
+    if(!statusMapRoll[p.id]) statusMapRoll[p.id] = "ปกติ";
+  });
+  statusMap = statusMapWork;
+
+  if(settingsRes.status === "fulfilled" && settingsRes.value && settingsRes.value.value){
+    const s = JSON.parse(settingsRes.value.value);
+    document.getElementById("botToken").value = s.botToken || "";
+    document.getElementById("chatId").value = s.chatId || "";
+  }
+}
+async function saveStateWork(){
+  try{ await window.storage.set(STORAGE_KEY_WORK, JSON.stringify(statusMapWork), true); }
+  catch(e){ showToast("บันทึกข้อมูล (ปฏิบัติงาน) ไม่สำเร็จ", true); }
+}
+async function saveStateRoll(){
+  try{ await window.storage.set(STORAGE_KEY_ROLL, JSON.stringify(statusMapRoll), true); }
+  catch(e){ showToast("บันทึกข้อมูล (รวมแถว) ไม่สำเร็จ", true); }
+}
+async function saveState(){ await saveStateWork(); }
+async function saveSettings(){
+  const botToken = document.getElementById("botToken").value.trim();
+  const chatId = document.getElementById("chatId").value.trim();
+  try{
+    await window.storage.set(SETTINGS_KEY, JSON.stringify({botToken, chatId}), true);
+    showToast("บันทึกการตั้งค่าแล้ว");
+  }catch(e){ showToast("บันทึกการตั้งค่าไม่สำเร็จ", true); }
+}
+
+/* ================= ADMIN ================= */
+function setAdminUI(){
+  document.querySelectorAll(".admin-only").forEach(el => el.classList.toggle("hidden", !isAdmin));
+  const t = document.getElementById("adminToggle");
+  t.textContent = isAdmin ? "ออกจากแอดมิน" : "โหมดแอดมิน";
+  t.classList.toggle("on", isAdmin);
+  if(isAdmin) renderGroupAdminList();
+}
+function openModal(id){ document.getElementById(id).classList.remove("hidden"); }
+function closeModal(id){ document.getElementById(id).classList.add("hidden"); }
+
+/* In-app replacement for window.confirm(), which sandboxed/embedded previews
+   often block silently (returns false immediately, making buttons look dead). */
+function customConfirm(message, title){
+  return new Promise(resolve => {
+    document.getElementById("confirmModalTitle").textContent = title || "ยืนยันการทำรายการ";
+    document.getElementById("confirmModalMsg").textContent = message;
+    openModal("confirmModal");
+    const yesBtn = document.getElementById("confirmYesBtn");
+    const noBtn = document.getElementById("confirmNoBtn");
+    function cleanup(result){
+      closeModal("confirmModal");
+      yesBtn.removeEventListener("click", onYes);
+      noBtn.removeEventListener("click", onNo);
+      resolve(result);
+    }
+    function onYes(){ cleanup(true); }
+    function onNo(){ cleanup(false); }
+    yesBtn.addEventListener("click", onYes);
+    noBtn.addEventListener("click", onNo);
+  });
+}
+
+/* ================= RENDER: FILTERS ================= */
+function renderFilters(mode){
+  const isWork = mode !== "roll";
+  const elId = isWork ? "statusFiltersWork" : "statusFiltersRoll";
+  const statuses = isWork ? STATUSES_WORK : STATUSES_ROLL;
+  const el = document.getElementById(elId);
+  if(!el) return;
+  const activeFilter = isWork ? activeFilterWork : activeFilterRoll;
+  const all = [{key:"all", label:"ทั้งหมด", color:"#4F8B5B"}, ...statuses];
+  el.innerHTML = all.map(s => {
+    const isActive = activeFilter === s.key;
+    const style = isActive ? ` style="background:${s.color}; border-color:${s.color}; color:#fff;"` : "";
+    return `<button class="chip ${isActive?'active':''}" data-filter="${s.key}"${style}>${s.label}</button>`;
+  }).join("");
+  el.querySelectorAll(".chip").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if(isWork) activeFilterWork = btn.dataset.filter;
+      else activeFilterRoll = btn.dataset.filter;
+      renderFilters(mode);
+      renderRoster(mode);
+    });
+  });
+}
+
+/* ================= RENDER: ROSTER ================= */
+function initials(name){
+  const clean = name.replace(/^(พ\.อ\.|พ\.ต\.|ร\.อ\.|ร\.ท\.|ร\.ต\.|จ\.ส\.อ\.|จ\.ส\.ท\.|จ\.ส\.ต\.|ส\.อ\.)\s*/,"");
+  const parts = clean.trim().split(" ");
+  return (parts[0]?.[0] || "") + (parts[1]?.[0] || "");
+}
+
+function renderRoster(mode){
+  const isWork = mode !== "roll";
+  const container = document.getElementById(isWork ? "rosterContainerWork" : "rosterContainerRoll");
+  const sMap = isWork ? statusMapWork : statusMapRoll;
+  const statuses = isWork ? STATUSES_WORK : STATUSES_ROLL;
+  const activeFilter = isWork ? activeFilterWork : activeFilterRoll;
+  const searchTerm = isWork ? searchTermWork : searchTermRoll;
+
+  let list = ROSTER.filter(p => {
+    if(activeFilter !== "all" && sMap[p.id] !== activeFilter) return false;
+    if(searchTerm){
+      const hay = (p.n + " " + p.role + " " + p.g).toLowerCase();
+      if(!hay.includes(searchTerm.toLowerCase())) return false;
+    }
+    return true;
+  });
+
+  if(list.length === 0){
+    container.innerHTML = `<div class="empty">ไม่พบรายชื่อที่ตรงกับเงื่อนไข</div>`;
+    return;
+  }
+
+  const groupOrder = [];
+  const groups = {};
+  list.forEach(p => {
+    if(!groups[p.g]){ groups[p.g]=[]; groupOrder.push(p.g); }
+    groups[p.g].push(p);
+  });
+
+  container.innerHTML = groupOrder.map(g => `
+    <div class="group">
+      <div class="group-title">${g}<div class="ln"></div>
+        <div class="gactions admin-only ${isAdmin?'':'hidden'}">
+          <button class="picon-btn edit" data-rename-group="${g}" data-mode="${isWork?'work':'roll'}" title="แก้ไขชื่อกลุ่ม">✎</button>
+          <button class="picon-btn" data-del-group="${g}" data-mode="${isWork?'work':'roll'}" title="ลบหน่วย/กลุ่มนี้ทั้งหมด">✕</button>
+        </div>
+      </div>
+      <div class="roster">
+        ${groups[g].map(p => `
+          <div class="person" data-id="${p.id}" data-status="${sMap[p.id]}">
+            <div class="avatar">${initials(p.n)}</div>
+            <div class="pinfo">
+              <div class="pname">${p.n}</div>
+              <div class="prole">${p.role}</div>
+            </div>
+            <select class="pstatus-select" data-id="${p.id}" data-mode="${isWork?'work':'roll'}">
+              ${statuses.map(s => `<option value="${s.key}" ${sMap[p.id]===s.key?'selected':''}>${s.label}</option>`).join("")}
+            </select>
+            <div class="admin-only ${isAdmin?'':'hidden'}" style="gap:4px; ${isAdmin?'display:flex;':'display:none;'}">
+              <button class="picon-btn edit" data-edit-person="${p.id}" title="แก้ไข">✎</button>
+              <button class="picon-btn" data-del-person="${p.id}" title="ลบ">✕</button>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `).join("");
+
+  container.querySelectorAll(".pstatus-select").forEach(sel => {
+    sel.addEventListener("change", async (e) => {
+      const id = e.target.dataset.id;
+      const modeAttr = e.target.dataset.mode;
+      if(modeAttr === "work"){
+        statusMapWork[id] = e.target.value;
+        await saveStateWork();
+      } else {
+        statusMapRoll[id] = e.target.value;
+        await saveStateRoll();
+      }
+      e.target.closest(".person").dataset.status = e.target.value;
+      renderAll(false);
+    });
+  });
+  container.querySelectorAll("[data-edit-person]").forEach(btn => {
+    btn.addEventListener("click", () => openPersonModal(btn.dataset.editPerson));
+  });
+  container.querySelectorAll("[data-del-person]").forEach(btn => {
+    btn.addEventListener("click", () => deletePerson(btn.dataset.delPerson));
+  });
+  container.querySelectorAll("[data-rename-group]").forEach(btn => {
+    btn.addEventListener("click", () => openGroupModal(btn.dataset.renameGroup));
+  });
+  container.querySelectorAll("[data-del-group]").forEach(btn => {
+    btn.addEventListener("click", () => deleteGroup(btn.dataset.delGroup));
+  });
+}
+
+/* ================= ADMIN: PERSON CRUD ================= */
+function populatePersonGroupOptions(selected){
+  const sel = document.getElementById("personGroup");
+  const names = allGroupNames();
+  let options = names.map(g => `<option value="${g}" ${g===selected?'selected':''}>${g}</option>`).join("");
+  if(selected && !names.includes(selected)){
+    options = `<option value="${selected}" selected>${selected}</option>` + options;
+  }
+  if(!options){
+    options = `<option value="">-- ยังไม่มีหน่วย/กลุ่ม --</option>`;
+  }
+  sel.innerHTML = options;
+}
+function openPersonModal(id){
+  editingPersonId = id || null;
+  const p = id ? ROSTER.find(x=>x.id===id) : null;
+  document.getElementById("personModalTitle").textContent = id ? "แก้ไขกำลังพล" : "เพิ่มกำลังพล";
+  document.getElementById("personName").value = p ? p.n : "";
+  document.getElementById("personRole").value = p ? p.role : "";
+  populatePersonGroupOptions(p ? p.g : "");
+  document.getElementById("personRank").value = p ? p.r : "nco";
+  openModal("personModal");
+}
+async function savePersonModal(){
+  const n = document.getElementById("personName").value.trim();
+  const role = document.getElementById("personRole").value.trim();
+  const g = document.getElementById("personGroup").value.trim();
+  const r = document.getElementById("personRank").value;
+  if(!n || !g){ showToast("กรอกชื่อและหน่วยให้ครบ", true); return; }
+
+  if(editingPersonId){
+    const p = ROSTER.find(x=>x.id===editingPersonId);
+    p.n = n; p.role = role; p.g = g; p.r = r;
+    showToast("แก้ไขข้อมูลแล้ว");
+  }else{
+    const id = "p" + (nextIdCounter++);
+    ROSTER.push({id, n, role, g, r});
+    statusMapWork[id] = "ปกติ";
+    statusMapRoll[id] = "ปกติ";
+    await saveStateWork(); await saveStateRoll();
+    showToast("เพิ่มกำลังพลแล้ว");
+  }
+  await saveRoster();
+  closeModal("personModal");
+  renderAll(true);
+}
+async function deletePerson(id){
+  const p = ROSTER.find(x=>x.id===id);
+  if(!p) return;
+  const ok = await customConfirm(`ลบ "${p.n}" ออกจากรายชื่อ?`, "ยืนยันการลบกำลังพล");
+  if(!ok) return;
+  ROSTER = ROSTER.filter(x=>x.id!==id);
+  delete statusMapWork[id];
+  delete statusMapRoll[id];
+  await saveRoster();
+  await saveStateWork(); await saveStateRoll();
+  renderAll(true);
+  showToast("ลบรายชื่อแล้ว");
+}
+
+/* ================= ADMIN: GROUP MANAGEMENT ================= */
+function allGroupNames(){
+  const set = new Set();
+  ROSTER.forEach(p => set.add(p.g));
+  EXTRA_GROUPS.forEach(g => set.add(g));
+  return Array.from(set);
+}
+function openGroupModal(name){
+  editingGroupName = name; /* null = adding a brand-new group, string = renaming an existing one */
+  document.getElementById("groupModalTitle").textContent = name ? "แก้ไขชื่อหน่วย/กลุ่ม" : "เพิ่มหน่วย/กลุ่มใหม่";
+  document.getElementById("groupNameInput").value = name || "";
+  openModal("groupModal");
+}
+async function saveGroupModal(){
+  const newName = document.getElementById("groupNameInput").value.trim();
+  if(!newName){ showToast("กรอกชื่อหน่วย/กลุ่ม", true); return; }
+
+  if(editingGroupName === null){
+    /* ADD mode */
+    if(allGroupNames().includes(newName)){
+      showToast("มีชื่อหน่วย/กลุ่มนี้อยู่แล้ว", true); return;
+    }
+    EXTRA_GROUPS.push(newName);
+    await saveExtraGroups();
+    closeModal("groupModal");
+    renderAll(true);
+    renderGroupAdminList();
+    showToast("เพิ่มหน่วย/กลุ่มแล้ว — ใช้ตอนเพิ่มกำลังพลได้ทันที");
+    return;
+  }
+
+  /* RENAME mode */
+  if(newName !== editingGroupName && allGroupNames().includes(newName)){
+    showToast("มีชื่อหน่วย/กลุ่มนี้อยู่แล้ว", true); return;
+  }
+  ROSTER.forEach(p => { if(p.g === editingGroupName) p.g = newName; });
+  EXTRA_GROUPS = EXTRA_GROUPS.map(g => g === editingGroupName ? newName : g);
+  await saveRoster();
+  await saveExtraGroups();
+  closeModal("groupModal");
+  renderAll(true);
+  renderGroupAdminList();
+  showToast("แก้ไขชื่อหน่วย/กลุ่มแล้ว");
+}
+async function deleteGroup(name){
+  const members = ROSTER.filter(p => p.g === name);
+  const msg = members.length > 0
+    ? `ลบหน่วย/กลุ่ม "${name}" พร้อมรายชื่อกำลังพลทั้งหมด ${members.length} คนในหน่วยนี้? การลบนี้ไม่สามารถย้อนกลับได้`
+    : `ลบหน่วย/กลุ่ม "${name}"?`;
+  const ok = await customConfirm(msg, "ยืนยันการลบหน่วย/กลุ่ม");
+  if(!ok) return;
+
+  ROSTER = ROSTER.filter(p => p.g !== name);
+  members.forEach(p => { delete statusMapWork[p.id]; delete statusMapRoll[p.id]; });
+  EXTRA_GROUPS = EXTRA_GROUPS.filter(g => g !== name);
+
+  await saveRoster();
+  await saveStateWork(); await saveStateRoll();
+  await saveExtraGroups();
+
+  renderAll(true);
+  renderGroupAdminList();
+  showToast(members.length > 0 ? `ลบหน่วย/กลุ่มและกำลังพล ${members.length} คนแล้ว` : "ลบหน่วย/กลุ่มแล้ว");
+}
+function renderGroupAdminList(){
+  const el = document.getElementById("groupAdminList");
+  if(!el) return;
+  const names = allGroupNames();
+  if(names.length === 0){
+    el.innerHTML = `<div class="empty">ยังไม่มีหน่วย/กลุ่ม</div>`;
+    return;
+  }
+  el.innerHTML = names.map(g => {
+    const count = ROSTER.filter(p=>p.g===g).length;
+    return `<div class="grouprow">
+      <div class="grouprow-info">
+        <div class="grouprow-name">${g}</div>
+        <div class="grouprow-count">${count} คน</div>
+      </div>
+      <div class="grouprow-actions">
+        <button class="picon-btn edit" data-gedit="${g}" title="แก้ไขชื่อ">✎</button>
+        <button class="picon-btn" data-gdel="${g}" title="ลบหน่วย/กลุ่ม">✕</button>
+      </div>
+    </div>`;
+  }).join("");
+  el.querySelectorAll("[data-gedit]").forEach(btn => btn.addEventListener("click", () => openGroupModal(btn.dataset.gedit)));
+  el.querySelectorAll("[data-gdel]").forEach(btn => btn.addEventListener("click", () => deleteGroup(btn.dataset.gdel)));
+}
+
+/* ================= COMPUTE SUMMARY ================= */
+function computeCounts(group, mode){
+  const isWork = mode !== "roll";
+  const sMap = isWork ? statusMapWork : statusMapRoll;
+  const cols = isWork ? SUMMARY_COLS_WORK : SUMMARY_COLS_ROLL;
+  /* group can be "officer", "nco", "conscript", or "all" */
+  const people = group === "all" ? ROSTER : ROSTER.filter(p => p.r === group);
+  const total = people.length;
+  const counts = {};
+  cols.forEach(c => counts[c] = 0);
+  people.forEach(p => {
+    const st = sMap[p.id];
+    if(cols.includes(st)) counts[st]++;
+  });
+  const deducted = cols.reduce((sum,c) => sum + counts[c], 0);
+  const present = total - deducted;
+  return {total, counts, deducted, present, cols};
+}
+
+/* ================= RENDER: HERO ================= */
+function renderHero(){
+  /* Hero shows combined stats from both systems — use roll system for "รวมแถว" ring */
+  const total = ROSTER.length;
+  const offRoll = ROSTER.filter(p => SUMMARY_COLS_ROLL.includes(statusMapRoll[p.id])).length;
+  const presentRoll = total - offRoll;
+  const offWork = ROSTER.filter(p => SUMMARY_COLS_WORK.includes(statusMapWork[p.id])).length;
+  const presentWork = total - offWork;
+  const pct = total ? Math.round((presentRoll/total)*100) : 0;
+
+  const circumference = 339;
+  const offset = circumference - (circumference * pct/100);
+  document.getElementById("ringFg").setAttribute("stroke-dashoffset", offset);
+  document.getElementById("ringPct").textContent = pct + "%";
+  document.getElementById("heroHeadline").textContent = `รวมแถว ${presentRoll} · ปฏิบัติงาน ${presentWork} / ${total} นาย`;
+
+  const byStatusRoll = {};
+  SUMMARY_COLS_ROLL.forEach(c => byStatusRoll[c] = ROSTER.filter(p => statusMapRoll[p.id]===c).length);
+  const statsHtml = STATUSES_ROLL.filter(s=>s.key!=="ปกติ").map(s => `
+    <div class="hstat"><span class="dot" style="background:${s.color}"></span>${s.label} <b class="mono">${byStatusRoll[s.key]||0}</b></div>
+  `).join("");
+  document.getElementById("heroStats").innerHTML = statsHtml;
+  document.getElementById("dateChip").textContent = thaiDateLabel();
+}
+
+/* ================= RENDER: SUMMARY TABLE ================= */
+function renderSummaryTable(mode){
+  const isWork = mode !== "roll";
+  const cols = isWork ? SUMMARY_COLS_WORK : SUMMARY_COLS_ROLL;
+  const tableId = isWork ? "summaryTableWork" : "summaryTableRoll";
+  const officer = computeCounts("officer", mode);
+  const nco = computeCounts("nco", mode);
+  const rowsTotal = {};
+
+  const head = `<thead><tr>
+    <th>กำลังพล</th><th>ยอด</th>
+    ${cols.map(c => `<th>${SUMMARY_COLS_SHORT[c]||c}</th>`).join("")}
+    <th>จำหน่าย</th><th>แถว</th>
+  </tr></thead>`;
+
+  function row(label, data){
+    return `<tr>
+      <td>${label}</td><td>${data.total}</td>
+      ${cols.map(c => `<td>${data.counts[c]}</td>`).join("")}
+      <td class="col-rwd">${data.deducted}</td><td class="col-rwy">${data.present}</td>
+    </tr>`;
+  }
+
+  const conscript = computeCounts("conscript", mode);
+  const hasConscript = conscript.total > 0;
+  const totalAll = officer.total + nco.total + conscript.total;
+  const deductedAll = officer.deducted + nco.deducted + conscript.deducted;
+  const presentAll = officer.present + nco.present + conscript.present;
+  cols.forEach(c => rowsTotal[c] = (officer.counts[c]||0) + (nco.counts[c]||0) + (conscript.counts[c]||0));
+
+  const body = `<tbody>
+    ${row("สัญญาบัตร", officer)}
+    ${row("ประทวน", nco)}
+    ${row("ทหารกองประจำการ", conscript)}
+    <tr class="total-row">
+      <td>รวม</td><td>${totalAll}</td>
+      ${cols.map(c => `<td>${rowsTotal[c]}</td>`).join("")}
+      <td class="col-rwd">${deductedAll}</td><td class="col-rwy">${presentAll}</td>
+    </tr>
+  </tbody>`;
+
+  const el = document.getElementById(tableId);
+  if(el) el.innerHTML = head + body;
+}
+
+/* name-list renderer for summary tab */
+function buildNameListHtml(mode){
+  const isWork = mode !== "roll";
+  const sMap = isWork ? statusMapWork : statusMapRoll;
+  const cols = isWork ? SUMMARY_COLS_WORK : SUMMARY_COLS_ROLL;
+  const statuses = isWork ? STATUSES_WORK : STATUSES_ROLL;
+  const cats = cols.filter(c => ROSTER.some(p => sMap[p.id]===c));
+  if(cats.length === 0){
+    return `<div class="empty">วันนี้ทุกคนปกติ ไม่มีรายชื่อจำหน่าย</div>`;
+  }
+  return cats.map(c => {
+    const people = ROSTER.filter(p => sMap[p.id]===c);
+    const st = statuses.find(s=>s.key===c);
+    const color = st ? st.color : "#888";
+    return `<div class="namelist-group">
+      <div class="namelist-head" style="color:${color}"><span class="dot" style="background:${color}"></span>${c} (${people.length})</div>
+      <div class="namelist-body">${people.map(p=>`<span class="nrow">${p.n}</span>`).join("")}</div>
+    </div>`;
+  }).join("");
+}
+function renderNameLists(){
+  const elWork = document.getElementById("statusBreakdownWork");
+  const elRoll = document.getElementById("statusBreakdownRoll");
+  if(elWork) elWork.innerHTML = buildNameListHtml("work");
+  if(elRoll) elRoll.innerHTML = buildNameListHtml("roll");
+}
+
+/* ================= REPORT TEXT ================= */
+function pad(num, width){
+  const s = String(num);
+  return " ".repeat(Math.max(0, width - s.length)) + s;
+}
+function buildReportText(mode){
+  const isWork = mode !== "roll";
+  const sMap = isWork ? statusMapWork : statusMapRoll;
+  const cols = isWork ? SUMMARY_COLS_WORK : SUMMARY_COLS_ROLL;
+  const modeLabel = isWork ? "ปฏิบัติงาน" : "รวมแถว";
+  const officer = computeCounts("officer", mode);
+  const nco = computeCounts("nco", mode);
+  const conscript = computeCounts("conscript", mode);
+  const totalAll = officer.total + nco.total + conscript.total;
+  const presentAll = officer.present + nco.present + conscript.present;
+  const deductedAll = officer.deducted + nco.deducted + conscript.deducted;
+  const rowsTotal = {};
+  cols.forEach(c => rowsTotal[c] = (officer.counts[c]||0) + (nco.counts[c]||0) + (conscript.counts[c]||0));
+
+  let txt = `สถานภาพกำลังพล (${modeLabel}) บก.ควบคุม 2\nประจำวันที่ ${thaiDateLabel()}\n\n`;
+  const colHdrs = cols.map(c => SUMMARY_COLS_SHORT[c]||c).join(" ");
+  txt += `กำลังพล      ยอด ${colHdrs} จำหน่าย แถว\n`;
+  function line(lbl, d){
+    const colVals = cols.map(c => pad(d.counts[c]||0, 4)).join(" ");
+    return `${lbl.padEnd(11," ")} ${pad(d.total,3)} ${colVals} ${pad(d.deducted,7)} ${pad(d.present,3)}`;
+  }
+  txt += line("สัญญาบัตร", officer) + "\n";
+  txt += line("ประทวน", nco) + "\n";
+  txt += line("ทหารกองประจำการ", conscript) + "\n";
+  txt += line("รวม", {total:totalAll, counts:rowsTotal, deducted:deductedAll, present:presentAll}) + "\n\n";
+  txt += `รายชื่อกำลังพลที่จำหน่าย\n`;
+  let any = false;
+  cols.forEach(c => {
+    const people = ROSTER.filter(p=>sMap[p.id]===c);
+    if(people.length){ any = true; txt += `\n${c} (${people.length})\n` + people.map(p=>"  - " + p.n).join("\n") + "\n"; }
+  });
+  if(!any) txt += `\n  - ไม่มี (ทุกคนปกติ)\n`;
+  txt += `\nสรุป: ${modeLabel} ${presentAll} / ${totalAll} นาย`;
+  return txt;
+}
+
+/* ================= TELEGRAM SEND ================= */
+async function sendToTelegram(text){
+  const botToken = document.getElementById("botToken").value.trim();
+  const chatId = document.getElementById("chatId").value.trim();
+  if(!botToken || !chatId){
+    showToast("กรุณากรอก Bot token และ Chat ID ก่อนส่ง", true);
+    return false;
+  }
+  const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+  try{
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({chat_id: chatId, text: text})
+    });
+    const data = await res.json();
+    if(data.ok){
+      showToast("ส่งรายงานเข้า Telegram แล้ว");
+      return true;
+    }else{
+      showToast("ส่งไม่สำเร็จ: " + (data.description || "unknown error"), true);
+      return false;
+    }
+  }catch(e){
+    showToast("เชื่อมต่อ Telegram ไม่สำเร็จ ตรวจสอบ token/chat id", true);
+    return false;
+  }
+}
+
+/* ================= TOAST ================= */
+let toastTimer;
+function showToast(msg, isError){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast show" + (isError ? " error" : "");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = "toast"; }, 3200);
+}
+
+/* ================= TABS ================= */
+function setupTabs(){
+  document.querySelectorAll(".tabbtn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tabbtn").forEach(b=>b.classList.remove("active"));
+      document.querySelectorAll(".tabpane").forEach(p=>p.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+    });
+  });
+}
+
+/* ================= GLOBAL RENDER ================= */
+function renderAll(rerenderRoster=true){
+  renderHero();
+  renderSummaryTable("work");
+  renderSummaryTable("roll");
+  renderNameLists();
+  if(rerenderRoster){ renderRoster("work"); renderRoster("roll"); }
+}
+
+/* ================= INIT ================= */
+async function init(){
+  const online = await probeFirebaseConnection();
+  if(!online) fbReady = false;
+
+  await Promise.all([loadRoster(), loadExtraGroups()]);
+  await loadState();
+  renderFilters("work");
+  renderFilters("roll");
+  renderAll(true);
+  setupTabs();
+  setAdminUI();
+
+  if(!fbReady){
+    showToast("เชื่อมต่อฐานข้อมูลออนไลน์ไม่สำเร็จ ระบบทำงานแบบออฟไลน์ชั่วคราว (แก้ไขจะไม่ถูกบันทึกถาวร)", true);
+  }
+
+  document.getElementById("searchInputWork").addEventListener("input", (e) => {
+    searchTermWork = e.target.value;
+    renderRoster("work");
+  });
+  document.getElementById("searchInputRoll").addEventListener("input", (e) => {
+    searchTermRoll = e.target.value;
+    renderRoster("roll");
+  });
+
+  /* reset buttons */
+  document.getElementById("resetAllBtnWork").addEventListener("click", async () => {
+    const ok = await customConfirm("ล้างสถานะ (ปฏิบัติงาน) ทุกคนให้เป็น \"ปกติ\" ทั้งหมด?", "ยืนยันการล้างสถานะ");
+    if(!ok) return;
+    ROSTER.forEach(p => statusMapWork[p.id] = "ปกติ");
+    await saveStateWork();
+    renderAll(true);
+    showToast("ล้างสถานะ (ปฏิบัติงาน) เป็นปกติทั้งหมดแล้ว");
+  });
+  document.getElementById("resetAllBtnRoll").addEventListener("click", async () => {
+    const ok = await customConfirm("ล้างสถานะ (รวมแถว) ทุกคนให้เป็น \"ปกติ\" ทั้งหมด?", "ยืนยันการล้างสถานะ");
+    if(!ok) return;
+    ROSTER.forEach(p => statusMapRoll[p.id] = "ปกติ");
+    await saveStateRoll();
+    renderAll(true);
+    showToast("ล้างสถานะ (รวมแถว) เป็นปกติทั้งหมดแล้ว");
+  });
+
+  document.getElementById("saveSettingsBtn").addEventListener("click", saveSettings);
+  document.getElementById("testSendBtn").addEventListener("click", async () => {
+    await sendToTelegram("ทดสอบการเชื่อมต่อ — ระบบเช็คยอดกำลังพล บก.ควบคุม 2 พร้อมใช้งาน");
+  });
+
+  /* send/copy work */
+  document.getElementById("sendReportBtnWork").addEventListener("click", async () => {
+    const btn = document.getElementById("sendReportBtnWork");
+    btn.disabled = true;
+    await sendToTelegram(buildReportText("work"));
+    btn.disabled = false;
+  });
+  document.getElementById("copyReportBtnWork").addEventListener("click", async () => {
+    try{ await navigator.clipboard.writeText(buildReportText("work")); showToast("คัดลอกข้อความ (ปฏิบัติงาน) แล้ว"); }
+    catch(e){ showToast("คัดลอกไม่สำเร็จ", true); }
+  });
+
+  /* send/copy roll */
+  document.getElementById("sendReportBtnRoll").addEventListener("click", async () => {
+    const btn = document.getElementById("sendReportBtnRoll");
+    btn.disabled = true;
+    await sendToTelegram(buildReportText("roll"));
+    btn.disabled = false;
+  });
+  document.getElementById("copyReportBtnRoll").addEventListener("click", async () => {
+    try{ await navigator.clipboard.writeText(buildReportText("roll")); showToast("คัดลอกข้อความ (รวมแถว) แล้ว"); }
+    catch(e){ showToast("คัดลอกไม่สำเร็จ", true); }
+  });
+
+  /* admin toggle */
+  document.getElementById("adminToggle").addEventListener("click", () => {
+    if(isAdmin){
+      isAdmin = false;
+      setAdminUI();
+      renderRoster("work"); renderRoster("roll");
+      showToast("ออกจากโหมดแอดมินแล้ว");
+    }else{
+      document.getElementById("loginUser").value = "";
+      document.getElementById("loginPass").value = "";
+      openModal("loginModal");
+    }
+  });
+  document.getElementById("loginCancelBtn").addEventListener("click", () => closeModal("loginModal"));
+
+  function doLogin(){
+    const u = document.getElementById("loginUser").value.trim();
+    const p = document.getElementById("loginPass").value;
+    if(u === ADMIN_ID && p === ADMIN_PASS){
+      isAdmin = true;
+      setAdminUI();
+      renderRoster("work"); renderRoster("roll");
+      closeModal("loginModal");
+      showToast("เข้าสู่โหมดแอดมินแล้ว");
+    }else{
+      showToast("ไอดีหรือรหัสผ่านไม่ถูกต้อง", true);
+      document.getElementById("loginPass").select();
+    }
+  }
+  document.getElementById("loginConfirmBtn").addEventListener("click", doLogin);
+  /* Enter key in login fields */
+  ["loginUser","loginPass"].forEach(id => {
+    document.getElementById(id).addEventListener("keydown", e => {
+      if(e.key === "Enter"){ e.preventDefault(); doLogin(); }
+    });
+  });
+
+  /* person modal */
+  document.getElementById("addPersonBtnWork").addEventListener("click", () => openPersonModal(null));
+  document.getElementById("addPersonBtnRoll").addEventListener("click", () => openPersonModal(null));
+  document.getElementById("personSaveBtn").addEventListener("click", savePersonModal);
+  document.getElementById("personCancelBtn").addEventListener("click", () => closeModal("personModal"));
+  /* Enter key in person modal fields */
+  ["personName","personRole"].forEach(id => {
+    document.getElementById(id).addEventListener("keydown", e => {
+      if(e.key === "Enter"){ e.preventDefault(); savePersonModal(); }
+    });
+  });
+
+  /* group modal */
+  document.getElementById("groupSaveBtn").addEventListener("click", saveGroupModal);
+  document.getElementById("groupCancelBtn").addEventListener("click", () => closeModal("groupModal"));
+  document.getElementById("addGroupBtn").addEventListener("click", () => openGroupModal(null));
+  document.getElementById("addGroupBtnTopWork").addEventListener("click", () => openGroupModal(null));
+  document.getElementById("addGroupBtnTopRoll").addEventListener("click", () => openGroupModal(null));
+  /* Enter key in group modal */
+  document.getElementById("groupNameInput").addEventListener("keydown", e => {
+    if(e.key === "Enter"){ e.preventDefault(); saveGroupModal(); }
+  });
+
+  /* Escape key closes any open modal */
+  document.addEventListener("keydown", e => {
+    if(e.key !== "Escape") return;
+    ["loginModal","personModal","groupModal","confirmModal"].forEach(id => {
+      const el = document.getElementById(id);
+      if(el && !el.classList.contains("hidden")) closeModal(id);
+    });
+  });
+
+  /* Firebase live reconnect watcher — restores fbReady when network comes back */
+  if(fbDb){
+    fbDb.ref(".info/connected").on("value", snap => {
+      const connected = snap.val() === true;
+      if(connected && !fbReady){
+        fbReady = true;
+        showToast("เชื่อมต่อฐานข้อมูลออนไลน์แล้ว");
+      } else if(!connected && fbReady){
+        fbReady = false;
+        showToast("ขาดการเชื่อมต่อ ระบบทำงานชั่วคราว", true);
+      }
+    });
+  }
+}
+
+init();
+</script>
+</body>
+</html>

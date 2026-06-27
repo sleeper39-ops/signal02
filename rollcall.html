@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>เช็คยอด บก.ควบคุม 2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700;800&family=Kanit:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/12.3.0/firebase-app-compat.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/12.3.0/firebase-database-compat.min.js"></script>
 <style>
@@ -50,7 +50,7 @@ body{
   -webkit-font-smoothing:antialiased;
   padding-bottom:80px;
 }
-.mono{font-family:'JetBrains Mono', monospace;}
+.mono{font-family:'Kanit',sans-serif;}
 .wrap{max-width:880px; margin:0 auto; padding:0 16px;}
 
 /* ===== HEADER ===== */
@@ -69,14 +69,14 @@ body{
   width:36px; height:36px; border-radius:10px;
   background:var(--sage);
   display:flex; align-items:center; justify-content:center;
-  font-weight:800; font-size:14px; color:#fff; font-family:'JetBrains Mono',monospace;
+  font-weight:800; font-size:14px; color:#fff; font-family:'Kanit',sans-serif;
   flex-shrink:0;
 }
 .brand-text h1{font-size:15px; font-weight:700; letter-spacing:-0.01em; line-height:1.2;}
 .brand-text p{font-size:11.5px; color:var(--txt-dim); margin-top:1px;}
 .topbar-right{display:flex; align-items:center; gap:8px;}
 .date-chip{
-  font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--sage-dim);
+  font-family:'Kanit',sans-serif; font-size:12px; color:var(--sage-dim);
   background:var(--sage-tint); border:1px solid #CFE6D3;
   padding:6px 10px; border-radius:8px; white-space:nowrap;
 }
@@ -107,7 +107,7 @@ body{
 .ring-label{
   position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
 }
-.ring-label .n{font-family:'JetBrains Mono',monospace; font-size:26px; font-weight:700; line-height:1; color:var(--txt);}
+.ring-label .n{font-family:'Kanit',sans-serif; font-size:26px; font-weight:700; line-height:1; color:var(--txt);}
 .ring-label .d{font-size:11px; color:var(--txt-dim); margin-top:2px;}
 .hero-text{flex:1; min-width:180px;}
 .hero-text .eyebrow{font-size:11.5px; color:var(--sage); font-weight:600; letter-spacing:0.04em; text-transform:uppercase; margin-bottom:4px;}
@@ -119,7 +119,7 @@ body{
   padding:7px 12px; font-size:12px; display:flex; align-items:center; gap:6px; box-shadow:var(--shadow);
 }
 .hstat .dot{width:7px; height:7px; border-radius:50%; flex-shrink:0;}
-.hstat b{font-family:'JetBrains Mono',monospace; font-weight:700;}
+.hstat b{font-family:'Kanit',sans-serif; font-weight:700;}
 
 /* ===== SECTION HEADERS ===== */
 .section{margin-top:26px;}
@@ -157,7 +157,7 @@ body{
 .avatar{
   width:38px; height:38px; border-radius:10px; flex-shrink:0;
   display:flex; align-items:center; justify-content:center;
-  font-weight:700; font-size:13px; font-family:'JetBrains Mono',monospace;
+  font-weight:700; font-size:13px; font-family:'Kanit',sans-serif;
   background:var(--panel2); color:var(--txt-dim); border:1px solid var(--line);
 }
 .pinfo{flex:1; min-width:0;}
@@ -207,7 +207,7 @@ table.sumtable thead th{
   font-size:10.5px; font-weight:700; color:var(--txt-dim); text-transform:uppercase; letter-spacing:0.01em;
   border-bottom:1px solid var(--line-strong); background:var(--panel2);
 }
-table.sumtable td{font-family:'JetBrains Mono',monospace; font-weight:500;}
+table.sumtable td{font-family:'Kanit',sans-serif; font-weight:500;}
 table.sumtable td:first-child{font-family:'Anuphan',sans-serif; font-weight:600;}
 table.sumtable tbody tr{border-bottom:1px solid var(--line);}
 table.sumtable tbody tr:last-child{border-bottom:none;}
@@ -233,7 +233,7 @@ table.sumtable tbody tr.total-row td{border-top:1px solid var(--line-strong); fo
 .field label{display:block; font-size:12px; color:var(--txt-dim); margin-bottom:6px; font-weight:600;}
 .field input, .field textarea, .field select{
   width:100%; background:var(--panel2); border:1px solid var(--line-strong); border-radius:9px;
-  padding:10px 12px; color:var(--txt); font-size:13.5px; font-family:'JetBrains Mono',monospace;
+  padding:10px 12px; color:var(--txt); font-size:13.5px; font-family:'Kanit',sans-serif;
 }
 .field input:focus, .field textarea:focus, .field select:focus{outline:none; border-color:var(--sage);}
 .field .hint{font-size:11px; color:var(--txt-faint); margin-top:5px; line-height:1.5; font-family:'Anuphan',sans-serif;}
@@ -257,7 +257,7 @@ table.sumtable tbody tr.total-row td{border-top:1px solid var(--line-strong); fo
 
 .preview-box{
   background:var(--panel2); border:1px solid var(--line-strong); border-radius:10px; padding:14px 16px;
-  font-family:'JetBrains Mono',monospace; font-size:12px; line-height:1.7; color:var(--txt);
+  font-family:'Kanit',sans-serif; font-size:12px; line-height:1.7; color:var(--txt);
   white-space:pre-wrap; word-break:break-word; max-height:380px; overflow-y:auto;
 }
 

@@ -1463,9 +1463,10 @@ function buildReportHtml(mode){
   h += '<span style="font-weight:700;color:#1E2A24;">สถานภาพกำลังพล (' + modeLabel + ') บก.ควบคุม 2</span>' + N;
   h += '<span style="color:#5C6B62;">ประจำวันที่ ' + thaiDateLabel() + '</span>' + N;
   h += DIM + N;
-  h += 'ยอดเดิม    : <span style="color:#2563A8;font-weight:700;">' + totalAll + ' นาย</span>' + N;
-  h += 'จำหน่าย   : <span style="color:#C92A2A;font-weight:700;">' + deductedAll + ' นาย</span>' + N;
-  h += modeLabel + '  : <span style="color:#1C8C76;font-weight:700;">' + presentAll + ' นาย</span>' + N;
+  var LABEL = 'style="display:inline-block;width:6.5em;"';
+  h += '<span ' + LABEL + '>ยอดเดิม</span>: <span style="color:#2563A8;font-weight:700;">' + totalAll + ' นาย</span>' + N;
+  h += '<span ' + LABEL + '>จำหน่าย</span>: <span style="color:#C92A2A;font-weight:700;">' + deductedAll + ' นาย</span>' + N;
+  h += '<span ' + LABEL + '>' + modeLabel + '</span>: <span style="color:#1C8C76;font-weight:700;">' + presentAll + ' นาย</span>' + N;
   h += DIM + N;
   h += '<span style="font-weight:700;color:#1E2A24;">รายชื่อกำลังพลที่จำหน่าย</span>' + N;
   var any = false;

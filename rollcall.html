@@ -466,14 +466,13 @@ footer{text-align:center; padding:30px 0 10px; color:var(--txt-faint); font-size
     <div class="hero-text">
       <div class="eyebrow">วันนี้ · roll call</div>
       <h2 id="heroHeadline">ยังไม่ได้เช็คยอด</h2>
-      <p>แตะสถานะรายชื่อด้านล่างให้ครบทุกคน แล้วกดส่งรายงานเข้า Telegram ได้ทันที</p>
+      <p>แตะสถานะรายชื่อด้านล่างให้ครบทุกคน แล้วกดส่งรายงานเข้า Telegram, Line ได้ทันที</p>
       <div class="hero-stats" id="heroStats"></div>
     </div>
   </div>
 
-  <div class="tabbar" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+  <div class="tabbar" style="grid-template-columns:1fr 1fr 1fr;">
     <button class="tabbtn active" data-tab="checkin-work">ปฏิบัติงาน</button>
-    <button class="tabbtn" data-tab="checkin-roll">รวมแถว</button>
     <button class="tabbtn" data-tab="summary">สรุปยอด</button>
     <button class="tabbtn" data-tab="report">ตั้งค่า</button>
   </div>
@@ -495,23 +494,6 @@ footer{text-align:center; padding:30px 0 10px; color:var(--txt-faint); font-size
     <div id="rosterContainerWork"></div>
   </div>
 
-  <!-- CHECK-IN TAB: รวมแถว -->
-  <div class="tabpane" id="tab-checkin-roll">
-    <div style="background:var(--sage-tint); border:1px solid #CFE6D3; border-radius:10px; padding:8px 14px; margin-bottom:12px; font-size:12.5px; color:var(--sage-dim); font-weight:600;">
-      📋 เช็คยอดกำลังพล (รวมแถว)
-    </div>
-    <div class="section-head">
-      <h3>กรองตามสถานะ</h3>
-      <div class="actions">
-        <button class="btn ghost sm" id="resetAllBtnRoll">ResetAll</button>
-        <button class="btn sm admin-only hidden" id="addGroupBtnTopRoll">+ เพิ่มหน่วย/กลุ่ม</button>
-        <button class="btn sm admin-only hidden" id="addPersonBtnRoll">+ เพิ่มกำลังพล</button>
-      </div>
-    </div>
-    <div class="filters" id="statusFiltersRoll"></div>
-    <div id="rosterContainerRoll"></div>
-  </div>
-
   <!-- SUMMARY TAB -->
   <div class="tabpane" id="tab-summary">
     <div class="section-head" style="margin-top:4px;">
@@ -525,43 +507,16 @@ footer{text-align:center; padding:30px 0 10px; color:var(--txt-faint); font-size
       <div class="section-head"><h3>รายชื่อจำหน่าย (ปฏิบัติงาน)</h3></div>
       <div class="preview-box" id="statusBreakdownWork" style="background:#fff;"></div>
       <div class="btnrow">
-        <button class="btn primary" id="sendReportBtnWork"><span>ส่ง Telegram (ปฏิบัติงาน)</span></button>
-        <button class="btn ghost" id="copyReportBtnWork">คัดลอก (ปฏิบัติงาน)</button>
+        <button class="btn primary" id="sendReportBtnWork" style="background:#2196F3; border-color:#2196F3;"><span>ส่ง Telegram</span></button>
+        <button class="btn" id="sendLineReportBtn" style="background:#06C755; color:#fff; border-color:#06C755;"><span>ส่ง LINE</span></button>
+        <button class="btn ghost" id="copyReportBtnWork">คัดลอก</button>
       </div>
     </div>
 
-    <div class="section-head" style="margin-top:24px;">
-      <h3 style="color:var(--sage-dim);">สถานภาพกำลังพล (รวมแถว)</h3>
-    </div>
-    <div class="summary-card">
-      <table class="sumtable" id="summaryTableRoll"></table>
-    </div>
-    <div class="section">
-      <div class="section-head"><h3>รายชื่อจำหน่าย (รวมแถว)</h3></div>
-      <div class="preview-box" id="statusBreakdownRoll" style="background:#fff;"></div>
-      <div class="btnrow">
-        <button class="btn primary" id="sendReportBtnRoll"><span>ส่ง Telegram (รวมแถว)</span></button>
-        <button class="btn ghost" id="copyReportBtnRoll">คัดลอก (รวมแถว)</button>
-      </div>
-    </div>
   </div>
 
   <!-- TELEGRAM SETTINGS TAB -->
   <div class="tabpane" id="tab-report">
-    <div class="section">
-      <div class="section-head"><h3>การแสดงผลวงแหวน %</h3></div>
-      <div class="panel">
-        <div class="field">
-          <label>แสดงผล % จากยอด</label>
-          <select id="ringModeSelect">
-            <option value="work" selected>ยอดปฏิบัติงาน</option>
-            <option value="roll">ยอดรวมแถว</option>
-          </select>
-          <div class="hint">เลือกว่าวงแหวนเปอร์เซ็นต์ที่หน้าหลักจะคิดจากยอดไหน — เปลี่ยนมีผลทันที</div>
-        </div>
-      </div>
-    </div>
-
     <div class="section">
       <div class="section-head"><h3>ตั้งค่า Telegram</h3></div>
       <div class="panel">
@@ -576,8 +531,35 @@ footer{text-align:center; padding:30px 0 10px; color:var(--txt-faint); font-size
           <div class="hint">เพิ่ม bot เข้ากลุ่ม แล้วหา chat id ผ่าน <a href="https://t.me/getidsbot" target="_blank">@getidsbot</a> หรือเปิด https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</div>
         </div>
         <div class="btnrow">
-          <button class="btn" id="saveSettingsBtn">บันทึกการตั้งค่า</button>
-          <button class="btn ghost" id="testSendBtn">ทดสอบส่งข้อความ</button>
+          <button class="btn" id="saveSettingsBtn" style="background:#2196F3; color:#fff; border-color:#2196F3;">บันทึกการตั้งค่า Telegram</button>
+          <button class="btn ghost" id="testSendBtn">ทดสอบส่ง Telegram</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><h3>ตั้งค่า LINE</h3></div>
+      <div class="panel">
+        <div class="field">
+          <label>Channel Access Token</label>
+          <input type="text" id="lineToken" placeholder="eyJhbGciOiJIUzI1NiJ9...">
+          <div class="hint">
+            ไปที่ <a href="https://developers.line.biz/console/" target="_blank">LINE Developers Console</a>
+            → เลือก Channel (Messaging API) → แท็บ <b>Messaging API</b>
+            → ส่วน <b>Channel access token</b> → กด <b>Issue</b> แล้วคัดลอกมาวาง
+          </div>
+        </div>
+        <div class="field">
+          <label>Group ID / Room ID (กลุ่มผู้รับ)</label>
+          <input type="text" id="lineGroupId" placeholder="C1234567890abcdef...">
+          <div class="hint">
+            เพิ่ม LINE Bot เข้ากลุ่ม แล้วส่งข้อความในกลุ่ม — Bot จะรับ webhook event ที่มี <b>groupId</b>
+            หรือใช้ <a href="https://developers.line.biz/en/docs/messaging-api/getting-group-id/" target="_blank">วิธีนี้</a> เพื่อดึง Group ID ผ่าน Webhook log
+          </div>
+        </div>
+        <div class="btnrow">
+          <button class="btn" id="saveLineSettingsBtn" style="background:#06C755; color:#fff; border-color:#06C755;">บันทึกการตั้งค่า LINE</button>
+          <button class="btn ghost" id="testLineSendBtn">ทดสอบส่ง LINE</button>
         </div>
       </div>
     </div>
@@ -985,10 +967,8 @@ async function loadState(){
     const s = JSON.parse(settingsRes.value.value);
     document.getElementById("botToken").value = s.botToken || "";
     document.getElementById("chatId").value = s.chatId || "";
-    if(s.ringMode && (s.ringMode === "work" || s.ringMode === "roll")){
-      ringMode = s.ringMode;
-      document.getElementById("ringModeSelect").value = ringMode;
-    }
+    document.getElementById("lineToken").value = s.lineToken || "";
+    document.getElementById("lineGroupId").value = s.lineGroupId || "";
   }
 }
 async function saveStateWork(){
@@ -1003,9 +983,10 @@ async function saveState(){ await saveStateWork(); }
 async function saveSettings(){
   const botToken = document.getElementById("botToken").value.trim();
   const chatId = document.getElementById("chatId").value.trim();
-  const ringModeSel = document.getElementById("ringModeSelect").value;
+  const lineToken = document.getElementById("lineToken").value.trim();
+  const lineGroupId = document.getElementById("lineGroupId").value.trim();
   try{
-    await window.storage.set(SETTINGS_KEY, JSON.stringify({botToken, chatId, ringMode: ringModeSel}), true);
+    await window.storage.set(SETTINGS_KEY, JSON.stringify({botToken, chatId, lineToken, lineGroupId}), true);
     showToast("บันทึกการตั้งค่าแล้ว");
   }catch(e){ showToast("บันทึกการตั้งค่าไม่สำเร็จ", true); }
 }
@@ -1369,21 +1350,15 @@ function computeCounts(group, mode){
 
 /* ================= RENDER: HERO ================= */
 function renderHero(){
-  /* Hero ring shows % based on ringMode setting */
+  /* Hero ring shows % based on work roster */
   const rollRoster = ROSTER.filter(p => p.r !== "conscript");
   const workRoster = conscriptRowHidden ? rollRoster : ROSTER;
   const totalWork = workRoster.length;
-  const totalRoll = rollRoster.length;
 
-  const offRoll = rollRoster.filter(p => SUMMARY_COLS_ROLL.includes(statusMapRoll[p.id])).length;
-  const presentRoll = totalRoll - offRoll;
   const offWork = workRoster.filter(p => SUMMARY_COLS_WORK.includes(statusMapWork[p.id])).length;
   const presentWork = totalWork - offWork;
 
-  /* pick values based on ringMode */
-  const pctBase  = ringMode === "roll" ? totalRoll : totalWork;
-  const pctPres  = ringMode === "roll" ? presentRoll : presentWork;
-  const pct = pctBase ? Math.round((pctPres / pctBase) * 100) : 0;
+  const pct = totalWork ? Math.round((presentWork / totalWork) * 100) : 0;
 
   const circumference = 339;
   const ringEl = document.getElementById("ringFg");
@@ -1398,19 +1373,14 @@ function renderHero(){
     ringEl.setAttribute("stroke-dashoffset", offset);
   }
   document.getElementById("ringPct").textContent = pct + "%";
-  document.getElementById("ringModeLabel").textContent = ringMode === "roll" ? "รวมแถว" : "ปฏิบัติงาน";
+  document.getElementById("ringModeLabel").textContent = "ปฏิบัติงาน";
 
   document.getElementById("heroHeadline").dataset.work = `ยอดปฏิบัติงาน ${presentWork}/${totalWork} นาย`;
-  document.getElementById("heroHeadline").dataset.roll = `ยอดรวมแถว ${presentRoll}/${totalRoll} นาย`;
   updateHeroHeadline();
 
-  const activeStatuses = ringMode === "roll" ? STATUSES_ROLL : STATUSES_WORK;
-  const activeSumCols  = ringMode === "roll" ? SUMMARY_COLS_ROLL : SUMMARY_COLS_WORK;
-  const activeSMap     = ringMode === "roll" ? statusMapRoll : statusMapWork;
-  const activeRoster   = ringMode === "roll" ? rollRoster : workRoster;
   const byStatus = {};
-  activeSumCols.forEach(c => byStatus[c] = activeRoster.filter(p => activeSMap[p.id]===c).length);
-  const statsHtml = activeStatuses.filter(s=>s.key!=="ปกติ").map(s => `
+  SUMMARY_COLS_WORK.forEach(c => byStatus[c] = workRoster.filter(p => statusMapWork[p.id]===c).length);
+  const statsHtml = STATUSES_WORK.filter(s=>s.key!=="ปกติ").map(s => `
     <div class="hstat"><span class="dot" style="background:${s.color}"></span>${s.label} <b class="mono">${byStatus[s.key]||0}</b></div>
   `).join("");
   document.getElementById("heroStats").innerHTML = statsHtml;
@@ -1554,9 +1524,7 @@ function buildReportHtml(mode){
 
 function renderNameLists(){
   const elWork = document.getElementById("statusBreakdownWork");
-  const elRoll = document.getElementById("statusBreakdownRoll");
   if(elWork) elWork.innerHTML = buildReportHtml("work");
-  if(elRoll) elRoll.innerHTML = buildReportHtml("roll");
 }
 
 /* ================= REPORT TEXT ================= */
@@ -1626,6 +1594,41 @@ async function sendToTelegram(text){
   }
 }
 
+/* ================= LINE SEND ================= */
+async function sendToLine(text){
+  const token = document.getElementById("lineToken").value.trim();
+  const groupId = document.getElementById("lineGroupId").value.trim();
+  if(!token || !groupId){
+    showToast("กรุณากรอก Channel Access Token และ Group ID ก่อนส่ง LINE", true);
+    return false;
+  }
+  const url = "https://api.line.me/v2/bot/message/push";
+  try{
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify({
+        to: groupId,
+        messages: [{ type: "text", text: text }]
+      })
+    });
+    if(res.ok){
+      showToast("ส่งรายงานเข้า LINE แล้ว");
+      return true;
+    } else {
+      const data = await res.json().catch(()=>({}));
+      showToast("ส่ง LINE ไม่สำเร็จ: " + (data.message || res.status), true);
+      return false;
+    }
+  }catch(e){
+    showToast("เชื่อมต่อ LINE ไม่สำเร็จ ตรวจสอบ Token / Group ID", true);
+    return false;
+  }
+}
+
 /* ================= TOAST ================= */
 let toastTimer;
 function showToast(msg, isError){
@@ -1639,14 +1642,12 @@ function showToast(msg, isError){
 /* ================= HERO HEADLINE ================= */
 function updateHeroHeadline(){
   const activeTab = document.querySelector(".tabbtn.active");
-  const tab = activeTab ? activeTab.dataset.tab : "checkin-roll";
+  const tab = activeTab ? activeTab.dataset.tab : "checkin-work";
   const el = document.getElementById("heroHeadline");
   if(tab === "checkin-work"){
     el.textContent = el.dataset.work || "";
-  } else if(tab === "checkin-roll"){
-    el.textContent = el.dataset.roll || "";
   } else if(tab === "summary"){
-    el.textContent = ringMode === "roll" ? (el.dataset.roll || "") : (el.dataset.work || "");
+    el.textContent = el.dataset.work || "";
   } else {
     el.textContent = "";
   }
@@ -1669,9 +1670,8 @@ function setupTabs(){
 function renderAll(rerenderRoster=true){
   renderHero();
   renderSummaryTable("work");
-  renderSummaryTable("roll");
   renderNameLists();
-  if(rerenderRoster){ renderRoster("work"); renderRoster("roll"); }
+  if(rerenderRoster){ renderRoster("work"); }
 }
 
 /* ================= INIT ================= */
@@ -1682,7 +1682,6 @@ async function init(){
   await Promise.all([loadRoster(), loadExtraGroups(), loadGroupOrder()]);
   await loadState();
   renderFilters("work");
-  renderFilters("roll");
   renderAll(true);
   setupTabs();
   setAdminUI();
@@ -1700,24 +1699,13 @@ async function init(){
     renderAll(true);
     showToast("ล้างสถานะ (ปฏิบัติงาน) เป็นปกติทั้งหมดแล้ว");
   });
-  document.getElementById("resetAllBtnRoll").addEventListener("click", async () => {
-    const ok = await customConfirm("ล้างสถานะ (รวมแถว) ทุกคนให้เป็น \"ปกติ\" ทั้งหมด?", "ยืนยันการล้างสถานะ");
-    if(!ok) return;
-    ROSTER.forEach(p => statusMapRoll[p.id] = "ปกติ");
-    await saveStateRoll();
-    renderAll(true);
-    showToast("ล้างสถานะ (รวมแถว) เป็นปกติทั้งหมดแล้ว");
-  });
-
   document.getElementById("saveSettingsBtn").addEventListener("click", saveSettings);
   document.getElementById("testSendBtn").addEventListener("click", async () => {
     await sendToTelegram("ทดสอบการเชื่อมต่อ — ระบบเช็คยอดกำลังพล บก.ควบคุม 2 พร้อมใช้งาน");
   });
-
-  /* ring mode selector — change takes effect immediately */
-  document.getElementById("ringModeSelect").addEventListener("change", (e) => {
-    ringMode = e.target.value;
-    renderHero();
+  document.getElementById("saveLineSettingsBtn").addEventListener("click", saveSettings);
+  document.getElementById("testLineSendBtn").addEventListener("click", async () => {
+    await sendToLine("ทดสอบการเชื่อมต่อ LINE — ระบบเช็คยอดกำลังพล บก.ควบคุม 2 พร้อมใช้งาน");
   });
 
   /* conscript row toggle */
@@ -1737,20 +1725,14 @@ async function init(){
     await sendToTelegram(buildReportText("work"));
     btn.disabled = false;
   });
-  document.getElementById("copyReportBtnWork").addEventListener("click", async () => {
-    try{ await navigator.clipboard.writeText(buildReportText("work")); showToast("คัดลอกข้อความ (ปฏิบัติงาน) แล้ว"); }
-    catch(e){ showToast("คัดลอกไม่สำเร็จ", true); }
-  });
-
-  /* send/copy roll */
-  document.getElementById("sendReportBtnRoll").addEventListener("click", async () => {
-    const btn = document.getElementById("sendReportBtnRoll");
+  document.getElementById("sendLineReportBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("sendLineReportBtn");
     btn.disabled = true;
-    await sendToTelegram(buildReportText("roll"));
+    await sendToLine(buildReportText("work"));
     btn.disabled = false;
   });
-  document.getElementById("copyReportBtnRoll").addEventListener("click", async () => {
-    try{ await navigator.clipboard.writeText(buildReportText("roll")); showToast("คัดลอกข้อความ (รวมแถว) แล้ว"); }
+  document.getElementById("copyReportBtnWork").addEventListener("click", async () => {
+    try{ await navigator.clipboard.writeText(buildReportText("work")); showToast("คัดลอกข้อความแล้ว"); }
     catch(e){ showToast("คัดลอกไม่สำเร็จ", true); }
   });
 
@@ -1759,7 +1741,7 @@ async function init(){
     if(isAdmin){
       isAdmin = false;
       setAdminUI();
-      renderRoster("work"); renderRoster("roll");
+      renderRoster("work");
       showToast("ออกจากโหมดแอดมินแล้ว");
     }else{
       document.getElementById("loginUser").value = "";
@@ -1775,7 +1757,7 @@ async function init(){
     if(u === ADMIN_ID && p === ADMIN_PASS){
       isAdmin = true;
       setAdminUI();
-      renderRoster("work"); renderRoster("roll");
+      renderRoster("work");
       closeModal("loginModal");
       showToast("เข้าสู่โหมดแอดมินแล้ว");
     }else{
@@ -1793,7 +1775,6 @@ async function init(){
 
   /* person modal */
   document.getElementById("addPersonBtnWork").addEventListener("click", () => openPersonModal(null));
-  document.getElementById("addPersonBtnRoll").addEventListener("click", () => openPersonModal(null));
   document.getElementById("personSaveBtn").addEventListener("click", savePersonModal);
   document.getElementById("personCancelBtn").addEventListener("click", () => closeModal("personModal"));
   /* Enter key in person modal fields */
@@ -1807,7 +1788,6 @@ async function init(){
   document.getElementById("groupSaveBtn").addEventListener("click", saveGroupModal);
   document.getElementById("groupCancelBtn").addEventListener("click", () => closeModal("groupModal"));
   document.getElementById("addGroupBtnTopWork").addEventListener("click", () => openGroupModal(null));
-  document.getElementById("addGroupBtnTopRoll").addEventListener("click", () => openGroupModal(null));
   /* Enter key in group modal */
   document.getElementById("groupNameInput").addEventListener("keydown", e => {
     if(e.key === "Enter"){ e.preventDefault(); saveGroupModal(); }

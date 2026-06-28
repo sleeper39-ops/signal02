@@ -474,7 +474,7 @@ footer{text-align:center; padding:30px 0 10px; color:var(--txt-faint); font-size
   <div class="tabbar" style="grid-template-columns:1fr 1fr 1fr;">
     <button class="tabbtn active" data-tab="checkin-work">ปฏิบัติงาน</button>
     <button class="tabbtn" data-tab="summary">สรุปยอด</button>
-    <button class="tabbtn" data-tab="report">ตั้งค่า</button>
+    <button class="tabbtn" data-tab="report">ตั้งค่าแจ้งเตือน</button>
   </div>
 
   <!-- CHECK-IN TAB: ปฏิบัติงาน -->
@@ -515,9 +515,12 @@ footer{text-align:center; padding:30px 0 10px; color:var(--txt-faint); font-size
 
   </div>
 
-  <!-- TELEGRAM SETTINGS TAB -->
+  <!-- SETTINGS TAB -->
   <div class="tabpane" id="tab-report">
-    <div class="section">
+    <div class="panel admin-only-hidden" id="settingsLockedMsg" style="text-align:center; color:var(--txt-faint); padding:32px 16px; font-size:13.5px;">
+      🔒 กรุณาเข้าสู่โหมดแอดมินเพื่อแก้ไขการตั้งค่าแจ้งเตือน
+    </div>
+    <div class="section admin-only hidden">
       <div class="section-head"><h3>ตั้งค่า Telegram</h3></div>
       <div class="panel">
         <div class="field">
@@ -537,7 +540,7 @@ footer{text-align:center; padding:30px 0 10px; color:var(--txt-faint); font-size
       </div>
     </div>
 
-    <div class="section">
+    <div class="section admin-only hidden">
       <div class="section-head"><h3>ตั้งค่า LINE</h3></div>
       <div class="panel">
         <div class="field">
@@ -997,6 +1000,8 @@ function setAdminUI(){
   const t = document.getElementById("adminToggle");
   t.textContent = isAdmin ? "ออกจากแอดมิน" : "โหมดแอดมิน";
   t.classList.toggle("on", isAdmin);
+  const locked = document.getElementById("settingsLockedMsg");
+  if(locked) locked.style.display = isAdmin ? "none" : "";
 }
 function openModal(id){ document.getElementById(id).classList.remove("hidden"); }
 function closeModal(id){ document.getElementById(id).classList.add("hidden"); }

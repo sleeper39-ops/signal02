@@ -1440,10 +1440,11 @@ function renderSummaryTable(mode){
   }
 
   const conscript = isWork ? computeCounts("conscript", mode) : null;
-  const totalAll = officer.total + nco.total + (isWork ? conscript.total : 0);
-  const deductedAll = officer.deducted + nco.deducted + (isWork ? conscript.deducted : 0);
-  const presentAll = officer.present + nco.present + (isWork ? conscript.present : 0);
-  cols.forEach(c => rowsTotal[c] = (officer.counts[c]||0) + (nco.counts[c]||0) + (isWork ? (conscript.counts[c]||0) : 0));
+  const includeConscript = isWork && !conscriptRowHidden;
+  const totalAll = officer.total + nco.total + (includeConscript ? conscript.total : 0);
+  const deductedAll = officer.deducted + nco.deducted + (includeConscript ? conscript.deducted : 0);
+  const presentAll = officer.present + nco.present + (includeConscript ? conscript.present : 0);
+  cols.forEach(c => rowsTotal[c] = (officer.counts[c]||0) + (nco.counts[c]||0) + (includeConscript ? (conscript.counts[c]||0) : 0));
 
   function rowWithClass(label, data, cls){
     return `<tr class="${cls}">

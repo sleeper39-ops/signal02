@@ -1727,13 +1727,15 @@ async function init(){
   document.getElementById("sendReportBtnWork").addEventListener("click", async () => {
     const btn = document.getElementById("sendReportBtnWork");
     btn.disabled = true;
-    await sendToTelegram(buildReportText("work"));
+    const el = document.getElementById("statusBreakdownWork");
+    await sendToTelegram(el ? el.innerText : buildReportText("work"));
     btn.disabled = false;
   });
   document.getElementById("sendLineReportBtn").addEventListener("click", async () => {
     const btn = document.getElementById("sendLineReportBtn");
     btn.disabled = true;
-    await sendToLine(buildReportText("work"));
+    const el = document.getElementById("statusBreakdownWork");
+    await sendToLine(el ? el.innerText : buildReportText("work"));
     btn.disabled = false;
   });
   document.getElementById("copyReportBtnWork").addEventListener("click", async () => {

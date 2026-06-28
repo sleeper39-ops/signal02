@@ -705,6 +705,17 @@
     await saveList('dept-personnel-v2', deptPersonnel);
   }
 
+  /* ---------------- บันทึก/โหลด ยอดกำลังพลแต่ละฝ่าย ---------------- */
+  let deptTotals = {}; // { 'ฝขว.': 5, 'ฝทส.': 3, ... }
+
+  async function saveDeptTotals(){
+    await saveList('dept-totals-v1', deptTotals);
+  }
+  async function loadDeptTotals(){
+    const saved = await loadList('dept-totals-v1');
+    if(saved) deptTotals = saved;
+  }
+
   /* ---------------- department list (ฝ่ายอำนวยการ) helpers ---------------- */
   async function saveDepartments(){
     await saveList('departments-v1', DEPARTMENTS);
@@ -946,6 +957,9 @@
   function buildDeptCard(dept){
     const list = getDeptPersonnel(dept.abbr);
     const defaultTotal = list.length || 1;
+    // ใช้ค่าที่บันทึกไว้ก่อน ถ้ามี (และไม่เกิน defaultTotal)
+    const savedTotal = deptTotals[dept.abbr];
+    const selectedTotal = (savedTotal && savedTotal >= 1 && savedTotal <= defaultTotal) ? savedTotal : defaultTotal;
     return `
     <div class="dept-card" data-dept-no="${dept.no}" data-dept-abbr="${dept.abbr}">
       <div class="dept-head">
@@ -956,7 +970,7 @@
       <div class="dept-row">
         <label class="field">
           <span>ยอด (นาย)</span>
-          <select data-role="total">${numOptions(1,defaultTotal,defaultTotal)}</select>
+          <select data-role="total">${numOptions(1,defaultTotal,selectedTotal)}</select>
         </label>
         <label class="field checkbox-field">
           <input type="checkbox" data-role="has-absent">
@@ -1029,83 +1043,22 @@
     }
   }
 
-  /* ---------------- preserve/restore department absent state ---------------- */
-  // เก็บสถานะจำหน่ายของแต่ละฝ่ายไว้ใน memory (ไม่หายเมื่อ initDepartments ถูกเรียกซ้ำ)
-  let savedDeptState = {}; // { 'ฝขว.': { hasAbsent, absentCount, absentees:[{name,reason,custom}] } }
-
-  function captureDeptState(){
-    $$('.dept-card').forEach(card => {
-      const abbr = card.dataset.deptAbbr;
-      const hasAbsent = card.querySelector('[data-role="has-absent"]').checked;
-      const total = card.querySelector('[data-role="total"]').value;
-      const absentCount = card.querySelector('[data-role="absent-count"]').value;
-      const absentees = $$('.absentee-row', card).map(r => ({
-        name: r.querySelector('[data-role="absentee-name"]').value,
-        reason: r.querySelector('[data-role="absentee-reason"]').value,
-        custom: r.querySelector('[data-role="absentee-reason-custom"]').value
-      }));
-      savedDeptState[abbr] = { hasAbsent, total: Number(total), absentCount: Number(absentCount), absentees };
-    });
-  }
-
-  function restoreDeptState(){
-    $$('.dept-card').forEach(card => {
-      const abbr = card.dataset.deptAbbr;
-      const st = savedDeptState[abbr];
-      if(!st) return;
-
-      // คืนค่า total (ยอด)
-      const totalSel = card.querySelector('[data-role="total"]');
-      // ปรับ options ถ้า total ที่บันทึกไว้อยู่นอกช่วง
-      if(totalSel && st.total > 0){
-        const maxOpt = Math.max(...Array.from(totalSel.options).map(o => Number(o.value)));
-        if(st.total <= maxOpt) totalSel.value = st.total;
-      }
-
-      if(!st.hasAbsent) return; // ถ้าไม่มีจำหน่าย ไม่ต้องกู้คืนอะไร
-
-      const countSel = card.querySelector('[data-role="absent-count"]');
-      const hasAbsentChk = card.querySelector('[data-role="has-absent"]');
-      hasAbsentChk.checked = true;
-      countSel.disabled = false;
-      countSel.value = st.absentCount;
-
-      rebuildAbsenteeRows(card, st.absentCount);
-
-      // คืนชื่อและเหตุผลในแต่ละแถว
-      $$('.absentee-row', card).forEach((row, i) => {
-        const saved = st.absentees[i];
-        if(!saved) return;
-        const nameSel = row.querySelector('[data-role="absentee-name"]');
-        const reasonSel = row.querySelector('[data-role="absentee-reason"]');
-        const customInput = row.querySelector('[data-role="absentee-reason-custom"]');
-        // ตั้งชื่อ (ถ้ายังมีใน option)
-        if(nameSel && saved.name){
-          const opt = Array.from(nameSel.options).find(o => o.value === saved.name);
-          if(opt) nameSel.value = saved.name;
-        }
-        // ตั้งเหตุผล
-        if(reasonSel && saved.reason) reasonSel.value = saved.reason;
-        if(saved.reason === 'อื่นๆ' && customInput){
-          customInput.hidden = false;
-          customInput.value = saved.custom || '';
-        }
-      });
-
-      updateStatusPill(card);
-    });
-  }
-
-  function initDepartments(clearState){
-    if(!clearState) captureDeptState(); // บันทึกสถานะก่อน rebuild (ยกเว้นกรณีรีเซ็ต)
+  function initDepartments(){
     const container = $('#departmentsContainer');
     container.innerHTML = DEPARTMENTS.map(buildDeptCard).join('');
-    if(!clearState) restoreDeptState(); // กู้คืนสถานะหลัง rebuild
   }
 
   $('#departmentsContainer').addEventListener('change', e => {
     const card = e.target.closest('.dept-card');
     if(!card) return;
+
+    // บันทึกยอดเมื่อผู้ใช้เปลี่ยนค่า
+    if(e.target.dataset.role === 'total'){
+      const abbr = card.dataset.deptAbbr;
+      deptTotals[abbr] = Number(e.target.value);
+      saveDeptTotals();
+    }
+
     if(e.target.dataset.role === 'has-absent'){
       const countSel = card.querySelector('[data-role="absent-count"]');
       const list = card.querySelector('[data-role="absentee-list"]');
@@ -1262,8 +1215,9 @@
     showToast('บันทึกไฟล์แล้ว');
   });
   $('#resetBtn').addEventListener('click', () => {
-    savedDeptState = {}; // ล้างสถานะที่จำไว้ทั้งหมด
-    initDepartments(true); renderReport();
+    deptTotals = {};
+    saveDeptTotals();
+    initDepartments(); renderReport();
     showToast('เริ่มรายงานใหม่แล้ว');
   });
 
@@ -1295,13 +1249,8 @@
       await saveDeptPersonnel();
     }
 
-    // Load department list (ฝ่ายอำนวยการ) — if never saved, use default
-    const savedDepartments = await loadList('departments-v1');
-    if(savedDepartments && savedDepartments.length){
-      DEPARTMENTS = savedDepartments;
-    } else {
-      await saveDepartments();
-    }
+    // Load saved totals per department
+    await loadDeptTotals();
 
     initDepartments();
     renderReport();

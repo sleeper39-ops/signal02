@@ -309,6 +309,21 @@
     </div>
   </div>
 
+  <!-- Confirm Reset Modal -->
+  <div class="modal-overlay" id="confirmResetModal">
+    <div class="modal" style="max-width:320px;">
+      <h3 style="color:var(--danger);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        ยืนยันการล้างยอด
+      </h3>
+      <p style="font-size:.85rem;color:var(--text-muted);margin:0 0 18px;line-height:1.6;">ยอดกำลังพลและรายการจำหน่ายทั้งหมดจะถูกล้าง<br>และไม่สามารถกู้คืนได้ ต้องการดำเนินการต่อ?</p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="confirmResetCancelBtn">ยกเลิก</button>
+        <button class="btn" id="confirmResetOkBtn" style="background:var(--danger);color:#fff;">ล้างยอดจำหน่าย</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Admin Panel (shown after login) -->
   <div class="admin-panel" id="adminPanel">
     <div class="admin-panel-header">
@@ -707,6 +722,8 @@
 
   /* ---------------- บันทึก/โหลด ยอดกำลังพลแต่ละฝ่าย ---------------- */
   let deptTotals = {}; // { 'ฝขว.': 5, 'ฝทส.': 3, ... }
+  // deptAbsent: { 'ฝขว.': { hasAbsent: true, count: 2, rows: [{name:'...', reason:'...', custom:'...'}] } }
+  let deptAbsent = {};
 
   async function saveDeptTotals(){
     await saveList('dept-totals-v1', deptTotals);
@@ -714,6 +731,53 @@
   async function loadDeptTotals(){
     const saved = await loadList('dept-totals-v1');
     if(saved) deptTotals = saved;
+  }
+
+  async function saveDeptAbsent(){
+    await saveList('dept-absent-v1', deptAbsent);
+  }
+  async function loadDeptAbsent(){
+    const saved = await loadList('dept-absent-v1');
+    if(saved) deptAbsent = saved;
+  }
+
+  function readAbsentStateFromCard(card){
+    const abbr = card.dataset.deptAbbr;
+    const hasAbsent = card.querySelector('[data-role="has-absent"]').checked;
+    const count = Number(card.querySelector('[data-role="absent-count"]').value);
+    const rows = Array.from(card.querySelectorAll('.absentee-row')).map(r => ({
+      name: r.querySelector('[data-role="absentee-name"]').value,
+      reason: r.querySelector('[data-role="absentee-reason"]').value,
+      custom: r.querySelector('[data-role="absentee-reason-custom"]').value
+    }));
+    deptAbsent[abbr] = { hasAbsent, count: hasAbsent ? count : 0, rows: hasAbsent ? rows : [] };
+    saveDeptAbsent();
+  }
+
+  function applyAbsentStateToCard(card){
+    const abbr = card.dataset.deptAbbr;
+    const state = deptAbsent[abbr];
+    if(!state || !state.hasAbsent) return;
+    const checkbox = card.querySelector('[data-role="has-absent"]');
+    const countSel = card.querySelector('[data-role="absent-count"]');
+    checkbox.checked = true;
+    countSel.disabled = false;
+    // ตั้งค่า count (ถ้ามีใน option)
+    const countVal = state.count >= 1 ? state.count : 1;
+    if(countSel.querySelector(`option[value="${countVal}"]`)) countSel.value = countVal;
+    rebuildAbsenteeRows(card, Number(countSel.value));
+    // restore ชื่อ/เหตุผล
+    const rowEls = card.querySelectorAll('.absentee-row');
+    (state.rows || []).forEach((saved, i) => {
+      if(!rowEls[i]) return;
+      const nameSel = rowEls[i].querySelector('[data-role="absentee-name"]');
+      const reasonSel = rowEls[i].querySelector('[data-role="absentee-reason"]');
+      const customIn = rowEls[i].querySelector('[data-role="absentee-reason-custom"]');
+      if(nameSel.querySelector(`option[value="${saved.name}"]`)) nameSel.value = saved.name;
+      if(reasonSel.querySelector(`option[value="${saved.reason}"]`)) reasonSel.value = saved.reason;
+      if(saved.reason === 'อื่นๆ'){ customIn.hidden = false; customIn.value = saved.custom; }
+    });
+    updateStatusPill(card);
   }
 
   /* ---------------- department list (ฝ่ายอำนวยการ) helpers ---------------- */
@@ -1072,10 +1136,12 @@
         list.innerHTML = '';
       }
       updateStatusPill(card);
+      readAbsentStateFromCard(card);
     }
     if(e.target.dataset.role === 'absent-count'){
       rebuildAbsenteeRows(card, Number(e.target.value));
       updateStatusPill(card);
+      readAbsentStateFromCard(card);
     }
     if(e.target.dataset.role === 'absentee-reason'){
       const row = e.target.closest('.absentee-row');
@@ -1085,10 +1151,20 @@
       } else {
         customInput.hidden = true; customInput.value = '';
       }
+      readAbsentStateFromCard(card);
     }
     renderReport();
   });
-  $('#departmentsContainer').addEventListener('input', renderReport);
+  $('#departmentsContainer').addEventListener('input', e => {
+    const card = e.target.closest('.dept-card');
+    if(card){
+      const role = e.target.dataset.role;
+      if(role === 'absentee-name' || role === 'absentee-reason-custom'){
+        readAbsentStateFromCard(card);
+      }
+    }
+    renderReport();
+  });
 
   /* ---------------- report generation ---------------- */
   function renderReport(){
@@ -1215,8 +1291,20 @@
     showToast('บันทึกไฟล์แล้ว');
   });
   $('#resetBtn').addEventListener('click', () => {
+    $('#confirmResetModal').classList.add('open');
+  });
+  $('#confirmResetCancelBtn').addEventListener('click', () => {
+    $('#confirmResetModal').classList.remove('open');
+  });
+  $('#confirmResetModal').addEventListener('click', e => {
+    if(e.target === $('#confirmResetModal')) $('#confirmResetModal').classList.remove('open');
+  });
+  $('#confirmResetOkBtn').addEventListener('click', () => {
+    $('#confirmResetModal').classList.remove('open');
     deptTotals = {};
+    deptAbsent = {};
     saveDeptTotals();
+    saveDeptAbsent();
     initDepartments(); renderReport();
     showToast('เริ่มรายงานใหม่แล้ว');
   });
@@ -1251,8 +1339,11 @@
 
     // Load saved totals per department
     await loadDeptTotals();
+    await loadDeptAbsent();
 
     initDepartments();
+    // restore absent state for each card after DOM is built
+    $$('.dept-card').forEach(card => applyAbsentStateToCard(card));
     renderReport();
   }
   init().then(() => {

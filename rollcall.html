@@ -1732,7 +1732,12 @@ async function init(){
     btn.disabled = false;
   });
   document.getElementById("copyReportBtnWork").addEventListener("click", async () => {
-    try{ await navigator.clipboard.writeText(buildReportText("work")); showToast("คัดลอกข้อความแล้ว"); }
+    try{
+      const el = document.getElementById("statusBreakdownWork");
+      const text = el ? el.innerText : buildReportText("work");
+      await navigator.clipboard.writeText(text);
+      showToast("คัดลอกข้อความแล้ว");
+    }
     catch(e){ showToast("คัดลอกไม่สำเร็จ", true); }
   });
 

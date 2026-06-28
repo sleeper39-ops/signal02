@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบรายงานการปฏิบัติประจำวันตามสายงาน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f7f8fa;
+    --card:#ffffff;
+    --border:#e3e6ea;
+    --border-soft:#edeff2;
+    --text:#1f2430;
+    --text-muted:#777e8c;
+    --accent:#2f6fed;
+    --accent-soft:#eaf1ff;
+    --ok:#1f9254;
+    --ok-bg:#e8f6ee;
+    --warn:#c2740a;
+    --warn-bg:#fdf2e2;
+    --radius:10px;
+    --admin:#2f6fed;
+    --admin-bg:#eaf1ff;
+    --danger:#dc2626;
+    --danger-bg:#fdeaea;
+    --gray-dark:#3a3f4b;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Sarabun','Noto Sans Thai',Tahoma,sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:860px;margin:0 auto;padding:0 16px 50px;}
+
+  /* ---------- Header ---------- */
+  .header{
+    background:var(--card);
+    border-bottom:1px solid var(--border);
+    padding:16px 18px;
+    margin-bottom:20px;
+  }
+  .header-row{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;}
+  .header-title{font-size:1.02rem; font-weight:700; color:var(--text);}
+  .header-sub{font-size:.76rem; color:var(--text-muted); margin-top:2px;}
+  .tag{
+    border:1px solid var(--border); background:var(--accent-soft); color:var(--accent);
+    font-size:.72rem; font-weight:600; padding:3px 10px; border-radius:999px;
+  }
+  .tag.admin-tag{background:var(--admin-bg); color:var(--admin); border-color:#c9dcff;}
+  .live-strip{display:flex; align-items:center; gap:18px; flex-wrap:wrap; margin-top:12px; font-size:.82rem; color:var(--text-muted);}
+  .live-time{font-family:'Courier New',monospace; font-weight:700; font-size:1.5rem; color:var(--accent);}
+  .live-time small{font-size:.78rem; font-weight:600; color:var(--text-muted); margin-right:5px;}
+  .live-strip b{color:var(--text); font-weight:600;}
+  .live-status{display:flex; align-items:center; gap:6px; margin-left:auto; font-weight:600;}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);}
+  .dot.warn{background:var(--warn);}
+
+  /* ---------- Cards ---------- */
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+    padding:16px 16px 18px; margin-bottom:14px;
+  }
+  .card h2{
+    font-size:.92rem; font-weight:700; margin:0 0 10px; color:var(--text);
+    display:flex; align-items:center; gap:8px;
+  }
+  .card h2 .eyebrow{
+    font-size:.66rem; font-weight:600; color:var(--accent); letter-spacing:.4px;
+    background:var(--accent-soft); padding:2px 8px; border-radius:999px;
+  }
+
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px;}
+  .field{display:flex; flex-direction:column; gap:4px; font-size:.78rem; color:var(--text-muted);}
+  .field span{font-weight:600; color:var(--text);}
+  select, input[type=text], input[type=date], input[type=password]{
+    font-family:inherit; font-size:.86rem; padding:7px 9px; border:1px solid var(--border);
+    border-radius:8px; background:#fff; color:var(--text); width:100%;
+  }
+  select:focus, input:focus{outline:2px solid var(--accent-soft); outline-offset:1px; border-color:var(--accent);}
+
+  .btn{
+    border:none; cursor:pointer; font-family:inherit; font-weight:600; font-size:.82rem;
+    padding:7px 14px; border-radius:8px; transition:filter .15s;
+  }
+  .btn-accent{background:var(--accent); color:#fff;}
+  .btn-accent:hover{filter:brightness(1.06);}
+  .btn-ghost{background:transparent; border:1px solid var(--border); color:var(--text);}
+  .btn-ghost:hover{background:var(--bg);}
+  .btn-danger-ghost{background:transparent;border:1px solid #f5c2c2;color:var(--danger); padding:3px 9px; font-size:.74rem;}
+  .btn-danger-ghost:hover{background:var(--danger);color:#fff;}
+  .btn-admin{background:var(--admin); color:#fff; font-size:.78rem; padding:5px 12px;}
+  .btn-admin:hover{filter:brightness(1.1);}
+  .btn-login{background:var(--gray-dark); color:#fff;}
+  .btn-login:hover{filter:brightness(1.15);}
+  .btn-logout{background:var(--danger); color:#fff; font-size:.78rem; padding:5px 12px; border:none;}
+  .btn-logout:hover{filter:brightness(1.1);}
+  .btn-sm{padding:4px 10px; font-size:.74rem;}
+  .roster-empty{font-size:.78rem; color:var(--text-muted); font-style:italic;}
+
+  /* ---------- Department cards ---------- */
+  .dept-card{border-top:1px solid var(--border-soft); padding:10px 0;}
+  .dept-card:first-child{border-top:none; padding-top:2px;}
+  .dept-head{display:flex; align-items:center; gap:9px; margin-bottom:8px;}
+  .dept-badge{
+    width:22px; height:22px; border-radius:50%; background:var(--accent); color:#fff;
+    font-size:.7rem; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .dept-name{font-weight:700; color:var(--text); flex:1; font-size:.88rem;}
+  .status-pill{font-size:.7rem; font-weight:600; padding:2px 10px; border-radius:999px; white-space:nowrap;}
+  .status-pill.ok{background:var(--ok-bg); color:var(--ok);}
+  .status-pill.warn{background:var(--warn-bg); color:var(--warn);}
+  .dept-row{display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; padding-left:31px;}
+  .dept-row .field{min-width:130px; flex:1;}
+  .checkbox-field{flex-direction:row !important; align-items:center; gap:7px; font-size:.8rem; min-width:auto !important;}
+  .checkbox-field input{width:auto;}
+  .absentee-list{padding-left:31px; margin-top:8px; display:flex; flex-direction:column; gap:6px;}
+  .absentee-row{display:flex; gap:7px; align-items:center; flex-wrap:wrap;}
+  .absentee-no{
+    width:18px; height:18px; border-radius:50%; border:1px solid var(--accent); color:var(--accent);
+    font-size:.66rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:700;
+  }
+  .absentee-row select, .absentee-row input{flex:1; min-width:140px;}
+
+  /* ---------- Admin Modal ---------- */
+  .modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,.45);
+    z-index:100; align-items:center; justify-content:center; padding:16px;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal{
+    background:#fff; border-radius:14px; padding:24px; width:100%; max-width:360px;
+    box-shadow:0 12px 40px rgba(0,0,0,.18);
+  }
+  .modal h3{margin:0 0 16px; font-size:1rem; color:var(--admin); display:flex; align-items:center; gap:8px;}
+  .modal .field{margin-bottom:12px;}
+  .modal-actions{display:flex;gap:8px;margin-top:4px;}
+  .modal-actions .btn{flex:1;}
+  .modal-error{color:#dc2626;font-size:.76rem;margin-top:6px;display:none;}
+
+  /* ---------- Admin Panel ---------- */
+  .admin-panel{
+    background:#ffffff; border:1px solid var(--border); border-radius:var(--radius);
+    padding:14px 16px; margin-bottom:14px; display:none;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);
+  }
+  .admin-panel.active{display:block;}
+  .admin-panel-header{display:flex;align-items:center;gap:10px;margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid var(--border-soft);}
+  .admin-panel-header h3{margin:0;font-size:.88rem;color:var(--admin);flex:1;}
+  .admin-section-title{font-size:.84rem; font-weight:700; color:var(--admin); margin:0 0 8px; display:flex; align-items:center; gap:6px;}
+  .admin-subsection{margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid var(--border-soft);}
+  .admin-subsection:last-child{border-bottom:none; margin-bottom:0; padding-bottom:0;}
+  .dept-admin-section{margin-bottom:12px; border:1px solid var(--border); border-radius:8px; overflow:hidden;}
+  .dept-admin-header{
+    background:var(--bg); padding:8px 12px; font-size:.82rem; font-weight:700;
+    color:var(--text); display:flex; align-items:center; gap:8px; cursor:pointer;
+    user-select:none;
+  }
+  .dept-admin-header:hover{background:var(--border-soft);}
+  .dept-admin-body{padding:10px 12px; background:#fff; display:none;}
+  .dept-admin-body.open{display:block;}
+  .dept-admin-add{display:flex; gap:8px; margin-bottom:8px;}
+  .dept-admin-add input{flex:1;}
+  .dept-personnel-list{display:flex; flex-direction:column; gap:5px; max-height:200px; overflow-y:auto;}
+  .dept-personnel-item{
+    display:flex; justify-content:space-between; align-items:center; gap:8px;
+    padding:5px 9px; background:var(--bg); border-radius:7px; font-size:.82rem;
+  }
+  .dept-personnel-item.editing input{flex:1; font-size:.82rem;}
+  .edit-actions{display:flex;gap:5px;flex-shrink:0;}
+  .btn-edit{background:transparent;border:1px solid var(--accent);color:var(--accent);padding:3px 9px;font-size:.72rem;border-radius:6px;cursor:pointer;font-family:inherit;}
+  .btn-save{background:var(--ok);color:#fff;border:none;padding:3px 9px;font-size:.72rem;border-radius:6px;cursor:pointer;font-family:inherit;}
+  .btn-cancel{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:3px 9px;font-size:.72rem;border-radius:6px;cursor:pointer;font-family:inherit;}
+  .btn-remove-dept{background:var(--danger-bg);border:1px solid #f5c2c2;color:var(--danger);padding:3px 9px;font-size:.72rem;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600;}
+  .btn-remove-dept:hover{background:var(--danger);color:#fff;}
+
+  /* ---------- Summary ---------- */
+  .summary-strip{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px;}
+  .sum-box{background:var(--bg); border-radius:8px; padding:10px 12px; text-align:center;}
+  .sum-box .num{font-family:'Courier New',monospace; font-size:1.35rem; font-weight:700; color:var(--text);}
+  .sum-box .lbl{font-size:.72rem; color:var(--text-muted); margin-top:1px;}
+
+  /* ---------- Report preview ---------- */
+  .memo{
+    background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:14px 16px;
+    font-size:.86rem; white-space:pre-wrap; word-break:break-word; min-height:100px; color:var(--text);
+  }
+  .report-actions{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;}
+  .toast{
+    position:fixed; bottom:22px; left:50%; transform:translate(-50%,12px);
+    background:var(--text); color:#fff; padding:9px 16px; border-radius:999px; font-size:.82rem;
+    opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:50;
+  }
+  .toast.show{opacity:1; transform:translate(-50%,0);}
+
+  footer{text-align:center; font-size:.72rem; color:var(--text-muted); margin-top:24px;}
+
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important;} }
+
+  /* ---------- Responsive: tablet (iPad portrait & similar) ---------- */
+  @media (max-width:880px){
+    .wrap{padding:0 14px 50px;}
+    .header{padding:14px 14px;}
+    .grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));}
+  }
+
+  /* ---------- Responsive: phone ---------- */
+  @media (max-width:600px){
+    .wrap{padding:0 10px 40px;}
+    .header{padding:12px 12px; margin-bottom:14px;}
+    .header-row{gap:8px;}
+    .header-title{font-size:.94rem;}
+    .header-sub{font-size:.72rem;}
+    .live-strip{gap:10px 14px; font-size:.78rem;}
+    .live-time{font-size:1.15rem;}
+    .live-status{margin-left:0; width:100%;}
+    .card{padding:13px 12px 15px;}
+    .grid{grid-template-columns:1fr 1fr; gap:8px;}
+    .dept-row, .absentee-list{padding-left:0;}
+    .dept-row{gap:8px;}
+    .dept-row .field{min-width:0; flex:1 1 130px;}
+    .absentee-row select, .absentee-row input{min-width:0; flex:1 1 100%;}
+    .absentee-no{margin-bottom:2px;}
+    .summary-strip{grid-template-columns:repeat(3,1fr); gap:8px;}
+    .sum-box{padding:8px 6px;}
+    .sum-box .num{font-size:1.1rem;}
+    .sum-box .lbl{font-size:.64rem;}
+    .report-actions{flex-direction:column;}
+    .report-actions .btn{width:100%;}
+    .modal{padding:20px 18px; max-width:none; margin:0 6px;}
+    .admin-panel{padding:12px 12px;}
+    .dept-admin-add{flex-direction:column;}
+    .dept-admin-add .btn{width:100%;}
+    .dept-personnel-item{flex-wrap:wrap;}
+    .dept-personnel-item.editing{flex-direction:column; align-items:stretch;}
+    .edit-actions{width:100%;}
+    .edit-actions .btn-save, .edit-actions .btn-cancel, .edit-actions .btn-edit, .edit-actions .btn-remove-dept{flex:1;}
+    .admin-panel-header{flex-wrap:wrap;}
+    .btn, select, input[type=text], input[type=date], input[type=password]{font-size:.88rem;}
+    .btn{padding:9px 14px;}
+  }
+
+  /* ---------- Touch target safety net (any touch device) ---------- */
+  @media (hover:none) and (pointer:coarse){
+    .btn, select, input[type=text], input[type=date], input[type=password]{min-height:38px;}
+    .checkbox-field input{width:18px; height:18px;}
+    .dept-admin-header{min-height:40px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="wrap" style="padding:0;">
+    <div class="header-row">
+      <div>
+        <div class="header-title">ระบบรายงานการปฏิบัติประจำวันตามสายงาน</div>
+        <div class="header-sub">บันทึกยอดกำลังพลและสถานะการจำหน่ายของแต่ละฝ่าย ตามห้วงเวลา</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+        <span class="tag" id="dayTypeTag">วันทำงานปกติ</span>
+        <span class="tag admin-tag" id="adminModeTag" style="display:none;">⚙ แอดมิน</span>
+        <button class="btn btn-admin" id="openAdminModalBtn" style="font-size:.72rem;padding:3px 12px;">🔐 แอดมิน</button>
+      </div>
+    </div>
+    <div class="live-strip">
+      <div class="live-time"><small>ห้วงเวลา</small><span id="liveTime">11:00</span></div>
+      <div>เสมียนเวร: <b id="liveClerk">ยังไม่เลือก</b></div>
+      <div>วันที่: <b id="liveDate">-</b></div>
+      <div class="live-status">
+        <span class="dot" id="boardDot"></span>
+        <span id="boardStatusText">ครบ 9/9 ฝ่าย</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- Admin Login Modal -->
+  <div class="modal-overlay" id="adminModal">
+    <div class="modal">
+      <h3>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        เข้าสู่โหมดแอดมิน
+      </h3>
+      <label class="field">
+        <span>ชื่อผู้ใช้</span>
+        <input type="text" id="adminUser" placeholder="username" autocomplete="off">
+      </label>
+      <label class="field" style="margin-top:10px;">
+        <span>รหัสผ่าน</span>
+        <input type="password" id="adminPass" placeholder="password">
+      </label>
+      <div class="modal-error" id="adminLoginError">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</div>
+      <div class="modal-actions" style="margin-top:16px;">
+        <button class="btn btn-ghost" id="adminModalCancelBtn">ยกเลิก</button>
+        <button class="btn btn-login" id="adminLoginBtn">เข้าสู่ระบบ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Panel (shown after login) -->
+  <div class="admin-panel" id="adminPanel">
+    <div class="admin-panel-header">
+      <h3>⚙ โหมดแอดมิน</h3>
+      <button class="btn btn-logout btn-sm" id="adminLogoutBtn">🔓 ล็อคเอ้าท์แอดมิน</button>
+    </div>
+
+    <div class="admin-subsection">
+      <div class="admin-section-title">📋 จัดการรายชื่อเสมียนเวร</div>
+      <div class="dept-admin-add">
+        <input type="text" id="adminAddClerkInput" placeholder="พิมพ์ ยศ ชื่อ-สกุล เช่น ส.อ. จิรายุ  บินทะลุบ้าน">
+        <button class="btn btn-accent btn-sm" id="adminAddClerkBtn">+ เพิ่ม</button>
+      </div>
+      <div class="dept-personnel-list" id="adminClerkList"></div>
+    </div>
+
+    <div class="admin-subsection">
+      <div class="admin-section-title">🏷 จัดการฝ่ายอำนวยการ</div>
+      <div class="dept-admin-add">
+        <input type="text" id="adminAddDeptInput" placeholder="พิมพ์ชื่อย่อฝ่าย เช่น ฝกพ.">
+        <button class="btn btn-accent btn-sm" id="adminAddDeptBtn">+ เพิ่มฝ่าย</button>
+      </div>
+      <div class="dept-personnel-list" id="adminDeptList"></div>
+    </div>
+
+    <div class="admin-subsection">
+      <div class="admin-section-title">👥 จัดการรายชื่อกำลังพล (แยกตามฝ่าย)</div>
+      <div id="adminDeptSections"></div>
+    </div>
+  </div>
+
+  <!-- ข้อมูลการรายงาน -->
+  <section class="card">
+    <h2><span class="eyebrow">ส่วนที่ 1</span> ข้อมูลการรายงาน</h2>
+    <div class="grid">
+      <label class="field">
+        <span>ประเภทวัน</span>
+        <select id="dayType">
+          <option value="normal">วันทำงานปกติ</option>
+          <option value="holiday">วันหยุด</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>ห้วงเวลา</span>
+        <select id="timeSelect"></select>
+      </label>
+      <label class="field">
+        <span>ประจำวันที่</span>
+        <input type="date" id="dateInput">
+      </label>
+      <label class="field">
+        <span>เรียน (ผู้รับรายงาน)</span>
+        <input type="text" id="recipientInput" value="รอง ผบ.บก.ควบคุม 2">
+      </label>
+      <div class="field" style="grid-column:1/-1;">
+        <span>เสมียนเวรประจำวัน</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <select id="clerkSelect" style="flex:1;min-width:180px;"><option value="">-- เลือกจากรายชื่อ --</option></select>
+          <span style="font-size:.75rem;color:var(--text-muted);white-space:nowrap;">หรือพิมพ์เอง</span>
+          <input type="text" id="clerkManual" placeholder="พิมพ์ ยศ ชื่อ-สกุล เช่น ส.อ. จิรายุ บินทะลุบ้าน" style="flex:2;min-width:200px;">
+          <button class="btn btn-login btn-sm" id="addClerkFromManualBtn">+ เพิ่มชื่อเสมียนเวร</button>
+        </div>
+        <div style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">หากพิมพ์ในช่อง "พิมพ์เอง" จะใช้ข้อความนั้นในรายงาน — ถ้าเว้นว่างจะใช้รายชื่อจาก dropdown</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- รายงานตามสายงาน -->
+  <section class="card">
+    <h2><span class="eyebrow">ส่วนที่ 2</span> รายงานตามสายงาน (1–9)</h2>
+    <div id="departmentsContainer"></div>
+  </section>
+
+  <!-- สรุปยอด -->
+  <section class="card">
+    <h2><span class="eyebrow">ส่วนที่ 3</span> สรุปยอด</h2>
+    <div class="summary-strip">
+      <div class="sum-box"><div class="num" id="sumTotal">0</div><div class="lbl">ยอดกำลังพลรวม (นาย)</div></div>
+      <div class="sum-box"><div class="num" id="sumAbsent">0</div><div class="lbl">ยอดจำหน่ายรวม (นาย)</div></div>
+      <div class="sum-box"><div class="num" id="sumRemain">0</div><div class="lbl">คงยอดปฏิบัติงาน (นาย)</div></div>
+    </div>
+  </section>
+
+  <!-- รายงานฉบับเต็ม -->
+  <section class="card">
+    <h2><span class="eyebrow">ส่วนที่ 4</span> รายงานฉบับเต็ม (พร้อมคัดลอก)</h2>
+    <div class="memo" id="reportOutput"></div>
+    <div class="report-actions">
+      <button class="btn btn-accent" id="copyBtn">คัดลอกรายงาน</button>
+      <button class="btn btn-ghost" id="downloadBtn">บันทึกเป็นไฟล์ .txt</button>
+      <button class="btn btn-ghost" id="resetBtn">เริ่มรายงานใหม่ (ล้างยอดจำหน่าย)</button>
+    </div>
+  </section>
+
+  <footer>รายชื่อกำลังพลแต่ละฝ่ายและเสมียนเวรจะถูกบันทึกไว้ในระบบ ส่วนข้อมูลของแต่ละรายงานจะไม่ถูกบันทึกอัตโนมัติ</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const THAI_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const TIME_OPTIONS = { normal:['09:00','11:00','15:00'], holiday:['11:00','15:00'] };
+  const REASON_OPTIONS = ['ราชการ','ลาป่วย','ขออนุญาต','ธุรการ','ฝึก/อบรม','ไปพบแพทย์'];
+
+  const ADMIN_USER = 'admin';
+  const ADMIN_PASS = 'admin2';
+
+  // Default personnel per department
+  const DEFAULT_DEPT_PERSONNEL = {
+    'ฝขว.': [
+      'ร.ท. สรศักดิ์ อยู่ยง','จ.ส.อ. ณัฐกิตติ์ อุตริน','ส.อ. อิสระพงษ์ สืบสุนทร',
+      'ส.อ. วงกต วันตา','ส.อ. วิเชียร สวาทพร','ส.อ. สมเกียรติ เหล่าพรหม',
+      'ส.อ. จักรกฤษณ์ คุณสมบัติ','ส.อ. ปิยะพงษ์ เขียนปัญญา','ส.อ. ณัฐเอก ลูมา'
+    ],
+    'ฝยก.': [
+      'ร.อ. ศิณพ เย็นใจ','ร.ท. สมบัติ ศรีตระการ','จ.ส.อ. ชัยฤทธิ์ ชูบุตร',
+      'จ.ส.อ. วันเฉลิม โพธิ์ศรี','จ.ส.อ. กิตติ พลลม','ส.อ. ปิยะณัฐ สีทัน'
+    ],
+    'ฝสส.': ['ส.อ. ชาติชาย ตรีแสน','ส.อ. สรรเสริญ แก้วพรม'],
+    'ปจว.': [
+      'ร.ต. นพฤทธิ์ ฉายอรุณ','จ.ส.อ. คำสอน พงษ์พันธ์',
+      'ส.อ. ณรงค์กร ฆ้องลา','ส.อ. ประชา หนูราช'
+    ],
+    'ฝกร.': ['จ.ส.อ. พรหมมาศ ทรงประสิทธิ์','ส.อ. กฤษณัส สุรันนา','ส.อ. วรัญญู แบนขุนทด'],
+    'ฝยส.': ['จ.ส.อ. ฐิติพงษ์ กุศล','จ.ส.อ. อัมฤทธิ์ พุ่มสวัสดิ์','จ.ส.ต. อนุทิน โมตา'],
+    'ศสน.': [
+      'ร.อ. ธีระพล นาราช','จ.ส.อ. ทินกร เหลาพรม','จ.ส.อ. สิทธิพงษ์ สิงหพันธ์',
+      'จ.ส.อ. อดิศร เรียงเสนาะ','จ.ส.ต. ปรัชญา ขาลพรหม','ส.อ. เมธี มิตราช'
+    ],
+    'ชกส.': [
+      'จ.ส.อ. สุดใจ ภูลายขาว','จ.ส.อ. เสกสรร ศรีลาลัย',
+      'จ.ส.อ. ไพรพนา ไชยปัญญา','จ.ส.ต. ธีระ จำปาเทศ'
+    ],
+    '250': [
+      'ร.ต. ณฤธร สุคนธชาติ','จ.ส.อ. วิศาล บุญตา',
+      'จ.ส.ท. สมควร เดชนุวัฒนชัย','ส.อ. ไกรวัลย์ อ่อนศรี'
+    ]
+  };
+
+  // Default duty clerk roster
+  const DEFAULT_CLERKS = [
+    'จ.ส.ต. ปรัชญา ขาลพรหม',
+    'จ.ส.ต. ธีระ จำปาเทศ',
+    'จ.ส.ท. สมควร เดชนุวัฒนชัย',
+    'ส.อ. ประชา หนูราช',
+    'ส.อ. ปิยะพงษ์ เขียนปัญญา',
+    'ส.อ. สมเกียรติ เหล่าพรหม',
+    'ส.อ. อิสระพงษ์ สืบสุนทร',
+    'ส.อ. เมธี มิตราช',
+    'ส.อ. วงกต วันตา',
+    'ส.อ. วรัญญู แบนขุนทด',
+    'ส.อ. ณรงค์กร ฆ้องลา',
+    'ส.อ. วิเชียร สวาทพร',
+    'ส.อ. จักรกฤษณ์ คุณสมบัติ',
+    'ส.อ. กฤษณัส สุรันนา',
+    'ส.อ. ชาติชาย ตรีแสน',
+    'ส.อ. ณัฐเอก ลูมา',
+    'ส.อ. สรรเสริญ แก้วพรม',
+    'ส.อ. ปิยะณัฐ สีทัน',
+    'จ.ส.ต. อนุทิน โมตา',
+    'ส.อ. ไกรวัลย์ อ่อนศรี'
+  ];
+
+  let DEPARTMENTS = [
+    {no:1, abbr:'ฝขว.'},
+    {no:2, abbr:'ฝยก.'},
+    {no:3, abbr:'ฝสส.'},
+    {no:4, abbr:'ปจว.'},
+    {no:5, abbr:'ฝกร.'},
+    {no:6, abbr:'ฝยส.'},
+    {no:7, abbr:'ศสน.'},
+    {no:8, abbr:'ชกส.'},
+    {no:9, abbr:'250'},
+  ];
+
+  const $ = (sel, root=document) => root.querySelector(sel);
+  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+  let clerks = [];
+  let deptPersonnel = {}; // { 'ฝขว.': [...], ... }
+  let isAdmin = false;
+
+  /* ---------------- storage ---------------- */
+  const STORAGE_PREFIX = 'duty-report::';
+  function hasArtifactStorage(){
+    return typeof window !== 'undefined' && window.storage && typeof window.storage.get === 'function';
+  }
+  async function loadList(key){
+    if(hasArtifactStorage()){
+      try{
+        const res = await window.storage.get(key, false);
+        if(res && res.value) return JSON.parse(res.value);
+        return null;
+      }catch(e){ /* fall through to localStorage */ }
+    }
+    try{
+      const raw = localStorage.getItem(STORAGE_PREFIX + key);
+      return raw ? JSON.parse(raw) : null;
+    }catch(e){ return null; }
+  }
+  async function saveList(key, val){
+    if(hasArtifactStorage()){
+      try{ await window.storage.set(key, JSON.stringify(val), false); return; }
+      catch(e){ /* fall through to localStorage */ }
+    }
+    try{ localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(val)); }
+    catch(e){ console.error('save failed', key, e); }
+  }
+
+  /* ---------------- date helpers ---------------- */
+  function thaiDateString(isoStr){
+    if(!isoStr) return '-';
+    const d = new Date(isoStr + 'T00:00:00');
+    return `${d.getDate()} ${THAI_MONTHS[d.getMonth()]} ${String(d.getFullYear()+543).slice(-2)}`;
+  }
+  function todayISO(){
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  /* ---------------- clerk select dropdown (synced with admin roster) ---------------- */
+  function renderClerkSelect(){
+    const sel = $('#clerkSelect');
+    if(!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">-- เลือกเสมียนเวร --</option>' +
+      clerks.map(name => `<option value="${name}">${name}</option>`).join('');
+    if(clerks.includes(current)) sel.value = current;
+  }
+
+  /* ---------------- admin: clerk roster management ---------------- */
+  function renderAdminClerkList(){
+    const listEl = $('#adminClerkList');
+    if(!listEl) return;
+    if(clerks.length === 0){
+      listEl.innerHTML = '<div class="roster-empty">ยังไม่มีรายชื่อ</div>';
+      return;
+    }
+    listEl.innerHTML = clerks.map((name, i) => `
+      <div class="dept-personnel-item">
+        <span>${name}</span>
+        <div class="edit-actions">
+          <button class="btn-edit" data-admin-clerk-edit="${i}">แก้ไข</button>
+          <button class="btn btn-danger-ghost" data-admin-clerk-del="${i}">ลบ</button>
+        </div>
+      </div>`).join('');
+  }
+  $('#adminAddClerkBtn').addEventListener('click', async () => {
+    const input = $('#adminAddClerkInput');
+    const val = input.value.trim();
+    if(!val) return;
+    clerks.push(val);
+    input.value = '';
+    await saveList('duty-clerks', clerks);
+    renderAdminClerkList(); renderClerkSelect();
+    showToast(`เพิ่มเสมียนเวร ${val} แล้ว`);
+  });
+  $('#adminAddClerkInput').addEventListener('keydown', e => { if(e.key==='Enter'){ e.preventDefault(); $('#adminAddClerkBtn').click(); } });
+  $('#adminClerkList').addEventListener('click', async e => {
+    const delBtn = e.target.closest('[data-admin-clerk-del]');
+    const editBtn = e.target.closest('[data-admin-clerk-edit]');
+    const saveBtn = e.target.closest('[data-admin-clerk-save]');
+    const cancelBtn = e.target.closest('[data-admin-clerk-cancel]');
+
+    if(delBtn){
+      const idx = Number(delBtn.dataset.adminClerkDel);
+      const name = clerks[idx];
+      clerks.splice(idx, 1);
+      await saveList('duty-clerks', clerks);
+      renderAdminClerkList(); renderClerkSelect();
+      showToast(`ลบเสมียนเวร ${name} แล้ว`);
+    }
+    if(editBtn){
+      const idx = Number(editBtn.dataset.adminClerkEdit);
+      const item = $('#adminClerkList').querySelectorAll('.dept-personnel-item')[idx];
+      const currentName = clerks[idx];
+      item.classList.add('editing');
+      item.innerHTML = `
+        <input type="text" value="${currentName}" data-role="edit-input">
+        <div class="edit-actions">
+          <button class="btn-save" data-admin-clerk-save="${idx}">บันทึก</button>
+          <button class="btn-cancel" data-admin-clerk-cancel="${idx}">ยกเลิก</button>
+        </div>`;
+      item.querySelector('[data-role="edit-input"]').focus();
+    }
+    if(saveBtn){
+      const idx = Number(saveBtn.dataset.adminClerkSave);
+      const item = saveBtn.closest('.dept-personnel-item');
+      const input = item ? item.querySelector('[data-role="edit-input"]') : null;
+      const newVal = input ? input.value.trim() : '';
+      if(newVal){ clerks[idx] = newVal; await saveList('duty-clerks', clerks); }
+      renderAdminClerkList(); renderClerkSelect();
+      showToast('แก้ไขรายชื่อเสมียนเวรแล้ว');
+    }
+    if(cancelBtn){ renderAdminClerkList(); }
+  });
+
+  /* ---------------- admin: department (ฝ่ายอำนวยการ) management ---------------- */
+  function renderAdminDeptList(){
+    const listEl = $('#adminDeptList');
+    if(!listEl) return;
+    if(DEPARTMENTS.length === 0){
+      listEl.innerHTML = '<div class="roster-empty">ยังไม่มีฝ่าย</div>';
+      return;
+    }
+    listEl.innerHTML = DEPARTMENTS.map(dept => `
+      <div class="dept-personnel-item">
+        <span>${dept.no}. ${dept.abbr} <span style="color:var(--text-muted);font-weight:400;">(${getDeptPersonnel(dept.abbr).length} นาย)</span></span>
+        <div class="edit-actions">
+          <button class="btn-remove-dept" data-admin-dept-del="${dept.abbr}" title="ลบฝ่ายนี้">− ลบฝ่าย</button>
+        </div>
+      </div>`).join('');
+  }
+  async function refreshAfterDeptChange(){
+    renderAdminDeptList();
+    renderAdminDeptSections();
+    initDepartments();
+    renderReport();
+  }
+  $('#adminAddDeptBtn').addEventListener('click', async () => {
+    const input = $('#adminAddDeptInput');
+    const val = input.value.trim();
+    if(!val) return;
+    const ok = await addDepartment(val);
+    if(!ok){ showToast(`มีฝ่าย "${val}" อยู่แล้ว`); return; }
+    input.value = '';
+    await refreshAfterDeptChange();
+    showToast(`เพิ่มฝ่าย ${val} แล้ว`);
+  });
+  $('#adminAddDeptInput').addEventListener('keydown', e => { if(e.key==='Enter'){ e.preventDefault(); $('#adminAddDeptBtn').click(); } });
+  $('#adminDeptList').addEventListener('click', async e => {
+    const delBtn = e.target.closest('[data-admin-dept-del]');
+    if(!delBtn) return;
+    const abbr = delBtn.dataset.adminDeptDel;
+    if(DEPARTMENTS.length <= 1){ showToast('ต้องมีฝ่ายอย่างน้อย 1 ฝ่าย'); return; }
+    await removeDepartment(abbr);
+    await refreshAfterDeptChange();
+    showToast(`ลบฝ่าย ${abbr} แล้ว`);
+  });
+
+  /* ---------------- dept personnel helpers ---------------- */
+  function getDeptPersonnel(abbr){
+    return deptPersonnel[abbr] || [];
+  }
+  async function saveDeptPersonnel(){
+    await saveList('dept-personnel-v2', deptPersonnel);
+  }
+
+  /* ---------------- department list (ฝ่ายอำนวยการ) helpers ---------------- */
+  async function saveDepartments(){
+    await saveList('departments-v1', DEPARTMENTS);
+  }
+  function renumberDepartments(){
+    DEPARTMENTS.forEach((d, i) => { d.no = i + 1; });
+  }
+  async function addDepartment(abbr){
+    const trimmed = abbr.trim();
+    if(!trimmed) return false;
+    if(DEPARTMENTS.some(d => d.abbr === trimmed)) return false;
+    DEPARTMENTS.push({ no: DEPARTMENTS.length + 1, abbr: trimmed });
+    if(!deptPersonnel[trimmed]) deptPersonnel[trimmed] = [];
+    await saveDepartments();
+    await saveDeptPersonnel();
+    return true;
+  }
+  async function removeDepartment(abbr){
+    const idx = DEPARTMENTS.findIndex(d => d.abbr === abbr);
+    if(idx === -1) return false;
+    DEPARTMENTS.splice(idx, 1);
+    renumberDepartments();
+    delete deptPersonnel[abbr];
+    await saveDepartments();
+    await saveDeptPersonnel();
+    return true;
+  }
+
+  /* ---------------- admin mode ---------------- */
+  function openAdminModal(){
+    $('#adminUser').value = '';
+    $('#adminPass').value = '';
+    $('#adminLoginError').style.display = 'none';
+    $('#adminModal').classList.add('open');
+    setTimeout(() => $('#adminUser').focus(), 50);
+  }
+  function closeAdminModal(){
+    $('#adminModal').classList.remove('open');
+  }
+
+  $('#openAdminModalBtn').addEventListener('click', openAdminModal);
+  $('#adminModalCancelBtn').addEventListener('click', closeAdminModal);
+  $('#adminModal').addEventListener('click', e => { if(e.target === $('#adminModal')) closeAdminModal(); });
+
+  function renderAdminDeptSections(){
+    const container = $('#adminDeptSections');
+    container.innerHTML = DEPARTMENTS.map(dept => {
+      const list = getDeptPersonnel(dept.abbr);
+      return `
+      <div class="dept-admin-section" data-dept-section="${dept.no}">
+        <div class="dept-admin-header" data-abbr="${dept.abbr}">
+          <span>${dept.no}.</span> ${dept.abbr}
+          <span style="margin-left:auto;font-weight:400;font-size:.76rem;" data-role="admin-count">${list.length} นาย</span>
+          <span style="margin-left:8px;font-size:.7rem;" class="arrow-icon">▸</span>
+        </div>
+        <div class="dept-admin-body" data-role="admin-body">
+          <div class="dept-admin-add">
+            <input type="text" data-role="admin-add-input" placeholder="ยศ ชื่อ-สกุล">
+            <button class="btn btn-accent btn-sm" data-admin-add="${dept.abbr}">+ เพิ่ม</button>
+          </div>
+          <div class="dept-personnel-list" data-role="admin-list">
+            ${renderAdminPersonnelList(dept.abbr)}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // header toggle
+    $$('.dept-admin-header', container).forEach(h => {
+      h.addEventListener('click', () => {
+        const section = h.closest('.dept-admin-section');
+        const body = section.querySelector('[data-role="admin-body"]');
+        const arrow = h.querySelector('.arrow-icon');
+        body.classList.toggle('open');
+        arrow.textContent = body.classList.contains('open') ? '▾' : '▸';
+      });
+    });
+
+    // add button listeners
+    $$('[data-admin-add]', container).forEach(btn => {
+      const section = btn.closest('.dept-admin-section');
+      const input = section.querySelector('[data-role="admin-add-input"]');
+      btn.addEventListener('click', async () => {
+        const abbr = btn.dataset.adminAdd;
+        const val = input.value.trim();
+        if(!val) return;
+        if(!deptPersonnel[abbr]) deptPersonnel[abbr] = [];
+        deptPersonnel[abbr].push(val);
+        input.value = '';
+        await saveDeptPersonnel();
+        refreshAdminList(section, abbr);
+        updateAdminCount(section, abbr);
+        initDepartments(); renderReport();
+        showToast(`เพิ่ม ${val} ใน ${abbr} แล้ว`);
+      });
+      input.addEventListener('keydown', e => {
+        if(e.key==='Enter'){ e.preventDefault(); btn.click(); }
+      });
+    });
+
+    // delete/edit via event delegation
+    $$('.dept-admin-section', container).forEach(section => {
+      const header = section.querySelector('.dept-admin-header');
+      const abbr = header.dataset.abbr;
+      const listEl = section.querySelector('[data-role="admin-list"]');
+      if(!listEl) return;
+      listEl.addEventListener('click', async e => {
+        const delBtn = e.target.closest('[data-admin-del]');
+        const editBtn = e.target.closest('[data-admin-edit]');
+        const saveBtn = e.target.closest('[data-admin-save]');
+        const cancelBtn = e.target.closest('[data-admin-cancel]');
+
+        if(delBtn){
+          const idx = Number(delBtn.dataset.adminDel);
+          const name = deptPersonnel[abbr][idx];
+          deptPersonnel[abbr].splice(idx, 1);
+          await saveDeptPersonnel();
+          refreshAdminList(section, abbr);
+          updateAdminCount(section, abbr);
+          initDepartments(); renderReport();
+          showToast(`ลบ ${name} แล้ว`);
+        }
+        if(editBtn){
+          const idx = Number(editBtn.dataset.adminEdit);
+          const item = listEl.querySelectorAll('.dept-personnel-item')[idx];
+          const currentName = deptPersonnel[abbr][idx];
+          item.classList.add('editing');
+          item.innerHTML = `
+            <input type="text" value="${currentName}" data-role="edit-input">
+            <div class="edit-actions">
+              <button class="btn-save" data-admin-save="${idx}">บันทึก</button>
+              <button class="btn-cancel" data-admin-cancel="${idx}">ยกเลิก</button>
+            </div>`;
+          item.querySelector('[data-role="edit-input"]').focus();
+        }
+        if(saveBtn){
+          const idx = Number(saveBtn.dataset.adminSave);
+          const item = saveBtn.closest('.dept-personnel-item');
+          const input = item ? item.querySelector('[data-role="edit-input"]') : null;
+          const newVal = input ? input.value.trim() : '';
+          if(newVal){ deptPersonnel[abbr][idx] = newVal; await saveDeptPersonnel(); }
+          refreshAdminList(section, abbr);
+          initDepartments(); renderReport();
+          showToast('แก้ไขรายชื่อแล้ว');
+        }
+        if(cancelBtn){ refreshAdminList(section, abbr); }
+      });
+    });
+  }
+
+  function renderAdminPersonnelList(abbr){
+    const list = getDeptPersonnel(abbr);
+    if(list.length === 0) return '<div class="roster-empty">ยังไม่มีรายชื่อ</div>';
+    return list.map((name, i) => `
+      <div class="dept-personnel-item">
+        <span>${name}</span>
+        <div class="edit-actions">
+          <button class="btn-edit" data-admin-edit="${i}">แก้ไข</button>
+          <button class="btn btn-danger-ghost" data-admin-del="${i}">ลบ</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function refreshAdminList(section, abbr){
+    const listEl = section.querySelector('[data-role="admin-list"]');
+    if(listEl) listEl.innerHTML = renderAdminPersonnelList(abbr);
+  }
+
+  function updateAdminCount(section, abbr){
+    const el = section.querySelector('[data-role="admin-count"]');
+    if(el) el.textContent = `${getDeptPersonnel(abbr).length} นาย`;
+  }
+
+  $('#adminLoginBtn').addEventListener('click', () => {
+    const u = $('#adminUser').value.trim();
+    const p = $('#adminPass').value;
+    if(u === ADMIN_USER && p === ADMIN_PASS){
+      isAdmin = true;
+      closeAdminModal();
+      $('#adminPanel').classList.add('active');
+      $('#adminModeTag').style.display = '';
+      $('#openAdminModalBtn').style.display = 'none';
+      renderAdminDeptSections();
+      renderAdminClerkList();
+      renderAdminDeptList();
+      showToast('เข้าสู่โหมดแอดมินแล้ว');
+    } else {
+      $('#adminLoginError').style.display = 'block';
+    }
+  });
+  $('#adminPass').addEventListener('keydown', e => { if(e.key==='Enter') $('#adminLoginBtn').click(); });
+
+  $('#adminLogoutBtn').addEventListener('click', () => {
+    isAdmin = false;
+    $('#adminPanel').classList.remove('active');
+    $('#adminModeTag').style.display = 'none';
+    $('#openAdminModalBtn').style.display = '';
+    showToast('ออกจากโหมดแอดมินแล้ว');
+  });
+
+  /* ---------------- time / day type ---------------- */
+  function refreshTimeOptions(){
+    const type = $('#dayType').value;
+    const sel = $('#timeSelect');
+    const prev = sel.value;
+    sel.innerHTML = TIME_OPTIONS[type].map(t => `<option value="${t}">${t}</option>`).join('');
+    sel.value = TIME_OPTIONS[type].includes(prev) ? prev : TIME_OPTIONS[type][0];
+    const tag = $('#dayTypeTag');
+    if(type === 'normal'){
+      tag.textContent = 'วันทำงานปกติ';
+      tag.style.cssText = 'background:#e8f6ee;color:#1f9254;border-color:#a8dfc0;';
+    } else {
+      tag.textContent = 'วันหยุด';
+      tag.style.cssText = 'background:#e9eaec;color:#555b68;border-color:#c5c8ce;';
+    }
+  }
+
+  /* ---------------- department cards ---------------- */
+  function numOptions(min, max, selected){
+    let html = '';
+    for(let i = min; i <= max; i++){
+      html += `<option value="${i}" ${i===selected?'selected':''}>${i}</option>`;
+    }
+    return html;
+  }
+
+  function buildAbsenteeNameOptions(){
+    // Collect all personnel from all departments
+    const allNames = [];
+    DEPARTMENTS.forEach(d => {
+      getDeptPersonnel(d.abbr).forEach(n => { if(!allNames.includes(n)) allNames.push(n); });
+    });
+    return '<option value="">-- เลือกชื่อ --</option>' +
+      allNames.map(n => `<option value="${n}">${n}</option>`).join('');
+  }
+
+  function buildDeptCard(dept){
+    const list = getDeptPersonnel(dept.abbr);
+    const defaultTotal = list.length || 1;
+    return `
+    <div class="dept-card" data-dept-no="${dept.no}" data-dept-abbr="${dept.abbr}">
+      <div class="dept-head">
+        <span class="dept-badge">${dept.no}</span>
+        <span class="dept-name">${dept.abbr} <span style="font-weight:400;font-size:.75rem;color:var(--text-muted);">(${list.length} นาย)</span></span>
+        <span class="status-pill ok" data-role="status-pill">ครบครับ</span>
+      </div>
+      <div class="dept-row">
+        <label class="field">
+          <span>ยอด (นาย)</span>
+          <select data-role="total">${numOptions(1,defaultTotal,defaultTotal)}</select>
+        </label>
+        <label class="field checkbox-field">
+          <input type="checkbox" data-role="has-absent">
+          <span>มีกำลังพลจำหน่าย</span>
+        </label>
+        <label class="field" data-role="absent-count-field" hidden>
+          <span>จำนวนจำหน่าย (นาย)</span>
+          <select data-role="absent-count">${numOptions(1,defaultTotal,1)}</select>
+        </label>
+      </div>
+      <div class="absentee-list" data-role="absentee-list" data-dept-abbr="${dept.abbr}"></div>
+    </div>`;
+  }
+
+  function reasonOptionsHtml(selected){
+    return '<option value="">-- เหตุผล --</option>' +
+      REASON_OPTIONS.map(r => `<option value="${r}" ${r===selected?'selected':''}>${r}</option>`).join('') +
+      `<option value="อื่นๆ" ${selected==='อื่นๆ'?'selected':''}>อื่นๆ (ระบุ)</option>`;
+  }
+
+  function buildAbsenteeRow(idx, deptAbbr){
+    const list = getDeptPersonnel(deptAbbr);
+    const nameOpts = '<option value="">-- เลือกชื่อ --</option>' +
+      list.map(n => `<option value="${n}">${n}</option>`).join('');
+    return `
+    <div class="absentee-row">
+      <span class="absentee-no">${idx}</span>
+      <select data-role="absentee-name">${nameOpts}</select>
+      <select data-role="absentee-reason">${reasonOptionsHtml('')}</select>
+      <input type="text" data-role="absentee-reason-custom" placeholder="ระบุเหตุผล" hidden>
+    </div>`;
+  }
+
+  function rebuildAbsenteeRows(card, count){
+    const abbr = card.dataset.deptAbbr;
+    const wrap = card.querySelector('[data-role="absentee-list"]');
+    const existing = $$('.absentee-row', wrap);
+    const oldValues = existing.map(r => ({
+      name: r.querySelector('[data-role="absentee-name"]').value,
+      reason: r.querySelector('[data-role="absentee-reason"]').value,
+      custom: r.querySelector('[data-role="absentee-reason-custom"]').value
+    }));
+    let html = '';
+    for(let i = 1; i <= count; i++) html += buildAbsenteeRow(i, abbr);
+    wrap.innerHTML = html;
+    $$('.absentee-row', wrap).forEach((row, i) => {
+      if(oldValues[i]){
+        const nameSel = row.querySelector('[data-role="absentee-name"]');
+        const list = getDeptPersonnel(abbr);
+        if(list.includes(oldValues[i].name)) nameSel.value = oldValues[i].name;
+        const reasonSel = row.querySelector('[data-role="absentee-reason"]');
+        reasonSel.value = oldValues[i].reason;
+        const customInput = row.querySelector('[data-role="absentee-reason-custom"]');
+        if(oldValues[i].reason === 'อื่นๆ'){
+          customInput.hidden = false;
+          customInput.value = oldValues[i].custom;
+        }
+      }
+    });
+  }
+
+  function updateStatusPill(card){
+    const hasAbsent = card.querySelector('[data-role="has-absent"]').checked;
+    const pill = card.querySelector('[data-role="status-pill"]');
+    if(!hasAbsent){
+      pill.textContent = 'ครบครับ'; pill.className = 'status-pill ok';
+    } else {
+      const count = card.querySelector('[data-role="absent-count"]').value;
+      pill.textContent = `จำหน่าย ${count} นาย`; pill.className = 'status-pill warn';
+    }
+  }
+
+  function initDepartments(){
+    const container = $('#departmentsContainer');
+    container.innerHTML = DEPARTMENTS.map(buildDeptCard).join('');
+  }
+
+  $('#departmentsContainer').addEventListener('change', e => {
+    const card = e.target.closest('.dept-card');
+    if(!card) return;
+    if(e.target.dataset.role === 'has-absent'){
+      const field = card.querySelector('[data-role="absent-count-field"]');
+      const list = card.querySelector('[data-role="absentee-list"]');
+      if(e.target.checked){
+        field.hidden = false;
+        rebuildAbsenteeRows(card, Number(card.querySelector('[data-role="absent-count"]').value));
+      } else {
+        field.hidden = true;
+        list.innerHTML = '';
+      }
+      updateStatusPill(card);
+    }
+    if(e.target.dataset.role === 'absent-count'){
+      rebuildAbsenteeRows(card, Number(e.target.value));
+      updateStatusPill(card);
+    }
+    if(e.target.dataset.role === 'absentee-reason'){
+      const row = e.target.closest('.absentee-row');
+      const customInput = row.querySelector('[data-role="absentee-reason-custom"]');
+      if(e.target.value === 'อื่นๆ'){
+        customInput.hidden = false;
+      } else {
+        customInput.hidden = true; customInput.value = '';
+      }
+    }
+    renderReport();
+  });
+  $('#departmentsContainer').addEventListener('input', renderReport);
+
+  /* ---------------- report generation ---------------- */
+  function renderReport(){
+    const time = $('#timeSelect').value;
+    const time4 = time.replace(':','');
+    const dateISO = $('#dateInput').value;
+    const thaiDate = thaiDateString(dateISO);
+    const recipient = $('#recipientInput').value.trim() || '[ยังไม่ระบุผู้รับรายงาน]';
+    const clerkManual = $('#clerkManual').value.trim();
+    const clerk = clerkManual || $('#clerkSelect').value || '[ยังไม่เลือกเสมียนเวร]';
+
+    let totalSum = 0, absentSum = 0, deptWithAbsent = 0;
+    const lines = [];
+    lines.push(`เรียน ${recipient}`);
+    lines.push(`กระผม ${clerk} เป็นเสมียนเวร ประจำวันที่ ${thaiDate} ขออนุญาตรายงานการปฏิบัติประจำวันตามสายงาน ห้วงเวลา ${time4} น. ดังนี้ ครับ`);
+
+    $$('.dept-card').forEach(card => {
+      const no = card.dataset.deptNo;
+      const abbr = card.dataset.deptAbbr;
+      const total = Number(card.querySelector('[data-role="total"]').value);
+      const hasAbsent = card.querySelector('[data-role="has-absent"]').checked;
+      totalSum += total;
+      if(!hasAbsent){
+        lines.push(`${no}. ${abbr} ยอด ${total} นาย ครบครับ`);
+      } else {
+        deptWithAbsent++;
+        const count = Number(card.querySelector('[data-role="absent-count"]').value);
+        absentSum += count;
+        const rows = $$('.absentee-row', card).map(r => {
+          const name = r.querySelector('[data-role="absentee-name"]').value || '(ยังไม่ระบุชื่อ)';
+          let reason = r.querySelector('[data-role="absentee-reason"]').value;
+          if(reason === 'อื่นๆ'){
+            reason = r.querySelector('[data-role="absentee-reason-custom"]').value.trim() || '(ยังไม่ระบุเหตุผล)';
+          } else if(!reason){ reason = '(ยังไม่ระบุเหตุผล)'; }
+          return `${name} ${reason}`;
+        });
+        lines.push(`${no}. ${abbr} ยอด ${total} นาย จำหน่าย ${count} นาย ${rows.join(', ')} ครบครับ`);
+      }
+    });
+
+    lines.push('');
+    lines.push(`สรุปยอดกำลังพลทั้งหมด ${totalSum} นาย`);
+    lines.push(`สรุปยอดจำหน่ายทั้งหมด ${absentSum} นาย`);
+    lines.push(`คงยอดปฏิบัติงาน ${totalSum - absentSum} นาย`);
+
+    $('#reportOutput').textContent = lines.join('\n');
+    $('#sumTotal').textContent = totalSum;
+    $('#sumAbsent').textContent = absentSum;
+    $('#sumRemain').textContent = totalSum - absentSum;
+    $('#liveTime').textContent = time;
+    $('#liveClerk').textContent = ($('#clerkManual').value.trim()) || $('#clerkSelect').value || 'ยังไม่เลือก';
+    $('#liveDate').textContent = thaiDate;
+    const okCount = DEPARTMENTS.length - deptWithAbsent;
+    $('#boardStatusText').textContent = deptWithAbsent === 0
+      ? `ครบ ${DEPARTMENTS.length}/${DEPARTMENTS.length} ฝ่าย`
+      : `ครบ ${okCount}/${DEPARTMENTS.length} ฝ่าย · จำหน่าย ${deptWithAbsent} ฝ่าย`;
+    $('#boardDot').className = deptWithAbsent === 0 ? 'dot' : 'dot warn';
+  }
+
+  /* ---------------- top-level listeners ---------------- */
+  $('#dayType').addEventListener('change', () => { refreshTimeOptions(); renderReport(); });
+  ['timeSelect','dateInput','recipientInput','clerkSelect','clerkManual'].forEach(id => {
+    $('#'+id).addEventListener('input', renderReport);
+    $('#'+id).addEventListener('change', renderReport);
+  });
+  // ปุ่มเพิ่มชื่อเสมียนเวรจากช่องพิมพ์เองเข้า dropdown
+  $('#addClerkFromManualBtn').addEventListener('click', async () => {
+    const val = $('#clerkManual').value.trim();
+    if(!val){ showToast('กรุณาพิมพ์ ยศ ชื่อ-สกุล ก่อนกดเพิ่ม'); return; }
+    if(clerks.includes(val)){ showToast(`"${val}" มีในรายชื่อแล้ว`); return; }
+    clerks.push(val);
+    await saveList('duty-clerks', clerks);
+    renderClerkSelect();
+    renderAdminClerkList();
+    // เลือก dropdown เป็นชื่อที่เพิ่งเพิ่ม และล้างช่องพิมพ์เอง
+    $('#clerkSelect').value = val;
+    $('#clerkManual').value = '';
+    renderReport();
+    showToast(`เพิ่ม "${val}" เข้ารายชื่อเสมียนเวรแล้ว`);
+  });
+  $('#clerkManual').addEventListener('keydown', e => { if(e.key==='Enter'){ e.preventDefault(); $('#addClerkFromManualBtn').click(); } });
+  $('#clerkSelect').addEventListener('change', () => {
+    if($('#clerkSelect').value) $('#clerkManual').value = '';
+    saveList('duty-clerk-name', $('#clerkSelect').value);
+    renderReport();
+  });
+  // เมื่อพิมพ์ในช่องเอง → รีเซ็ต dropdown เป็นค่าว่าง
+  $('#clerkManual').addEventListener('input', () => {
+    if($('#clerkManual').value.trim()) $('#clerkSelect').value = '';
+    renderReport();
+  });
+
+  /* ---------------- actions: copy / download / reset ---------------- */
+  function showToast(msg){
+    const t = $('#toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 1600);
+  }
+  $('#copyBtn').addEventListener('click', async () => {
+    const text = $('#reportOutput').textContent;
+    try{
+      await navigator.clipboard.writeText(text);
+      showToast('คัดลอกรายงานแล้ว');
+    }catch(e){
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); showToast('คัดลอกรายงานแล้ว'); }
+      catch(err){ showToast('คัดลอกไม่สำเร็จ ลองเลือกข้อความเอง'); }
+      ta.remove();
+    }
+  });
+  $('#downloadBtn').addEventListener('click', () => {
+    const text = $('#reportOutput').textContent;
+    const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `รายงานประจำวัน-${$('#dateInput').value||'today'}-${$('#timeSelect').value.replace(':','')}.txt`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    showToast('บันทึกไฟล์แล้ว');
+  });
+  $('#resetBtn').addEventListener('click', () => {
+    initDepartments(); renderReport();
+    showToast('เริ่มรายงานใหม่แล้ว');
+  });
+
+  /* ---------------- init ---------------- */
+  async function init(){
+    $('#dateInput').value = todayISO();
+    refreshTimeOptions();
+
+    // Load clerk roster — if never saved, use defaults
+    const savedClerks = await loadList('duty-clerks');
+    if(savedClerks){
+      clerks = savedClerks;
+    } else {
+      clerks = [...DEFAULT_CLERKS];
+      await saveList('duty-clerks', clerks);
+    }
+    renderClerkSelect();
+
+    // Restore last-used clerk selection (if still present in roster)
+    const savedClerkName = await loadList('duty-clerk-name');
+    if(savedClerkName && clerks.includes(savedClerkName)) $('#clerkSelect').value = savedClerkName;
+
+    // Load dept personnel — if never saved, use defaults
+    const savedDeptPersonnel = await loadList('dept-personnel-v2');
+    if(savedDeptPersonnel){
+      deptPersonnel = savedDeptPersonnel;
+    } else {
+      deptPersonnel = JSON.parse(JSON.stringify(DEFAULT_DEPT_PERSONNEL));
+      await saveDeptPersonnel();
+    }
+
+    // Load department list (ฝ่ายอำนวยการ) — if never saved, use default
+    const savedDepartments = await loadList('departments-v1');
+    if(savedDepartments && savedDepartments.length){
+      DEPARTMENTS = savedDepartments;
+    } else {
+      await saveDepartments();
+    }
+
+    initDepartments();
+    renderReport();
+  }
+  init();
+})();
+</script>
+</body>
+</html>

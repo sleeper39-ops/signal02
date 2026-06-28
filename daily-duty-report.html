@@ -1029,9 +1029,78 @@
     }
   }
 
-  function initDepartments(){
+  /* ---------------- preserve/restore department absent state ---------------- */
+  // เก็บสถานะจำหน่ายของแต่ละฝ่ายไว้ใน memory (ไม่หายเมื่อ initDepartments ถูกเรียกซ้ำ)
+  let savedDeptState = {}; // { 'ฝขว.': { hasAbsent, absentCount, absentees:[{name,reason,custom}] } }
+
+  function captureDeptState(){
+    $$('.dept-card').forEach(card => {
+      const abbr = card.dataset.deptAbbr;
+      const hasAbsent = card.querySelector('[data-role="has-absent"]').checked;
+      const total = card.querySelector('[data-role="total"]').value;
+      const absentCount = card.querySelector('[data-role="absent-count"]').value;
+      const absentees = $$('.absentee-row', card).map(r => ({
+        name: r.querySelector('[data-role="absentee-name"]').value,
+        reason: r.querySelector('[data-role="absentee-reason"]').value,
+        custom: r.querySelector('[data-role="absentee-reason-custom"]').value
+      }));
+      savedDeptState[abbr] = { hasAbsent, total: Number(total), absentCount: Number(absentCount), absentees };
+    });
+  }
+
+  function restoreDeptState(){
+    $$('.dept-card').forEach(card => {
+      const abbr = card.dataset.deptAbbr;
+      const st = savedDeptState[abbr];
+      if(!st) return;
+
+      // คืนค่า total (ยอด)
+      const totalSel = card.querySelector('[data-role="total"]');
+      // ปรับ options ถ้า total ที่บันทึกไว้อยู่นอกช่วง
+      if(totalSel && st.total > 0){
+        const maxOpt = Math.max(...Array.from(totalSel.options).map(o => Number(o.value)));
+        if(st.total <= maxOpt) totalSel.value = st.total;
+      }
+
+      if(!st.hasAbsent) return; // ถ้าไม่มีจำหน่าย ไม่ต้องกู้คืนอะไร
+
+      const countSel = card.querySelector('[data-role="absent-count"]');
+      const hasAbsentChk = card.querySelector('[data-role="has-absent"]');
+      hasAbsentChk.checked = true;
+      countSel.disabled = false;
+      countSel.value = st.absentCount;
+
+      rebuildAbsenteeRows(card, st.absentCount);
+
+      // คืนชื่อและเหตุผลในแต่ละแถว
+      $$('.absentee-row', card).forEach((row, i) => {
+        const saved = st.absentees[i];
+        if(!saved) return;
+        const nameSel = row.querySelector('[data-role="absentee-name"]');
+        const reasonSel = row.querySelector('[data-role="absentee-reason"]');
+        const customInput = row.querySelector('[data-role="absentee-reason-custom"]');
+        // ตั้งชื่อ (ถ้ายังมีใน option)
+        if(nameSel && saved.name){
+          const opt = Array.from(nameSel.options).find(o => o.value === saved.name);
+          if(opt) nameSel.value = saved.name;
+        }
+        // ตั้งเหตุผล
+        if(reasonSel && saved.reason) reasonSel.value = saved.reason;
+        if(saved.reason === 'อื่นๆ' && customInput){
+          customInput.hidden = false;
+          customInput.value = saved.custom || '';
+        }
+      });
+
+      updateStatusPill(card);
+    });
+  }
+
+  function initDepartments(clearState){
+    if(!clearState) captureDeptState(); // บันทึกสถานะก่อน rebuild (ยกเว้นกรณีรีเซ็ต)
     const container = $('#departmentsContainer');
     container.innerHTML = DEPARTMENTS.map(buildDeptCard).join('');
+    if(!clearState) restoreDeptState(); // กู้คืนสถานะหลัง rebuild
   }
 
   $('#departmentsContainer').addEventListener('change', e => {
@@ -1193,7 +1262,8 @@
     showToast('บันทึกไฟล์แล้ว');
   });
   $('#resetBtn').addEventListener('click', () => {
-    initDepartments(); renderReport();
+    savedDeptState = {}; // ล้างสถานะที่จำไว้ทั้งหมด
+    initDepartments(true); renderReport();
     showToast('เริ่มรายงานใหม่แล้ว');
   });
 

@@ -1370,13 +1370,14 @@ function computeCounts(group, mode){
 /* ================= RENDER: HERO ================= */
 function renderHero(){
   /* Hero ring shows % based on ringMode setting */
-  const totalWork = ROSTER.length;
   const rollRoster = ROSTER.filter(p => p.r !== "conscript");
+  const workRoster = conscriptRowHidden ? rollRoster : ROSTER;
+  const totalWork = workRoster.length;
   const totalRoll = rollRoster.length;
 
   const offRoll = rollRoster.filter(p => SUMMARY_COLS_ROLL.includes(statusMapRoll[p.id])).length;
   const presentRoll = totalRoll - offRoll;
-  const offWork = ROSTER.filter(p => SUMMARY_COLS_WORK.includes(statusMapWork[p.id])).length;
+  const offWork = workRoster.filter(p => SUMMARY_COLS_WORK.includes(statusMapWork[p.id])).length;
   const presentWork = totalWork - offWork;
 
   /* pick values based on ringMode */
@@ -1406,7 +1407,7 @@ function renderHero(){
   const activeStatuses = ringMode === "roll" ? STATUSES_ROLL : STATUSES_WORK;
   const activeSumCols  = ringMode === "roll" ? SUMMARY_COLS_ROLL : SUMMARY_COLS_WORK;
   const activeSMap     = ringMode === "roll" ? statusMapRoll : statusMapWork;
-  const activeRoster   = ringMode === "roll" ? rollRoster : ROSTER;
+  const activeRoster   = ringMode === "roll" ? rollRoster : workRoster;
   const byStatus = {};
   activeSumCols.forEach(c => byStatus[c] = activeRoster.filter(p => activeSMap[p.id]===c).length);
   const statsHtml = activeStatuses.filter(s=>s.key!=="ปกติ").map(s => `
@@ -1726,6 +1727,7 @@ async function init(){
     btn.classList.toggle("hidden-row", conscriptRowHidden);
     btn.title = conscriptRowHidden ? "แสดงแถวทหารกองประจำการ" : "ซ่อนแถวทหารกองประจำการ";
     renderSummaryTable("work");
+    renderHero();
   });
 
   /* send/copy work */

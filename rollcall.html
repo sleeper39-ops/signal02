@@ -215,6 +215,14 @@ table.sumtable tbody tr.total-row{background:var(--panel2);}
 table.sumtable tbody tr.total-row td{border-top:1px solid var(--line-strong); font-weight:700;}
 .col-rwy{color:var(--sage-dim); font-weight:700 !important;}
 .col-rwd{color:var(--coral); font-weight:700 !important;}
+.conscript-toggle-btn{
+  flex-shrink:0; font-size:13px; padding:4px 8px; border-radius:7px;
+  border:1px solid var(--line-strong); background:var(--panel); color:var(--txt-dim);
+  cursor:pointer; transition:all 0.18s; line-height:1;
+}
+.conscript-toggle-btn:hover{border-color:var(--violet); color:var(--violet);}
+.conscript-toggle-btn.hidden-row{border-color:var(--amber); color:var(--amber); background:var(--amber-tint);}
+tr.conscript-row.row-hidden{ display:none; }
 
 /* ===== NAME LIST (summary) ===== */
 .namelist-group{margin-bottom:14px;}
@@ -508,6 +516,7 @@ footer{text-align:center; padding:30px 0 10px; color:var(--txt-faint); font-size
   <div class="tabpane" id="tab-summary">
     <div class="section-head" style="margin-top:4px;">
       <h3 style="color:var(--blue);">สถานภาพกำลังพล (ปฏิบัติงาน)</h3>
+      <button class="conscript-toggle-btn" id="conscriptToggleBtn" title="ซ่อน/แสดงแถวทหารกองประจำการ">👁 ทกป.</button>
     </div>
     <div class="summary-card">
       <table class="sumtable" id="summaryTableWork"></table>
@@ -665,6 +674,9 @@ footer{text-align:center; padding:30px 0 10px; color:var(--txt-faint); font-size
 const ADMIN_ID = "admin";
 const ADMIN_PASS = "admin2";
 let isAdmin = false;
+
+/* ================= CONSCRIPT ROW TOGGLE ================= */
+let conscriptRowHidden = false;
 
 /* ================= ROSTER DATA (from บก.ควบคุม 2 sheet) ================= */
 const DEFAULT_ROSTER = [
@@ -1433,10 +1445,18 @@ function renderSummaryTable(mode){
   const presentAll = officer.present + nco.present + (isWork ? conscript.present : 0);
   cols.forEach(c => rowsTotal[c] = (officer.counts[c]||0) + (nco.counts[c]||0) + (isWork ? (conscript.counts[c]||0) : 0));
 
+  function rowWithClass(label, data, cls){
+    return `<tr class="${cls}">
+      <td>${label}</td><td>${data.total}</td>
+      ${cols.map(c => `<td>${data.counts[c]}</td>`).join("")}
+      <td class="col-rwd">${data.deducted}</td><td class="col-rwy">${data.present}</td>
+    </tr>`;
+  }
+
   const body = `<tbody>
     ${row("สัญญาบัตร", officer)}
     ${row("ประทวน", nco)}
-    ${isWork ? row("ทหารกองประจำการ", conscript) : ""}
+    ${isWork ? rowWithClass("ทหารกองประจำการ", conscript, "conscript-row" + (conscriptRowHidden ? " row-hidden" : "")) : ""}
     <tr class="total-row">
       <td>รวม</td><td>${totalAll}</td>
       ${cols.map(c => `<td>${rowsTotal[c]}</td>`).join("")}
@@ -1696,6 +1716,15 @@ async function init(){
   document.getElementById("ringModeSelect").addEventListener("change", (e) => {
     ringMode = e.target.value;
     renderHero();
+  });
+
+  /* conscript row toggle */
+  document.getElementById("conscriptToggleBtn").addEventListener("click", () => {
+    conscriptRowHidden = !conscriptRowHidden;
+    const btn = document.getElementById("conscriptToggleBtn");
+    btn.classList.toggle("hidden-row", conscriptRowHidden);
+    btn.title = conscriptRowHidden ? "แสดงแถวทหารกองประจำการ" : "ซ่อนแถวทหารกองประจำการ";
+    renderSummaryTable("work");
   });
 
   /* send/copy work */

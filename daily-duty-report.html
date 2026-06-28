@@ -425,21 +425,18 @@
     measurementId: "G-K3VJ5LQW53"
   };
 
-  const app = initializeApp(firebaseConfig);
-  const db  = getDatabase(app);
+  let fbSet = null, fbGet = null;
+  try {
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
+    fbSet = async (key, val) => { await set(ref(db, 'duty-report/' + key), val); };
+    fbGet = async (key) => {
+      const snap = await get(child(ref(db), 'duty-report/' + key));
+      return snap.exists() ? snap.val() : null;
+    };
+  } catch(e) { console.warn('Firebase init failed', e); }
 
-  // expose helpers ให้ IIFE ด้านล่างใช้งาน
-  window._fbSet = async (key, val) => {
-    await set(ref(db, 'duty-report/' + key), val);
-  };
-  window._fbGet = async (key) => {
-    const snap = await get(child(ref(db), 'duty-report/' + key));
-    return snap.exists() ? snap.val() : null;
-  };
-  window._fbReady = true;
-</script>
-<script>
-(function(){
+
   const THAI_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   const TIME_OPTIONS = { normal:['09:00','11:00','15:00'], holiday:['11:00','15:00'] };
   const REASON_OPTIONS = ['ราชการ','ลาป่วย','ขออนุญาต','ธุรการ','ฝึก/อบรม','ไปพบแพทย์'];
@@ -528,19 +525,12 @@
   async function loadList(key){
     // 1) Firebase
     try{
-      if(window._fbGet){
-        const val = await window._fbGet(key);
+      if(fbGet){
+        const val = await fbGet(key);
         if(val !== null) return val;
       }
     }catch(e){ console.warn('Firebase load failed', key, e); }
-    // 2) artifact storage
-    if(typeof window !== 'undefined' && window.storage && typeof window.storage.get === 'function'){
-      try{
-        const res = await window.storage.get(key, false);
-        if(res && res.value) return JSON.parse(res.value);
-      }catch(e){}
-    }
-    // 3) localStorage
+    // 2) localStorage
     try{
       const raw = localStorage.getItem(STORAGE_PREFIX + key);
       return raw ? JSON.parse(raw) : null;
@@ -550,13 +540,9 @@
   async function saveList(key, val){
     // 1) Firebase
     try{
-      if(window._fbSet) await window._fbSet(key, val);
+      if(fbSet) await fbSet(key, val);
     }catch(e){ console.warn('Firebase save failed', key, e); }
-    // 2) artifact storage
-    if(typeof window !== 'undefined' && window.storage && typeof window.storage.set === 'function'){
-      try{ await window.storage.set(key, JSON.stringify(val), false); }catch(e){}
-    }
-    // 3) localStorage
+    // 2) localStorage
     try{ localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(val)); }
     catch(e){ console.error('save failed', key, e); }
   }
@@ -1230,10 +1216,9 @@
     renderReport();
   }
   init().then(() => {
-    // ตรวจสอบสถานะ Firebase
     const dot = document.getElementById('fbDot');
     const txt = document.getElementById('fbStatusText');
-    if(window._fbReady){
+    if(fbGet){
       dot.style.background = 'var(--ok)';
       txt.textContent = 'Firebase ✓';
     } else {
@@ -1244,7 +1229,6 @@
     document.getElementById('fbDot').style.background = 'var(--danger)';
     document.getElementById('fbStatusText').textContent = 'Firebase ✗';
   });
-})();
 </script>
 </body>
 </html>

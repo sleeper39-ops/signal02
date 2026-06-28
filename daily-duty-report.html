@@ -909,9 +909,9 @@
           <input type="checkbox" data-role="has-absent">
           <span>มีกำลังพลจำหน่าย</span>
         </label>
-        <label class="field" data-role="absent-count-field" hidden>
+        <label class="field" data-role="absent-count-field">
           <span>จำนวนจำหน่าย (นาย)</span>
-          <select data-role="absent-count">${numOptions(1,defaultTotal,1)}</select>
+          <select data-role="absent-count" disabled><option value="0" selected>ไม่มี</option>${numOptions(1,defaultTotal,0)}</select>
         </label>
       </div>
       <div class="absentee-list" data-role="absentee-list" data-dept-abbr="${dept.abbr}"></div>
@@ -985,13 +985,15 @@
     const card = e.target.closest('.dept-card');
     if(!card) return;
     if(e.target.dataset.role === 'has-absent'){
-      const field = card.querySelector('[data-role="absent-count-field"]');
+      const countSel = card.querySelector('[data-role="absent-count"]');
       const list = card.querySelector('[data-role="absentee-list"]');
       if(e.target.checked){
-        field.hidden = false;
-        rebuildAbsenteeRows(card, Number(card.querySelector('[data-role="absent-count"]').value));
+        countSel.disabled = false;
+        countSel.value = countSel.value === '0' ? '1' : countSel.value;
+        rebuildAbsenteeRows(card, Number(countSel.value));
       } else {
-        field.hidden = true;
+        countSel.disabled = true;
+        countSel.value = '0';
         list.innerHTML = '';
       }
       updateStatusPill(card);
@@ -1046,9 +1048,10 @@
           if(reason === 'อื่นๆ'){
             reason = r.querySelector('[data-role="absentee-reason-custom"]').value.trim() || '(ยังไม่ระบุเหตุผล)';
           } else if(!reason){ reason = '(ยังไม่ระบุเหตุผล)'; }
-          return `${name} ${reason}`;
+          return `   - ${name} ${reason}`;
         });
-        lines.push(`${no}. ${abbr} ยอด ${total} นาย จำหน่าย ${count} นาย ${rows.join(', ')} ครบครับ`);
+        lines.push(`${no}. ${abbr} ยอด ${total} นาย จำหน่าย ${count} นาย คงเหลือ ${total - count} นาย ครบครับ`);
+        rows.forEach(r => lines.push(r));
       }
     });
 

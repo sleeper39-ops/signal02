@@ -1058,7 +1058,7 @@
     lines.push('');
     lines.push(`สรุปยอดกำลังพลทั้งหมด ${totalSum} นาย`);
     lines.push(`สรุปยอดจำหน่ายทั้งหมด ${absentSum} นาย`);
-    lines.push(`คงยอดปฏิบัติงาน ${totalSum - absentSum} นาย`);
+    lines.push(`คงเหลือปฏิบัติงาน ${totalSum - absentSum} นาย`);
 
     $('#reportOutput').textContent = lines.join('\n');
     $('#sumTotal').textContent = totalSum;

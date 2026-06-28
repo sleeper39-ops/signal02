@@ -1490,9 +1490,10 @@ function buildReportHtml(mode){
   var officer = computeCounts("officer", mode);
   var nco = computeCounts("nco", mode);
   var conscript = isWork ? computeCounts("conscript", mode) : null;
-  var totalAll = officer.total + nco.total + (isWork ? conscript.total : 0);
-  var presentAll = officer.present + nco.present + (isWork ? conscript.present : 0);
-  var deductedAll = officer.deducted + nco.deducted + (isWork ? conscript.deducted : 0);
+  var includeConscript = isWork && !conscriptRowHidden;
+  var totalAll = officer.total + nco.total + (includeConscript ? conscript.total : 0);
+  var presentAll = officer.present + nco.present + (includeConscript ? conscript.present : 0);
+  var deductedAll = officer.deducted + nco.deducted + (includeConscript ? conscript.deducted : 0);
   var colorMap = {};
   statuses.forEach(function(s){ colorMap[s.key] = s.color; });
   var N = "\n";
@@ -1511,7 +1512,7 @@ function buildReportHtml(mode){
   var first = true;
   cols.forEach(function(c){
     var people = sortByRank(ROSTER.filter(function(p){
-      if(!isWork && p.r === "conscript") return false;
+      if(p.r === "conscript" && (!isWork || conscriptRowHidden)) return false;
       return sMap[p.id] === c;
     }));
     if(!people.length) return;
@@ -1545,9 +1546,10 @@ function buildReportText(mode){
   const officer = computeCounts("officer", mode);
   const nco = computeCounts("nco", mode);
   const conscript = isWork ? computeCounts("conscript", mode) : null;
-  const totalAll = officer.total + nco.total + (isWork ? conscript.total : 0);
-  const presentAll = officer.present + nco.present + (isWork ? conscript.present : 0);
-  const deductedAll = officer.deducted + nco.deducted + (isWork ? conscript.deducted : 0);
+  const includeConscript = isWork && !conscriptRowHidden;
+  const totalAll = officer.total + nco.total + (includeConscript ? conscript.total : 0);
+  const presentAll = officer.present + nco.present + (includeConscript ? conscript.present : 0);
+  const deductedAll = officer.deducted + nco.deducted + (includeConscript ? conscript.deducted : 0);
 
   const line = "─".repeat(30);
   let txt = `สถานภาพกำลังพล (${modeLabel}) บก.ควบคุม 2\n`;
@@ -1561,7 +1563,7 @@ function buildReportText(mode){
   let any = false;
   cols.forEach(c => {
     const people = ROSTER.filter(p => {
-      if(!isWork && p.r === "conscript") return false;
+      if(p.r === "conscript" && (!isWork || conscriptRowHidden)) return false;
       return sMap[p.id] === c;
     });
     if(people.length){ any = true; txt += `\n${c} (${people.length} นาย)\n` + people.map(p=>"  - " + p.n).join("\n") + "\n"; }
@@ -1720,6 +1722,7 @@ async function init(){
     btn.classList.toggle("hidden-row", conscriptRowHidden);
     btn.title = conscriptRowHidden ? "แสดงแถวทหารกองประจำการ" : "ซ่อนแถวทหารกองประจำการ";
     renderSummaryTable("work");
+    renderNameLists();
     renderHero();
   });
 

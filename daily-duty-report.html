@@ -558,6 +558,21 @@
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
 
+  /* ---------------- confirm delete helper ---------------- */
+  function showConfirmDelete(btn, onConfirm){
+    const item = btn.closest('.dept-personnel-item');
+    if(!item) return;
+    const original = item.innerHTML;
+    item.innerHTML = `
+      <span style="flex:1;color:var(--danger);font-size:.8rem;">⚠ ยืนยันการลบ?</span>
+      <div class="edit-actions">
+        <button class="btn-save" style="background:var(--danger);" data-confirm-yes>ยืนยันลบ</button>
+        <button class="btn-cancel" data-confirm-no>ยกเลิก</button>
+      </div>`;
+    item.querySelector('[data-confirm-yes]').addEventListener('click', onConfirm);
+    item.querySelector('[data-confirm-no]').addEventListener('click', () => { item.innerHTML = original; });
+  }
+
   /* ---------------- clerk select dropdown (synced with admin roster) ---------------- */
   function renderClerkSelect(){
     const sel = $('#clerkSelect');
@@ -603,12 +618,14 @@
     const cancelBtn = e.target.closest('[data-admin-clerk-cancel]');
 
     if(delBtn){
-      const idx = Number(delBtn.dataset.adminClerkDel);
-      const name = clerks[idx];
-      clerks.splice(idx, 1);
-      await saveList('duty-clerks', clerks);
-      renderAdminClerkList(); renderClerkSelect();
-      showToast(`ลบเสมียนเวร ${name} แล้ว`);
+      showConfirmDelete(delBtn, async () => {
+        const idx = Number(delBtn.dataset.adminClerkDel);
+        const name = clerks[idx];
+        clerks.splice(idx, 1);
+        await saveList('duty-clerks', clerks);
+        renderAdminClerkList(); renderClerkSelect();
+        showToast(`ลบเสมียนเวร ${name} แล้ว`);
+      });
     }
     if(editBtn){
       const idx = Number(editBtn.dataset.adminClerkEdit);
@@ -673,9 +690,11 @@
     if(!delBtn) return;
     const abbr = delBtn.dataset.adminDeptDel;
     if(DEPARTMENTS.length <= 1){ showToast('ต้องมีฝ่ายอย่างน้อย 1 ฝ่าย'); return; }
-    await removeDepartment(abbr);
-    await refreshAfterDeptChange();
-    showToast(`ลบฝ่าย ${abbr} แล้ว`);
+    showConfirmDelete(delBtn, async () => {
+      await removeDepartment(abbr);
+      await refreshAfterDeptChange();
+      showToast(`ลบฝ่าย ${abbr} แล้ว`);
+    });
   });
 
   /* ---------------- dept personnel helpers ---------------- */
@@ -799,14 +818,16 @@
         const cancelBtn = e.target.closest('[data-admin-cancel]');
 
         if(delBtn){
-          const idx = Number(delBtn.dataset.adminDel);
-          const name = deptPersonnel[abbr][idx];
-          deptPersonnel[abbr].splice(idx, 1);
-          await saveDeptPersonnel();
-          refreshAdminList(section, abbr);
-          updateAdminCount(section, abbr);
-          initDepartments(); renderReport();
-          showToast(`ลบ ${name} แล้ว`);
+          showConfirmDelete(delBtn, async () => {
+            const idx = Number(delBtn.dataset.adminDel);
+            const name = deptPersonnel[abbr][idx];
+            deptPersonnel[abbr].splice(idx, 1);
+            await saveDeptPersonnel();
+            refreshAdminList(section, abbr);
+            updateAdminCount(section, abbr);
+            initDepartments(); renderReport();
+            showToast(`ลบ ${name} แล้ว`);
+          });
         }
         if(editBtn){
           const idx = Number(editBtn.dataset.adminEdit);

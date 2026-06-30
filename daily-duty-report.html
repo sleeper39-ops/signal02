@@ -256,13 +256,15 @@
     .card{padding:13px 12px 15px;}
     .info-card{padding:14px 12px 15px;}
     .grid{grid-template-columns:1fr 1fr; gap:8px;}
-    .info-grid{grid-template-columns:1fr; gap:10px;}
+    .info-grid{grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px;}
     .info-grid > .field:nth-child(1),
     .info-grid > .field:nth-child(2),
     .info-grid > .field:nth-child(3),
-    .info-grid > .field:nth-child(4),
-    .clerk-field{grid-column:1;}
-    .clerk-controls{grid-template-columns:1fr; gap:8px;}
+    .info-grid > .field:nth-child(4){grid-column:span 1;}
+    .clerk-field{grid-column:1 / -1;}
+    .clerk-controls{grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px;}
+    .clerk-controls select, .clerk-controls input, .clerk-controls .btn{min-width:0; width:100%;}
+    .clerk-controls .btn{grid-column:1 / -1;}
     .departments-form-shell{padding:8px;}
     .dept-row, .absentee-list{padding-left:0;}
     .dept-row{grid-template-columns:1fr; gap:8px;}

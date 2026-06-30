@@ -784,7 +784,8 @@ let activeFilterRoll = "all";
 let editingPersonId = null;
 let editingGroupName = null;
 const todayKey = () => new Date().toISOString().slice(0,10);
-const STORAGE_KEY_WORK = "checkin-work:" + todayKey();
+const STORAGE_KEY_WORK_LEGACY = "checkin-work:" + todayKey();
+const STORAGE_KEY_WORK = "checkin-work";
 const STORAGE_KEY_ROLL = "checkin-roll:" + todayKey();
 const SETTINGS_KEY = "telegram-settings";
 const ROSTER_KEY = "roster-data";
@@ -945,7 +946,7 @@ function orderedGroupNames(){
 }
 async function loadState(){
   const [stateWorkRes, stateRollRes, settingsRes] = await Promise.allSettled([
-    window.storage.get(STORAGE_KEY_WORK, true),
+    window.storage.get(STORAGE_KEY_WORK, true).catch(async () => window.storage.get(STORAGE_KEY_WORK_LEGACY, true)),
     window.storage.get(STORAGE_KEY_ROLL, true),
     window.storage.get(SETTINGS_KEY, true)
   ]);

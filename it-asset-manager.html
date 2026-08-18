@@ -6,6 +6,8 @@
 <title>ระบบบริหารทรัพย์สินไอที</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <style>
   :root{
     --bg:#F5F6F8; --surface:#FFFFFF; --ink:#1B2430; --muted:#64748B; --hint:#8A93A1;
@@ -56,11 +58,20 @@
 <div id="app"></div>
 
 <script>
+const firebaseConfig = {
+    apiKey: "AIzaSyDnbOpvNTZ1bNFzReLXMq_wW4kp5iB5oiE",
+    authDomain: "signal02-f4d85.firebaseapp.com",
+    databaseURL: "https://signal02-f4d85-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "signal02-f4d85",
+    storageBucket: "signal02-f4d85.firebasestorage.app",
+    messagingSenderId: "653019128612",
+    appId: "1:653019128612:web:41d283659202787c4689b1",
+    measurementId: "G-3G3TQ0VLXM"
+};
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
 const TOKEN_KEY = "it-asset-inventory-v1";
-const TOKEN_SHARED = true;
-const STORAGE_AVAILABLE = (typeof window !== "undefined") && !!window.storage
-  && typeof window.storage.get === "function" && typeof window.storage.set === "function";
-let storageNoticeShown = false;
 
 const CATEGORIES = [
   "คอมพิวเตอร์ตั้งโต๊ะ","โน้ตบุ๊ก","จอภาพ","เครื่องพิมพ์",
@@ -134,18 +145,14 @@ const state = {
 };
 
 async function persist(){
-  if(!STORAGE_AVAILABLE){
-    if(!storageNoticeShown){
-      storageNoticeShown = true;
-      toast("โหมดนี้ยังไม่เชื่อมระบบบันทึกถาวร ข้อมูลจะหายเมื่อปิดหน้าเว็บ", true);
-    }
-    return;
-  }
   state.saving = true;
   try{
-    await window.storage.set(TOKEN_KEY, JSON.stringify(state.assets), TOKEN_SHARED);
+    await db.ref('it_assets').set(state.assets);
+    localStorage.setItem(TOKEN_KEY, JSON.stringify(state.assets));
   }catch(e){
-    toast("บันทึกข้อมูลไม่สำเร็จ ลองอีกครั้ง", true);
+    console.error("Firebase save error:", e);
+    localStorage.setItem(TOKEN_KEY, JSON.stringify(state.assets));
+    toast("บันทึกข้อมูลในเครื่องเรียบร้อย", false);
   }finally{
     state.saving = false;
   }
@@ -620,23 +627,40 @@ function detailRow(label, value){
 }
 
 /* ---------- init ---------- */
-async function init(){
+function init(){
   renderShell();
   renderLoading();
-  if(STORAGE_AVAILABLE){
-    try{
-      const res = await window.storage.get(TOKEN_KEY, TOKEN_SHARED);
-      const data = res && res.value ? JSON.parse(res.value) : [];
-      state.assets = Array.isArray(data) ? data : [];
-    }catch(e){
-      state.assets = [];
+  
+  db.ref('it_assets').on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      state.assets = Array.isArray(data) ? data : Object.values(data);
+    } else {
+      const local = localStorage.getItem(TOKEN_KEY);
+      if (local) {
+        try { state.assets = JSON.parse(local) || []; } catch(e) { state.assets = []; }
+      } else {
+        state.assets = [];
+      }
     }
-  }
-  state.loading = false;
-  renderLoading();
-  renderSummary();
-  renderToolbar();
-  renderTable();
+    state.loading = false;
+    renderLoading();
+    renderSummary();
+    renderToolbar();
+    renderTable();
+    if (state.modal) renderModal();
+  }, (err) => {
+    console.error("Firebase load error:", err);
+    const local = localStorage.getItem(TOKEN_KEY);
+    if (local) {
+      try { state.assets = JSON.parse(local) || []; } catch(e) { state.assets = []; }
+    }
+    state.loading = false;
+    renderLoading();
+    renderSummary();
+    renderToolbar();
+    renderTable();
+  });
 }
 
 init();

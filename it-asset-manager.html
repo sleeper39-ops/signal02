@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ระบบบริหารทรัพย์สินไอที</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F6F8; --surface:#FFFFFF; --ink:#1B2430; --muted:#64748B; --hint:#8A93A1;
+    --border:#E2E5EA; --border2:#D8DBE0; --accent:#1D9E75; --accent-dark:#0B2B26; --accent-mid:#0F5C4A;
+    --green-bg:#EAF3DE; --green-fg:#27500A; --green-dot:#639922;
+    --amber-bg:#FAEEDA; --amber-fg:#633806; --amber-dot:#BA7517;
+    --red-bg:#FCEBEB; --red-fg:#791F1F; --red-dot:#E24B4A;
+    --blue-bg:#E6F1FB; --blue-fg:#0C447C; --blue-dot:#378ADD;
+    --gray-bg:#F1EFE8; --gray-fg:#444441; --gray-dot:#888780;
+    --teal-bg:#E1F5EE; --teal-fg:#085041; --teal-dot:#1D9E75;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--ink);}
+  input,select,textarea,button{font-family:'Sarabun',sans-serif;}
+  ::placeholder{color:#9AA1AC;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  table{border-collapse:collapse;width:100%;}
+  th,td{text-align:left;padding:11px 14px;font-size:13.5px;}
+  thead tr{background:#F7F8FA;border-bottom:1px solid var(--border);}
+  th{font-weight:600;color:var(--muted);font-size:12.5px;white-space:nowrap;}
+  tbody tr{border-bottom:1px solid #EEF0F3;cursor:pointer;}
+  tbody tr:hover{background:#F0F2F5;}
+  .icon-btn{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:none;background:transparent;border-radius:6px;cursor:pointer;color:var(--muted);}
+  .icon-btn:hover{background:#E9ECF1;}
+  .icon-btn.danger{color:var(--red-fg);}
+  .field-input{width:100%;padding:8px 10px;border-radius:7px;border:1px solid var(--border2);font-size:13.5px;outline:none;background:#fff;color:var(--ink);}
+  .field-label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:5px;font-weight:500;}
+  .btn-primary{display:flex;align-items:center;gap:8px;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;}
+  .btn-secondary{padding:9px 16px;border-radius:8px;border:1px solid var(--border2);background:#fff;font-size:13.5px;cursor:pointer;}
+  .overlay{position:fixed;inset:0;background:rgba(11,43,38,0.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px;}
+  .modal{background:#fff;border-radius:12px;max-height:88vh;overflow-y:auto;animation:slideIn .15s ease;}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid #EEF0F3;}
+  .modal-footer{display:flex;justify-content:flex-end;gap:8px;padding:16px 22px;border-top:1px solid #EEF0F3;}
+  .status-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap;}
+  .asset-tag{display:inline-flex;align-items:center;gap:6px;background:var(--accent-dark);color:#9FE1CB;padding:4px 9px;border-radius:6px;font-size:12px;font-weight:600;letter-spacing:.3px;}
+  .asset-tag.large{padding:6px 12px;font-size:14px;}
+  .summary-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+  .spin{animation:spin 1s linear infinite;}
+  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  @keyframes slideIn{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+  @media (max-width:640px){
+    #toolbar{flex-direction:column;align-items:stretch !important;}
+    .summary-grid{grid-template-columns:repeat(2,1fr) !important;}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+const TOKEN_KEY = "it-asset-inventory-v1";
+const TOKEN_SHARED = true;
+const STORAGE_AVAILABLE = (typeof window !== "undefined") && !!window.storage
+  && typeof window.storage.get === "function" && typeof window.storage.set === "function";
+let storageNoticeShown = false;
+
+const CATEGORIES = [
+  "คอมพิวเตอร์ตั้งโต๊ะ","โน้ตบุ๊ก","จอภาพ","เครื่องพิมพ์",
+  "เราเตอร์ / อุปกรณ์เครือข่าย","โทรศัพท์มือถือ / แท็บเล็ต",
+  "อุปกรณ์ต่อพ่วง","ซอฟต์แวร์ / ไลเซนส์","อื่นๆ",
+];
+
+const STATUSES = [
+  { id:"active", label:"ใช้งานปกติ", ramp:"green" },
+  { id:"repair", label:"ส่งซ่อม", ramp:"amber" },
+  { id:"broken", label:"ชำรุด", ramp:"red" },
+  { id:"spare", label:"สำรอง / คลัง", ramp:"blue" },
+  { id:"retired", label:"จำหน่ายแล้ว", ramp:"gray" },
+];
+
+const RAMP = {
+  green:{bg:"var(--green-bg)",fg:"var(--green-fg)",dot:"var(--green-dot)"},
+  amber:{bg:"var(--amber-bg)",fg:"var(--amber-fg)",dot:"var(--amber-dot)"},
+  red:{bg:"var(--red-bg)",fg:"var(--red-fg)",dot:"var(--red-dot)"},
+  blue:{bg:"var(--blue-bg)",fg:"var(--blue-fg)",dot:"var(--blue-dot)"},
+  gray:{bg:"var(--gray-bg)",fg:"var(--gray-fg)",dot:"var(--gray-dot)"},
+  teal:{bg:"var(--teal-bg)",fg:"var(--teal-fg)",dot:"var(--teal-dot)"},
+};
+
+function statusMeta(id){ return STATUSES.find(s=>s.id===id) || STATUSES[0]; }
+function esc(s){ return (s==null?"":String(s)).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function thaiDate(iso){
+  if(!iso) return "-";
+  const d = new Date(iso+"T00:00:00");
+  if(isNaN(d)) return iso;
+  const months=["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()+543}`;
+}
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+function nextCode(assets, dateISO){
+  const year=(dateISO?new Date(dateISO):new Date()).getFullYear()+543;
+  const shortYear=String(year).slice(-2);
+  const count=assets.filter(a=>a.code.includes(`-${shortYear}-`)).length;
+  return `IT-${shortYear}-${String(count+1).padStart(4,"0")}`;
+}
+
+const ICON = {
+  plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  search:'<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+  edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',
+  transfer:'<path d="M17 3l4 4-4 4"/><path d="M21 7H9"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h12"/>',
+  package:'<path d="M3 7l9-4 9 4v10l-9 4-9-4Z"/><path d="M3 7l9 4 9-4"/><line x1="12" y1="11" x2="12" y2="21"/>',
+  wrench:'<path d="M14.7 6.3a4 4 0 1 1-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 1 5.4-5.4Z"/>',
+  archive:'<rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><line x1="10" y1="12" x2="14" y2="12"/>',
+  building:'<rect x="4" y="2" width="16" height="20" rx="1"/><line x1="8" y1="6" x2="8" y2="6"/><line x1="12" y1="6" x2="12" y2="6"/><line x1="16" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="9" y1="22" x2="9" y2="16" width="6"/><rect x="9" y="16" width="6" height="6"/>',
+  x:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  save:'<path d="M20 6L9 17l-5-5"/>',
+  alert:'<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+  history:'<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/>',
+  chevron:'<polyline points="6 9 12 15 18 9"/>',
+  check:'<circle cx="12" cy="12" r="10"/><path d="M8 12l2.5 2.5L16 9"/>',
+  reset:'<path d="M3 12a9 9 0 1 0 2.64-6.36"/><polyline points="3 4 3 9 8 9"/>',
+  home:'<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+};
+function icon(name, size){
+  size = size || 16;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON[name]}</svg>`;
+}
+
+const state = {
+  assets: [], loading: true, saving: false,
+  search: "", deptFilter: "", statusFilter: "", categoryFilter: "",
+  modal: null, activeId: null, confirmDeleteId: null,
+};
+
+async function persist(){
+  if(!STORAGE_AVAILABLE){
+    if(!storageNoticeShown){
+      storageNoticeShown = true;
+      toast("โหมดนี้ยังไม่เชื่อมระบบบันทึกถาวร ข้อมูลจะหายเมื่อปิดหน้าเว็บ", true);
+    }
+    return;
+  }
+  state.saving = true;
+  try{
+    await window.storage.set(TOKEN_KEY, JSON.stringify(state.assets), TOKEN_SHARED);
+  }catch(e){
+    toast("บันทึกข้อมูลไม่สำเร็จ ลองอีกครั้ง", true);
+  }finally{
+    state.saving = false;
+  }
+}
+
+function departments(){
+  return Array.from(new Set(state.assets.map(a=>a.department).filter(Boolean))).sort();
+}
+
+function filteredAssets(){
+  const q = state.search.trim().toLowerCase();
+  return state.assets.filter(a=>{
+    if(state.deptFilter && a.department!==state.deptFilter) return false;
+    if(state.statusFilter && a.status!==state.statusFilter) return false;
+    if(state.categoryFilter && a.category!==state.categoryFilter) return false;
+    if(!q) return true;
+    return [a.code,a.name,a.holder,a.department,a.serial].join(" ").toLowerCase().includes(q);
+  }).sort((a,b)=>b.acquiredDate.localeCompare(a.acquiredDate));
+}
+
+let toastTimer = null;
+function toast(text, isError){
+  const root = document.getElementById("toast-root");
+  root.innerHTML = `<div style="position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:${isError?'#791F1F':'#0B2B26'};color:#fff;padding:10px 18px;border-radius:8px;font-size:13.5px;box-shadow:0 4px 14px rgba(0,0,0,0.18);z-index:200;">${esc(text)}</div>`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{ root.innerHTML = ""; }, 2600);
+}
+
+/* ---------- render: shell ---------- */
+function renderShell(){
+  const app = document.getElementById("app");
+  app.innerHTML = `
+    <div style="min-height:100vh;">
+      <header style="background:var(--accent-dark);padding:22px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <a href="index.html" style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:8px;background:rgba(255,255,255,0.08);color:#9FE1CB;text-decoration:none;border:1px solid rgba(255,255,255,0.15);transition:background 0.2s;" title="กลับหน้าหลัก">
+            ${icon('home',20)}
+          </a>
+          <div style="width:40px;height:40px;border-radius:8px;background:var(--accent-mid);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#9FE1CB;">${icon('package',22)}</div>
+          <div>
+            <h1 style="margin:0;font-size:19px;font-weight:700;color:#fff;letter-spacing:.2px;">ระบบบริหารทรัพย์สินไอที</h1>
+            <p style="margin:0;font-size:12.5px;color:#9FE1CB;">ติดตามผู้ถือครอง ฝ่าย/ชป. และประวัติการโอนย้ายอุปกรณ์</p>
+          </div>
+        </div>
+        <button id="btn-add" class="btn-primary">${icon('plus',17)} เพิ่มทรัพย์สิน</button>
+      </header>
+      <main style="max-width:1180px;margin:0 auto;padding:24px 20px 60px;">
+        <div id="loading-section"></div>
+        <div id="summary-section"></div>
+        <div id="toolbar" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;align-items:center;"></div>
+        <div id="table-section" style="background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;"></div>
+        <p style="font-size:12px;color:#9AA1AC;margin-top:10px;">ข้อมูลนี้จัดเก็บแบบใช้ร่วมกัน ผู้ที่เปิดแอปนี้ทุกคนจะเห็นและแก้ไขรายการเดียวกัน</p>
+      </main>
+      <div id="modal-root"></div>
+      <div id="toast-root"></div>
+    </div>
+  `;
+  document.getElementById("btn-add").addEventListener("click", openAdd);
+}
+
+/* ---------- render: loading ---------- */
+function renderLoading(){
+  const el = document.getElementById("loading-section");
+  el.innerHTML = state.loading
+    ? `<div style="display:flex;align-items:center;gap:10px;color:var(--muted);padding:60px 0;justify-content:center;"><span class="spin">${icon('reset',18)}</span> กำลังโหลดข้อมูล...</div>`
+    : "";
+}
+
+/* ---------- render: summary ---------- */
+function renderSummary(){
+  const el = document.getElementById("summary-section");
+  if(state.loading){ el.innerHTML=""; return; }
+  const byStatus = {};
+  STATUSES.forEach(s=>byStatus[s.id]=0);
+  state.assets.forEach(a=>{ byStatus[a.status]=(byStatus[a.status]||0)+1; });
+  const depts = departments();
+  const cards = [
+    ["ทรัพย์สินทั้งหมด", state.assets.length, "package", "teal"],
+    ["ใช้งานปกติ", byStatus.active||0, "check", "green"],
+    ["ซ่อม / ชำรุด", (byStatus.repair||0)+(byStatus.broken||0), "wrench", "amber"],
+    ["จำหน่ายแล้ว", byStatus.retired||0, "archive", "gray"],
+    ["ฝ่าย / ชป. ที่ถือครอง", depts.length, "building", "blue"],
+  ];
+  let html = `<div class="summary-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;">`;
+  cards.forEach(([label,value,ic,ramp])=>{
+    const r = RAMP[ramp];
+    html += `<div class="summary-card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <div style="width:26px;height:26px;border-radius:6px;background:${r.bg};color:${r.fg};display:flex;align-items:center;justify-content:center;">${icon(ic,17)}</div>
+        <span style="font-size:12px;color:var(--hint);">${esc(label)}</span>
+      </div>
+      <p style="margin:0;font-size:24px;font-weight:700;">${value}</p>
+    </div>`;
+  });
+  html += `</div>`;
+
+  const map = {};
+  state.assets.forEach(a=>{ const key=a.department||"ไม่ระบุ"; map[key]=(map[key]||0)+1; });
+  const breakdown = Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  if(breakdown.length){
+    html += `<div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:20px;">
+      <p style="margin:0 0 12px;font-size:13px;font-weight:600;color:var(--muted);">สัดส่วนทรัพย์สินตามฝ่าย / ชป.</p>
+      <div style="display:flex;flex-direction:column;gap:8px;">`;
+    breakdown.forEach(([dept,count])=>{
+      const pct = state.assets.length ? (count/state.assets.length)*100 : 0;
+      html += `<div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:13px;width:160px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(dept)}</span>
+        <div style="flex:1;background:#EEF0F3;border-radius:4px;height:8px;overflow:hidden;">
+          <div style="width:${pct}%;background:var(--accent);height:100%;border-radius:4px;"></div>
+        </div>
+        <span style="font-size:12.5px;color:var(--muted);width:26px;text-align:right;">${count}</span>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+  el.innerHTML = html;
+}
+
+/* ---------- render: toolbar ---------- */
+function renderToolbar(){
+  const el = document.getElementById("toolbar");
+  if(state.loading){ el.innerHTML=""; return; }
+  const depts = departments();
+  const anyFilter = state.search || state.deptFilter || state.statusFilter || state.categoryFilter;
+  el.innerHTML = `
+    <div style="position:relative;flex:1 1 240px;">
+      <span style="position:absolute;left:12px;top:11px;color:#9AA1AC;">${icon('search',16)}</span>
+      <input id="search-input" class="field-input" style="padding-left:34px;" placeholder="ค้นหารหัส ชื่อทรัพย์สิน ผู้ถือครอง หรือ S/N" value="${esc(state.search)}" />
+    </div>
+    <div style="position:relative;">
+      <select id="dept-filter" class="field-input" style="width:auto;min-width:140px;padding-right:28px;appearance:none;cursor:pointer;">
+        <option value="">ทุกฝ่าย/ชป.</option>
+        ${depts.map(d=>`<option value="${esc(d)}" ${state.deptFilter===d?'selected':''}>${esc(d)}</option>`).join("")}
+      </select>
+      <span style="position:absolute;right:9px;top:12px;color:#9AA1AC;pointer-events:none;">${icon('chevron',13)}</span>
+    </div>
+    <div style="position:relative;">
+      <select id="status-filter" class="field-input" style="width:auto;min-width:140px;padding-right:28px;appearance:none;cursor:pointer;">
+        <option value="">ทุกสถานะ</option>
+        ${STATUSES.map(s=>`<option value="${s.id}" ${state.statusFilter===s.id?'selected':''}>${esc(s.label)}</option>`).join("")}
+      </select>
+      <span style="position:absolute;right:9px;top:12px;color:#9AA1AC;pointer-events:none;">${icon('chevron',13)}</span>
+    </div>
+    <div style="position:relative;">
+      <select id="category-filter" class="field-input" style="width:auto;min-width:140px;padding-right:28px;appearance:none;cursor:pointer;">
+        <option value="">ทุกประเภท</option>
+        ${CATEGORIES.map(c=>`<option value="${esc(c)}" ${state.categoryFilter===c?'selected':''}>${esc(c)}</option>`).join("")}
+      </select>
+      <span style="position:absolute;right:9px;top:12px;color:#9AA1AC;pointer-events:none;">${icon('chevron',13)}</span>
+    </div>
+    ${anyFilter ? `<button id="clear-filters" class="btn-secondary" style="display:flex;align-items:center;gap:6px;color:var(--muted);">${icon('reset',13)} ล้างตัวกรอง</button>` : ""}
+  `;
+  document.getElementById("search-input").addEventListener("input", e=>{ state.search=e.target.value; renderSummaryTableOnly(); });
+  document.getElementById("dept-filter").addEventListener("change", e=>{ state.deptFilter=e.target.value; renderSummaryTableOnly(); });
+  document.getElementById("status-filter").addEventListener("change", e=>{ state.statusFilter=e.target.value; renderSummaryTableOnly(); });
+  document.getElementById("category-filter").addEventListener("change", e=>{ state.categoryFilter=e.target.value; renderSummaryTableOnly(); });
+  const clearBtn = document.getElementById("clear-filters");
+  if(clearBtn) clearBtn.addEventListener("click", ()=>{
+    state.search=""; state.deptFilter=""; state.statusFilter=""; state.categoryFilter="";
+    renderToolbar(); renderTable();
+  });
+}
+
+function renderSummaryTableOnly(){ renderTable(); }
+
+/* ---------- render: table ---------- */
+function renderTable(){
+  const el = document.getElementById("table-section");
+  if(state.loading){ el.innerHTML=""; return; }
+  const list = filteredAssets();
+  let html = `<div style="overflow-x:auto;"><table style="min-width:900px;"><thead><tr>
+    <th>รหัสทรัพย์สิน</th><th>รายการ</th><th>ผู้ถือครอง</th><th>ฝ่าย / ชป.</th><th>วันที่ได้รับ</th><th>สถานะ</th><th></th>
+  </tr></thead><tbody>`;
+  list.forEach(a=>{
+    const st = statusMeta(a.status);
+    const r = RAMP[st.ramp];
+    html += `<tr data-id="${a.id}" class="row-open">
+      <td><span class="asset-tag mono"><span style="width:5px;height:5px;border-radius:50%;background:var(--accent);"></span>${esc(a.code)}</span></td>
+      <td><div style="font-weight:500;">${esc(a.name)}</div><div style="font-size:12px;color:var(--hint);">${esc(a.category)}</div></td>
+      <td>${esc(a.holder)}</td>
+      <td>${esc(a.department)}</td>
+      <td style="white-space:nowrap;color:#475569;">${thaiDate(a.acquiredDate)}</td>
+      <td><span class="status-pill" style="background:${r.bg};color:${r.fg};"><span style="width:6px;height:6px;border-radius:50%;background:${r.dot};"></span>${esc(st.label)}</span></td>
+      <td>
+        <div style="display:flex;gap:4px;">
+          <button class="icon-btn row-transfer" data-id="${a.id}" title="โอนย้าย">${icon('transfer',15)}</button>
+          <button class="icon-btn row-edit" data-id="${a.id}" title="แก้ไข">${icon('edit',15)}</button>
+          <button class="icon-btn danger row-delete" data-id="${a.id}" title="ลบ">${icon('trash',15)}</button>
+        </div>
+      </td>
+    </tr>`;
+  });
+  html += `</tbody></table></div>`;
+  if(list.length===0){
+    html += `<div style="padding:50px 20px;text-align:center;color:var(--hint);">
+      <div style="opacity:.4;margin-bottom:8px;">${icon('package',30)}</div>
+      <p style="margin:0;font-size:14px;">${state.assets.length===0 ? "ยังไม่มีรายการทรัพย์สิน เริ่มเพิ่มรายการแรกได้เลย" : "ไม่พบรายการที่ตรงกับตัวกรอง"}</p>
+    </div>`;
+  }
+  el.innerHTML = html;
+
+  el.querySelectorAll(".row-open").forEach(tr=>{
+    tr.addEventListener("click", ()=>openDetail(tr.dataset.id));
+  });
+  el.querySelectorAll(".row-transfer").forEach(btn=>{
+    btn.addEventListener("click", e=>{ e.stopPropagation(); openTransfer(btn.dataset.id); });
+  });
+  el.querySelectorAll(".row-edit").forEach(btn=>{
+    btn.addEventListener("click", e=>{ e.stopPropagation(); openEdit(btn.dataset.id); });
+  });
+  el.querySelectorAll(".row-delete").forEach(btn=>{
+    btn.addEventListener("click", e=>{ e.stopPropagation(); state.confirmDeleteId=btn.dataset.id; renderModal(); });
+  });
+}
+
+/* ---------- modals ---------- */
+function closeModal(){ state.modal=null; state.activeId=null; renderModal(); }
+
+function deptDatalist(){
+  return `<datalist id="dept-list">${departments().map(d=>`<option value="${esc(d)}">`).join("")}</datalist>`;
+}
+
+function fieldHtml(id,label,inputHtml,full,required){
+  return `<div style="grid-column:${full?'1 / -1':'auto'};">
+    <label class="field-label">${esc(label)}${required?'<span style="color:var(--red-fg)"> *</span>':''}</label>
+    ${inputHtml}
+  </div>`;
+}
+
+function openAdd(){
+  state.modal="form-add";
+  state.activeId=null;
+  renderModal();
+}
+function openEdit(id){
+  state.modal="form-edit";
+  state.activeId=id;
+  renderModal();
+}
+function openDetail(id){
+  state.modal="detail";
+  state.activeId=id;
+  renderModal();
+}
+function openTransfer(id){
+  state.modal="transfer";
+  state.activeId=id;
+  renderModal();
+}
+
+function renderModal(){
+  const root = document.getElementById("modal-root");
+  const m = state.modal;
+  if(!m && !state.confirmDeleteId){ root.innerHTML=""; return; }
+
+  if(m==="form-add" || m==="form-edit"){
+    const editing = m==="form-edit";
+    const asset = editing ? state.assets.find(a=>a.id===state.activeId) : null;
+    const f = asset || { code: nextCode(state.assets, todayISO()), name:"", category:CATEGORIES[0], serial:"", holder:"", department:"", acquiredDate:todayISO(), status:"active", value:"", notes:"" };
+    root.innerHTML = `<div class="overlay" id="overlay-form">
+      <form class="modal" id="asset-form" novalidate style="width:560px;max-width:94vw;">
+        <div class="modal-header"><h3 style="margin:0;font-size:16px;font-weight:700;">${editing?"แก้ไขข้อมูลทรัพย์สิน":"เพิ่มทรัพย์สินใหม่"}</h3>
+          <button type="button" id="close-form" style="border:none;background:transparent;cursor:pointer;color:var(--hint);display:flex;">${icon('x',18)}</button>
+        </div>
+        <div style="padding:18px 22px;display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          ${fieldHtml('f-code','รหัสทรัพย์สิน', `<input id="f-code" class="field-input mono" placeholder="สร้างอัตโนมัติ" value="${esc(f.code)}" />`, true)}
+          ${fieldHtml('f-name','ชื่อทรัพย์สิน', `<input id="f-name" class="field-input" placeholder="เช่น โน้ตบุ๊ก Dell Latitude 5440" value="${esc(f.name)}" required />`, true, true)}
+          ${fieldHtml('f-category','ประเภท', `<select id="f-category" class="field-input">${CATEGORIES.map(c=>`<option value="${esc(c)}" ${f.category===c?'selected':''}>${esc(c)}</option>`).join("")}</select>`)}
+          ${fieldHtml('f-serial','หมายเลขเครื่อง (S/N)', `<input id="f-serial" class="field-input" value="${esc(f.serial)}" />`)}
+          ${fieldHtml('f-holder','ผู้ถือครอง / ผู้รับผิดชอบ', `<input id="f-holder" class="field-input" value="${esc(f.holder)}" required />`, false, true)}
+          ${fieldHtml('f-department','ฝ่าย / ชป.', `<input id="f-department" class="field-input" list="dept-list" value="${esc(f.department)}" required />${deptDatalist()}`, false, true)}
+          ${fieldHtml('f-date','วันที่ได้รับ', `<input id="f-date" type="date" class="field-input" value="${esc(f.acquiredDate)}" required />`, false, true)}
+          ${fieldHtml('f-status','สถานะ', `<select id="f-status" class="field-input">${STATUSES.map(s=>`<option value="${s.id}" ${f.status===s.id?'selected':''}>${esc(s.label)}</option>`).join("")}</select>`)}
+          ${fieldHtml('f-value','มูลค่า (บาท)', `<input id="f-value" class="field-input" placeholder="ไม่บังคับ" value="${esc(f.value)}" />`)}
+          ${fieldHtml('f-notes','หมายเหตุ', `<textarea id="f-notes" class="field-input" rows="2" style="resize:vertical;">${esc(f.notes)}</textarea>`, true)}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" id="cancel-form">ยกเลิก</button>
+          <button type="submit" id="submit-form" class="btn-primary" style="padding:9px 18px;">${icon('save',14)} ${editing?"บันทึกการแก้ไข":"เพิ่มทรัพย์สิน"}</button>
+        </div>
+      </form>
+    </div>`;
+    document.getElementById("overlay-form").addEventListener("click", e=>{ if(e.target.id==="overlay-form") closeModal(); });
+    document.getElementById("close-form").addEventListener("click", closeModal);
+    document.getElementById("cancel-form").addEventListener("click", closeModal);
+    document.getElementById("asset-form").addEventListener("submit", async e=>{
+      e.preventDefault();
+      const vals = {
+        code: document.getElementById("f-code").value.trim(),
+        name: document.getElementById("f-name").value.trim(),
+        category: document.getElementById("f-category").value,
+        serial: document.getElementById("f-serial").value.trim(),
+        holder: document.getElementById("f-holder").value.trim(),
+        department: document.getElementById("f-department").value.trim(),
+        acquiredDate: document.getElementById("f-date").value,
+        status: document.getElementById("f-status").value,
+        value: document.getElementById("f-value").value.trim(),
+        notes: document.getElementById("f-notes").value.trim(),
+      };
+      if(!vals.name || !vals.holder || !vals.department || !vals.acquiredDate){
+        toast("กรอกชื่อทรัพย์สิน ผู้ถือครอง ฝ่าย/ชป. และวันที่ได้รับให้ครบ", true);
+        return;
+      }
+      if(editing){
+        state.assets = state.assets.map(a=> a.id===state.activeId ? {...a, ...vals, updatedAt:new Date().toISOString()} : a);
+        toast("บันทึกการแก้ไขแล้ว");
+      }else{
+        const record = {
+          ...vals,
+          id: uid(),
+          code: vals.code || nextCode(state.assets, vals.acquiredDate),
+          history: [{date: vals.acquiredDate, holder: vals.holder, department: vals.department, note: "รับเข้าครั้งแรก"}],
+          createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+        };
+        state.assets = [...state.assets, record];
+        toast(`เพิ่มทรัพย์สิน ${record.code} แล้ว`);
+      }
+      await persist();
+      closeModal();
+      renderSummary(); renderToolbar(); renderTable();
+    });
+    return;
+  }
+
+  if(m==="transfer"){
+    const a = state.assets.find(x=>x.id===state.activeId);
+    if(!a){ closeModal(); return; }
+    root.innerHTML = `<div class="overlay" id="overlay-transfer">
+      <form class="modal" id="transfer-form" novalidate style="width:440px;max-width:94vw;">
+        <div class="modal-header"><h3 style="margin:0;font-size:16px;font-weight:700;">โอนย้ายทรัพย์สิน</h3>
+          <button type="button" id="close-transfer" style="border:none;background:transparent;cursor:pointer;color:var(--hint);display:flex;">${icon('x',18)}</button>
+        </div>
+        <div style="padding:18px 22px;">
+          <div style="background:#F7F8FA;border-radius:8px;padding:10px 12px;margin-bottom:16px;font-size:13px;">
+            <span class="asset-tag mono"><span style="width:5px;height:5px;border-radius:50%;background:var(--accent);"></span>${esc(a.code)}</span>
+            <strong style="margin-left:6px;">${esc(a.name)}</strong>
+            <div style="color:var(--hint);margin-top:4px;">ปัจจุบัน: ${esc(a.holder)} · ${esc(a.department)}</div>
+          </div>
+          <div style="display:grid;gap:14px;">
+            ${fieldHtml('t-holder','ผู้รับมอบคนใหม่', `<input id="t-holder" class="field-input" value="${esc(a.holder)}" required />`, true, true)}
+            ${fieldHtml('t-department','ฝ่าย / ชป. ใหม่', `<input id="t-department" class="field-input" list="dept-list" value="${esc(a.department)}" required />${deptDatalist()}`, true, true)}
+            ${fieldHtml('t-date','วันที่โอนย้าย', `<input id="t-date" type="date" class="field-input" value="${todayISO()}" required />`, true, true)}
+            ${fieldHtml('t-note','หมายเหตุ', `<input id="t-note" class="field-input" placeholder="เช่น ย้ายตามคำสั่งฝ่าย" />`, true)}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" id="cancel-transfer">ยกเลิก</button>
+          <button type="submit" class="btn-primary" style="padding:9px 18px;">${icon('save',14)} ยืนยันการโอนย้าย</button>
+        </div>
+      </form>
+    </div>`;
+    document.getElementById("overlay-transfer").addEventListener("click", e=>{ if(e.target.id==="overlay-transfer") closeModal(); });
+    document.getElementById("close-transfer").addEventListener("click", closeModal);
+    document.getElementById("cancel-transfer").addEventListener("click", closeModal);
+    document.getElementById("transfer-form").addEventListener("submit", async e=>{
+      e.preventDefault();
+      const holder = document.getElementById("t-holder").value.trim();
+      const department = document.getElementById("t-department").value.trim();
+      const date = document.getElementById("t-date").value;
+      const note = document.getElementById("t-note").value.trim();
+      if(!holder || !department || !date){
+        toast("กรอกผู้รับมอบ ฝ่าย/ชป. และวันที่ให้ครบ", true);
+        return;
+      }
+      state.assets = state.assets.map(x=>{
+        if(x.id!==state.activeId) return x;
+        return { ...x, holder, department, updatedAt:new Date().toISOString(),
+          history:[...(x.history||[]), {date, holder, department, note: note || "โอนย้ายทรัพย์สิน"}] };
+      });
+      await persist();
+      toast("บันทึกการโอนย้ายแล้ว");
+      state.modal="detail";
+      renderModal();
+      renderSummary(); renderToolbar(); renderTable();
+    });
+    return;
+  }
+
+  if(m==="detail"){
+    const a = state.assets.find(x=>x.id===state.activeId);
+    if(!a){ closeModal(); return; }
+    const st = statusMeta(a.status); const r = RAMP[st.ramp];
+    const hist = (a.history||[]).slice().reverse();
+    root.innerHTML = `<div class="overlay" id="overlay-detail">
+      <div class="modal" style="width:520px;max-width:94vw;">
+        <div class="modal-header"><h3 style="margin:0;font-size:16px;font-weight:700;">รายละเอียดทรัพย์สิน</h3>
+          <button type="button" id="close-detail" style="border:none;background:transparent;cursor:pointer;color:var(--hint);display:flex;">${icon('x',18)}</button>
+        </div>
+        <div style="padding:18px 22px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+            <div>
+              <span class="asset-tag large mono"><span style="width:5px;height:5px;border-radius:50%;background:var(--accent);"></span>${esc(a.code)}</span>
+              <h3 style="margin:10px 0 2px;font-size:17px;font-weight:700;">${esc(a.name)}</h3>
+              <p style="margin:0;font-size:13px;color:var(--hint);">${esc(a.category)}</p>
+            </div>
+            <span class="status-pill" style="background:${r.bg};color:${r.fg};">${esc(st.label)}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;">
+            ${detailRow("ผู้ถือครองปัจจุบัน", a.holder)}
+            ${detailRow("ฝ่าย / ชป.", a.department)}
+            ${detailRow("วันที่ได้รับ", thaiDate(a.acquiredDate))}
+            ${detailRow("หมายเลขเครื่อง", a.serial || "-")}
+            ${detailRow("มูลค่า", a.value ? `${esc(a.value)} บาท` : "-")}
+            ${detailRow("แก้ไขล่าสุด", a.updatedAt ? thaiDate(a.updatedAt.slice(0,10)) : "-")}
+          </div>
+          ${a.notes ? `<div style="background:#F7F8FA;border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:18px;color:#475569;">${esc(a.notes)}</div>` : ""}
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;color:var(--muted);">${icon('history',15)}<p style="margin:0;font-size:13px;font-weight:600;">ประวัติการโอนย้าย/ถือครอง</p></div>
+          <div style="margin-bottom:20px;">
+            ${hist.map((h,i)=>`<div style="display:flex;gap:10px;padding-bottom:12px;">
+              <div style="display:flex;flex-direction:column;align-items:center;">
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);margin-top:4px;flex-shrink:0;"></div>
+                ${i<hist.length-1 ? `<div style="width:1px;flex:1;background:var(--border);margin-top:2px;"></div>` : ""}
+              </div>
+              <div style="padding-bottom:4px;">
+                <p style="margin:0;font-size:13px;font-weight:500;">${esc(h.holder)} <span style="color:var(--hint);font-weight:400;">· ${esc(h.department)}</span></p>
+                <p style="margin:2px 0 0;font-size:12px;color:#9AA1AC;">${thaiDate(h.date)}${h.note ? " · "+esc(h.note) : ""}</p>
+              </div>
+            </div>`).join("")}
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button id="detail-transfer" class="btn-secondary" style="display:flex;align-items:center;gap:6px;">${icon('transfer',14)} โอนย้าย</button>
+            <button id="detail-edit" class="btn-secondary" style="display:flex;align-items:center;gap:6px;">${icon('edit',14)} แก้ไข</button>
+            <button id="detail-delete" class="btn-secondary" style="display:flex;align-items:center;gap:6px;border-color:#F0999599;background:var(--red-bg);color:var(--red-fg);">${icon('trash',14)} ลบรายการ</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+    document.getElementById("overlay-detail").addEventListener("click", e=>{ if(e.target.id==="overlay-detail") closeModal(); });
+    document.getElementById("close-detail").addEventListener("click", closeModal);
+    document.getElementById("detail-transfer").addEventListener("click", ()=>openTransfer(a.id));
+    document.getElementById("detail-edit").addEventListener("click", ()=>openEdit(a.id));
+    document.getElementById("detail-delete").addEventListener("click", ()=>{ state.confirmDeleteId=a.id; renderModal(); });
+    return;
+  }
+
+  if(state.confirmDeleteId){
+    const id = state.confirmDeleteId;
+    const under = m ? root.innerHTML : "";
+    root.innerHTML = under + `<div class="overlay" id="overlay-confirm" style="z-index:150;">
+      <div class="modal" style="width:380px;max-width:90vw;padding:22px;">
+        <div style="display:flex;gap:10px;margin-bottom:14px;">
+          <span style="color:var(--red-dot);flex-shrink:0;margin-top:1px;">${icon('alert',20)}</span>
+          <div>
+            <p style="margin:0;font-size:15px;font-weight:600;">ยืนยันการลบรายการ</p>
+            <p style="margin:4px 0 0;font-size:13px;color:var(--muted);">ข้อมูลและประวัติการโอนย้ายของรายการนี้จะถูกลบถาวร ไม่สามารถกู้คืนได้</p>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;">
+          <button id="cancel-delete" class="btn-secondary">ยกเลิก</button>
+          <button id="confirm-delete" style="padding:8px 16px;border-radius:8px;border:none;background:var(--red-dot);color:#fff;font-size:13.5px;font-weight:600;cursor:pointer;">ลบรายการ</button>
+        </div>
+      </div>
+    </div>`;
+    document.getElementById("cancel-delete").addEventListener("click", ()=>{ state.confirmDeleteId=null; renderModal(); });
+    document.getElementById("confirm-delete").addEventListener("click", async ()=>{
+      state.assets = state.assets.filter(a=>a.id!==id);
+      await persist();
+      state.confirmDeleteId=null;
+      if(state.modal==="detail" && state.activeId===id){ state.modal=null; state.activeId=null; }
+      renderModal();
+      toast("ลบรายการแล้ว");
+      renderSummary(); renderToolbar(); renderTable();
+    });
+    return;
+  }
+
+  root.innerHTML = "";
+}
+
+function detailRow(label, value){
+  return `<div><p style="margin:0 0 2px;font-size:11.5px;color:#9AA1AC;">${esc(label)}</p><p style="margin:0;font-size:13.5px;font-weight:500;">${esc(value)}</p></div>`;
+}
+
+/* ---------- init ---------- */
+async function init(){
+  renderShell();
+  renderLoading();
+  if(STORAGE_AVAILABLE){
+    try{
+      const res = await window.storage.get(TOKEN_KEY, TOKEN_SHARED);
+      const data = res && res.value ? JSON.parse(res.value) : [];
+      state.assets = Array.isArray(data) ? data : [];
+    }catch(e){
+      state.assets = [];
+    }
+  }
+  state.loading = false;
+  renderLoading();
+  renderSummary();
+  renderToolbar();
+  renderTable();
+}
+
+init();
+</script>
+</body>
+</html>

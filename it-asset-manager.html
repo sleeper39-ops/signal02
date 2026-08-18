@@ -158,8 +158,51 @@ async function persist(){
   }
 }
 
+function getUnitSortKey(itemOrStr){
+  let str = "";
+  if(typeof itemOrStr === "string"){
+    str = itemOrStr;
+  } else if(itemOrStr && typeof itemOrStr === "object"){
+    str = [itemOrStr.department, itemOrStr.holder, itemOrStr.name].filter(Boolean).join(" ");
+  }
+  if(!str) return { isUnitNum: false, num: 9999, text: "" };
+
+  const match = str.match(/(?:ชป\.?|ชุดปฏิบัติการ(?:\s*ที่)?)\s*(\d+)/i);
+  if(match){
+    return { isUnitNum: true, num: parseInt(match[1], 10), text: str };
+  }
+  return { isUnitNum: false, num: 9999, text: str };
+}
+
+function compareAssets(a, b){
+  const keyA = getUnitSortKey(a);
+  const keyB = getUnitSortKey(b);
+
+  if(keyA.isUnitNum && keyB.isUnitNum){
+    if(keyA.num !== keyB.num) return keyA.num - keyB.num;
+    return (a.code || "").localeCompare(b.code || "", undefined, { numeric: true });
+  }
+  if(keyA.isUnitNum) return -1;
+  if(keyB.isUnitNum) return 1;
+
+  const deptCmp = (a.department || "").localeCompare(b.department || "", 'th', { numeric: true });
+  if(deptCmp !== 0) return deptCmp;
+
+  return (a.code || "").localeCompare(b.code || "", undefined, { numeric: true });
+}
+
 function departments(){
-  return Array.from(new Set(state.assets.map(a=>a.department).filter(Boolean))).sort();
+  const list = Array.from(new Set(state.assets.map(a=>a.department).filter(Boolean)));
+  return list.sort((a, b) => {
+    const keyA = getUnitSortKey(a);
+    const keyB = getUnitSortKey(b);
+    if(keyA.isUnitNum && keyB.isUnitNum){
+      if(keyA.num !== keyB.num) return keyA.num - keyB.num;
+    }
+    if(keyA.isUnitNum) return -1;
+    if(keyB.isUnitNum) return 1;
+    return a.localeCompare(b, 'th', { numeric: true });
+  });
 }
 
 function filteredAssets(){
@@ -170,7 +213,7 @@ function filteredAssets(){
     if(state.categoryFilter && a.category!==state.categoryFilter) return false;
     if(!q) return true;
     return [a.code,a.name,a.holder,a.department,a.serial].join(" ").toLowerCase().includes(q);
-  }).sort((a,b)=>b.acquiredDate.localeCompare(a.acquiredDate));
+  }).sort(compareAssets);
 }
 
 let toastTimer = null;
